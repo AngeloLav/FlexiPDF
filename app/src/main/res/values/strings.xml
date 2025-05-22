@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">FlexiPDF</string>
     <string name="modification">First modification 12345</string>
+    <string name="alphabet">abcdefghilmnopqrstuvwxyz</string>
 </resources>
