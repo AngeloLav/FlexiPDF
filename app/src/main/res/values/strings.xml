@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">FlexiPDF</string>
-    <string name="message">Finally i can use GitHub too!</string>
+
+    <!-- Fragments temporary strings -->
+    <string name="fragmentOne">Finally i can use GitHub too!</string>
+    <string name="fragmentTwo">2</string>
+    <string name="fragmentThree">3</string>
+    <string name="fragmentFour">4</string>
 </resources>
