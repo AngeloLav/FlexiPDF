@@ -70,7 +70,6 @@ class FoldersFragment : Fragment() {
         val location = IntArray(2)
         binding.floatingActionButton.getLocationOnScreen(location)
 
-
         val fabX = location[0]
         val fabY = location[1]
         val popupWidth = popupView.measuredWidth
