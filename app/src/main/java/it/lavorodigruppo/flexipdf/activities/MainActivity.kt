@@ -37,7 +37,6 @@ class MainActivity : AppCompatActivity() {
             //It must be true or the item selected in the bottom navigation bar won't change
             true
         }
-
     }
 
     private fun replaceFragment(fragment: Fragment) {
