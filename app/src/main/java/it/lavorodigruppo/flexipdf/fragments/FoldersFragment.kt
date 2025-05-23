@@ -6,11 +6,9 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import it.lavorodigruppo.flexipdf.R
 import it.lavorodigruppo.flexipdf.databinding.FragmentFoldersBinding
 
 import android.widget.PopupWindow
-import android.widget.TextView
 import android.widget.Toast
 import it.lavorodigruppo.flexipdf.databinding.CustomPopupMenuBinding
 
