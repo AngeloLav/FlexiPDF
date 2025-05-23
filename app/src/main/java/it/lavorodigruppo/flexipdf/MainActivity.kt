@@ -12,6 +12,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         replaceFragment(HomeFragment())
@@ -22,12 +23,15 @@ class MainActivity : AppCompatActivity() {
                 R.id.folders -> replaceFragment(FoldersFragment())
                 R.id.shared -> replaceFragment(SharedFragment())
                 R.id.settings -> replaceFragment(SettingsFragment())
+
+                //No other case should be added
                 else ->{
                 }
             }
+            //It must be true or the item selected in the bottom navigation bar won't change
             true
         }
-        enableEdgeToEdge()
+
     }
 
     private fun replaceFragment(fragment: Fragment) {
