@@ -20,7 +20,10 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        replaceFragment(HomeFragment())
+
+        if (savedInstanceState == null) {
+            replaceFragment(HomeFragment())
+        }
 
         binding.bottomNavigationView.setOnItemSelectedListener {
             when (it.itemId) {
@@ -28,15 +31,12 @@ class MainActivity : AppCompatActivity() {
                 R.id.folders -> replaceFragment(FoldersFragment())
                 R.id.shared -> replaceFragment(SharedFragment())
                 R.id.settings -> replaceFragment(SettingsFragment())
-
-                //No other case should be added
                 else ->{
                 }
             }
             //It must be true or the item selected in the bottom navigation bar won't change
             true
         }
-
     }
 
     private fun replaceFragment(fragment: Fragment) {

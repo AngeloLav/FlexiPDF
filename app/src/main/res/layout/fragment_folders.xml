@@ -24,5 +24,9 @@
         android:contentDescription="@string/floating_action_button_description"
         android:src="@drawable/add_24dp_000000_fill0_wght400_grad0_opsz24" />
 
+    <androidx.recyclerview.widget.RecyclerView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
 
 </FrameLayout>
