@@ -1,5 +1,6 @@
 package it.lavorodigruppo.flexipdf.fragments
 
+//Standard
 import android.os.Bundle
 import android.view.Gravity
 import androidx.fragment.app.Fragment
@@ -8,9 +9,14 @@ import android.view.View
 import android.view.ViewGroup
 import it.lavorodigruppo.flexipdf.databinding.FragmentFoldersBinding
 
+//Custom popupWindow
 import android.widget.PopupWindow
 import android.widget.Toast
 import it.lavorodigruppo.flexipdf.databinding.CustomPopupMenuBinding
+
+//Animations
+import android.animation.ObjectAnimator
+import android.view.animation.OvershootInterpolator
 
 class FoldersFragment : Fragment() {
 
@@ -33,6 +39,7 @@ class FoldersFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.floatingActionButton.setOnClickListener {
+            rotateFabForward()
             showPopupMenu()
         }
 
@@ -42,7 +49,6 @@ class FoldersFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
-
 
     // --- Other functions ---
 
@@ -64,11 +70,13 @@ class FoldersFragment : Fragment() {
         val location = IntArray(2)
         binding.floatingActionButton.getLocationOnScreen(location)
 
+
         val fabX = location[0]
         val fabY = location[1]
         val popupWidth = popupView.measuredWidth
+        val fabWidth = binding.floatingActionButton.width
 
-        val xOffset = fabX - popupWidth
+        val xOffset = fabX - popupWidth + fabWidth/3
         val yOffset = fabY - popupView.measuredHeight
 
         val margin = (15 * resources.displayMetrics.density).toInt()
@@ -92,6 +100,15 @@ class FoldersFragment : Fragment() {
             popupWindow.dismiss()
         }
 
+    }
+
+    private fun rotateFabForward() {
+        ObjectAnimator.ofFloat(binding.floatingActionButton, "rotation", 0f, 90f).apply {
+            //in milliseconds
+            duration = 500
+            interpolator = OvershootInterpolator()
+            start()
+        }
     }
 
 }
