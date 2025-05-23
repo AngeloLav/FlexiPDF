@@ -1,10 +1,15 @@
-package it.lavorodigruppo.flexipdf
+package it.lavorodigruppo.flexipdf.activities
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import it.lavorodigruppo.flexipdf.fragments.HomeFragment
+import it.lavorodigruppo.flexipdf.R
+import it.lavorodigruppo.flexipdf.fragments.SettingsFragment
+import it.lavorodigruppo.flexipdf.fragments.SharedFragment
 import it.lavorodigruppo.flexipdf.databinding.ActivityMainBinding
+import it.lavorodigruppo.flexipdf.fragments.FoldersFragment
 
 class MainActivity : AppCompatActivity() {
 

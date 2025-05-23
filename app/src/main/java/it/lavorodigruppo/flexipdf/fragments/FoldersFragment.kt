@@ -1,4 +1,4 @@
-package it.lavorodigruppo.flexipdf
+package it.lavorodigruppo.flexipdf.fragments
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
