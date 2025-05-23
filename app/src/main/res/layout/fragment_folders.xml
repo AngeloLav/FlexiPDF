@@ -10,7 +10,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:text="@string/fragmentTwo"
-        android:textSize="26dp" />
+        android:textSize="26sp" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/floatingActionButton"
@@ -20,6 +20,7 @@
         android:src="@drawable/add_24dp_000000_fill0_wght400_grad0_opsz24"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
-        android:backgroundTint="@color/mild_red"/>
+        android:backgroundTint="@color/mild_red"
+        android:contentDescription="@string/floating_action_button_description"/>
 
 </FrameLayout>
