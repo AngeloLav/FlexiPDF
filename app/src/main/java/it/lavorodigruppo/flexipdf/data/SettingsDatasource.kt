@@ -11,7 +11,7 @@ class SettingsDatasource(private val context: Context) {
         val options = context.resources.getStringArray(R.array.settings_options)
 
         val icons = listOf(
-            R.drawable.language_24dp_ffffff_fill0_wght400_grad0_opsz24,
+            R.drawable.baseline_language_24,
             R.drawable.contrast_24dp_ffffff_fill0_wght400_grad0_opsz24,
             R.drawable.info_24dp_ffffff_fill0_wght400_grad0_opsz24,
             R.drawable.description_24dp_ffffff_fill0_wght400_grad0_opsz24,

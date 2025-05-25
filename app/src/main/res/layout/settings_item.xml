@@ -21,7 +21,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        tools:srcCompat="@drawable/language_24dp_ffffff_fill0_wght400_grad0_opsz24" />
+        tools:srcCompat="@drawable/baseline_language_24" />
 
         <TextView
             android:id="@+id/settingTitleTextView"
