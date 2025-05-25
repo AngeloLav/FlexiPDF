@@ -60,9 +60,9 @@ class SettingsFragment : Fragment() {
                 settingsRecyclerView.paddingRight,
                 systemBarsInsets.bottom
             )
-
             insets
         }
+        // --- End WindowInsets manager ---
 
         return view
     }
