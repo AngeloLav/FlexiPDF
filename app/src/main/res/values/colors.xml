@@ -3,6 +3,5 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="mild_red">#e60000</color>
-    <color name="dark_themed">#1E2124</color>
-
+    <color name="dark_themed">#201F25</color>
 </resources>
