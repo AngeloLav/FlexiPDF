@@ -6,5 +6,20 @@
     <string name="fragmentOne">Finally i can use GitHub too!</string>
     <string name="fragmentTwo">2</string>
     <string name="fragmentThree">3</string>
-    <string name="fragmentFour">4</string>
+    <string name="fragmentFour">Settings</string>
+
+    <!-- Settings Options -->
+    <string-array name="settings_options">
+        <item>Language</item>
+        <item>Theme</item>
+        <item>About Us</item>
+        <item>Credits</item>
+        <item>Help</item>
+        <item>Share App</item>
+    </string-array>
+    <string name="settings_icon_description">Settings Icon</string>
+
+    <string name="settings_item_message">%1$s</string>
+
+
 </resources>
