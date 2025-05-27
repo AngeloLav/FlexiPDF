@@ -92,7 +92,6 @@ class FoldersFragment : Fragment() {
 
         // --- Listeners ---
         popupBinding.optionImportPdf.setOnClickListener {
-
             listener?.launchPdfPicker()
             popupWindow.dismiss()
 
@@ -107,6 +106,8 @@ class FoldersFragment : Fragment() {
 
 
     // --- PDF Picker ---
+
+    // Methods necessary for a safe attachment of PDFs during the lifecycle of the fragment
     override fun onAttach(context: Context) {
         super.onAttach(context)
         if (context is OnPdfPickerListener) {
