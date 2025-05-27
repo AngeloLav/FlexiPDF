@@ -8,6 +8,7 @@
     <string name="fragmentThree">3</string>
     <string name="fragmentFour">Settings</string>
 
+    <string name="searchbar_message">Search between imported PDF…</string>
 
     <!-- Settings Options -->
     <string-array name="settings_options">

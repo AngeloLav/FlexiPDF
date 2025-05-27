@@ -13,6 +13,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         app:cardBackgroundColor="@color/mild_red"
+        app:cardElevation="4dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -22,10 +23,23 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingStart="16dp"
-            android:paddingEnd="0dp"
-            android:paddingTop="10dp"
-            android:paddingBottom="20dp">
+            android:paddingEnd="16dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="11dp">
         
+          <SearchView
+                android:id="@+id/searchView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:iconifiedByDefault="false"
+                android:queryBackground="@android:color/transparent"
+                android:queryHint="@string/searchbar_message"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:layout_marginTop="20dp"/>
+          
             <TextView
                 android:id="@+id/settingsTitleTextView"
                 android:layout_width="wrap_content"
@@ -42,14 +56,30 @@
 
     </androidx.cardview.widget.CardView>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/foldersRecyclerView"
+<androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/pdfRecyclerView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@+id/topBannerCardView"
+        app:layout_constraintTop_toBottomOf="@id/topBannerCardView"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        tools:listitem="@layout/horizontal_folder_element" />
+        android:paddingTop="8dp"
+        android:clipToPadding="false"
+        tools:listitem="@layout/item_pdf_file" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/floatingActionButton"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="@color/mild_red"
+        android:clickable="true"
+        android:focusable="true"
+        android:contentDescription="@string/floating_action_button_description"
+        android:src="@drawable/add_24dp_000000_fill0_wght400_grad0_opsz24"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+

@@ -16,18 +16,52 @@ import it.lavorodigruppo.flexipdf.databinding.CustomPopupMenuBinding
 
 //Animations
 import android.animation.ObjectAnimator
+import android.content.Context
 import android.view.animation.OvershootInterpolator
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import it.lavorodigruppo.flexipdf.R
+
+interface OnPdfPickerListener {
+    fun launchPdfPicker()
+}
 
 class FoldersFragment : Fragment() {
 
     private var _binding: FragmentFoldersBinding? = null
     private val binding get() = _binding!!
+    private var listener: OnPdfPickerListener? = null
+    private var originalBannerPaddingTop = 0
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentFoldersBinding.inflate(inflater, container, false)
+
+        // --- WindowInsets management ---
+        val bannerContentLayout = view?.findViewById<androidx.constraintlayout.widget.ConstraintLayout>(
+            R.id.bannerContentLayout)
+
+        if (bannerContentLayout != null) {
+            originalBannerPaddingTop = bannerContentLayout.paddingTop
+        }
+
+        view?.let {
+            ViewCompat.setOnApplyWindowInsetsListener(it) { _, insets ->
+                val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+                bannerContentLayout?.setPadding(
+                    bannerContentLayout.paddingLeft,
+                    originalBannerPaddingTop + systemBarsInsets.top,
+                    bannerContentLayout.paddingRight,
+                    bannerContentLayout.paddingBottom
+                )
+                insets
+            }
+        }
+        // --- End WindowInsets manager ---
+
         return binding.root
     }
 
@@ -86,8 +120,9 @@ class FoldersFragment : Fragment() {
 
         // --- Listeners ---
         popupBinding.optionImportPdf.setOnClickListener {
-            Toast.makeText(context, "Import PDF clicked!", Toast.LENGTH_SHORT).show()
+            listener?.launchPdfPicker()
             popupWindow.dismiss()
+
         }
 
         popupBinding.optionCreateFolder.setOnClickListener {
@@ -96,6 +131,25 @@ class FoldersFragment : Fragment() {
         }
 
     }
+
+
+    // --- PDF Picker ---
+
+    // Methods necessary for a safe attachment of PDFs during the lifecycle of the fragment
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is OnPdfPickerListener) {
+            listener = context
+        } else {
+            throw RuntimeException("$context must implement OnPdfPickerListener")
+        }
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+        listener = null
+    }
+    // --- End of PDF Picker ---
 
     private fun rotateFabForward() {
         ObjectAnimator.ofFloat(binding.floatingActionButton, "rotation", 0f, 90f).apply {
