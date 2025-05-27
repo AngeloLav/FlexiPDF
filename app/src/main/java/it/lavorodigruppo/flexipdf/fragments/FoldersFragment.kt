@@ -16,15 +16,18 @@ import it.lavorodigruppo.flexipdf.databinding.CustomPopupMenuBinding
 
 //Animations
 import android.animation.ObjectAnimator
-import android.content.Intent
+import android.content.Context
 import android.view.animation.OvershootInterpolator
-import it.lavorodigruppo.flexipdf.activities.MainActivity
-import it.lavorodigruppo.flexipdf.activities.PDFViewerActivity
+
+interface OnPdfPickerListener {
+    fun launchPdfPicker()
+}
 
 class FoldersFragment : Fragment() {
 
     private var _binding: FragmentFoldersBinding? = null
     private val binding get() = _binding!!
+    private var listener: OnPdfPickerListener? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -90,10 +93,8 @@ class FoldersFragment : Fragment() {
         // --- Listeners ---
         popupBinding.optionImportPdf.setOnClickListener {
 
-            val intent = Intent(this@FoldersFragment.requireContext(), PDFViewerActivity::class.java)
-            startActivity(intent)
-
-
+            listener?.launchPdfPicker()
+            popupWindow.dismiss()
 
         }
 
@@ -103,6 +104,23 @@ class FoldersFragment : Fragment() {
         }
 
     }
+
+
+    // --- PDF Picker ---
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is OnPdfPickerListener) {
+            listener = context
+        } else {
+            throw RuntimeException("$context must implement OnPdfPickerListener")
+        }
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+        listener = null
+    }
+    // --- End of PDF Picker ---
 
     private fun rotateFabForward() {
         ObjectAnimator.ofFloat(binding.floatingActionButton, "rotation", 0f, 90f).apply {
