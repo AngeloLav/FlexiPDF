@@ -20,6 +20,7 @@ import it.lavorodigruppo.flexipdf.fragments.FoldersFragment
 import androidx.preference.PreferenceManager
 import android.content.SharedPreferences
 import it.lavorodigruppo.flexipdf.fragments.OnPdfPickerListener
+import androidx.core.content.edit
 
 
 class MainActivity : AppCompatActivity(), OnPdfPickerListener {
@@ -63,7 +64,7 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
 
             contentResolver.takePersistableUriPermission(uri, takeFlags)
 
-            sharedPreferences.edit().putString(PDF_URI_KEY, uri.toString()).apply()
+            sharedPreferences.edit() { putString(PDF_URI_KEY, uri.toString()) }
             Snackbar.make(binding.root, "PDF imported!", Snackbar.LENGTH_SHORT).show()
 
         } catch (e: Exception) {

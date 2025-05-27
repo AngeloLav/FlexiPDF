@@ -43,7 +43,7 @@ dependencies {
     implementation libs.androidx.appcompat
     implementation libs.material
     implementation libs.androidx.activity
-    implementation 'com.github.mhiew:android-pdf-viewer:3.2.0-beta.1'
+    implementation libs.android.pdf.viewer
     implementation libs.androidx.constraintlayout
     implementation libs.androidx.preference.ktx
     testImplementation libs.junit

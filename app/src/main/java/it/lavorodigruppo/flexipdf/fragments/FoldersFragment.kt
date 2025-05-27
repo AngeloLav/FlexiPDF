@@ -16,11 +16,8 @@ import it.lavorodigruppo.flexipdf.databinding.CustomPopupMenuBinding
 
 //Animations
 import android.animation.ObjectAnimator
-import android.content.Intent
 import android.content.Context
 import android.view.animation.OvershootInterpolator
-import it.lavorodigruppo.flexipdf.activities.MainActivity
-import it.lavorodigruppo.flexipdf.activities.PDFViewerActivity
 
 interface OnPdfPickerListener {
     fun launchPdfPicker()
