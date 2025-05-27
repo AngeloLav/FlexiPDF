@@ -5,8 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/dark_themed_2"
-    tools:context=".fragments.FoldersFragment">
+    android:background="@color/dark_themed_2">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/topBannerCardView"
