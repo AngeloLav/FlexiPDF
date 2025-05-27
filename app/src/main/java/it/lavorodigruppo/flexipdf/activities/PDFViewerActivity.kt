@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import it.lavorodigruppo.flexipdf.R
+import androidx.activity.enableEdgeToEdge
 
 // PDF imports
 import android.net.Uri
@@ -15,7 +16,7 @@ class PDFViewerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_pdfviewer)
-
+        enableEdgeToEdge()
         val pdfView = findViewById<PDFView>(R.id.pdfView)
 
         // getParcelableExtra is deprecated but it works
