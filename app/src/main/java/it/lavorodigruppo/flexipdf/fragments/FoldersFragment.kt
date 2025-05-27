@@ -18,6 +18,9 @@ import it.lavorodigruppo.flexipdf.databinding.CustomPopupMenuBinding
 import android.animation.ObjectAnimator
 import android.content.Context
 import android.view.animation.OvershootInterpolator
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import it.lavorodigruppo.flexipdf.R
 
 interface OnPdfPickerListener {
     fun launchPdfPicker()
@@ -28,12 +31,37 @@ class FoldersFragment : Fragment() {
     private var _binding: FragmentFoldersBinding? = null
     private val binding get() = _binding!!
     private var listener: OnPdfPickerListener? = null
+    private var originalBannerPaddingTop = 0
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentFoldersBinding.inflate(inflater, container, false)
+
+        // --- WindowInsets management ---
+        val bannerContentLayout = view?.findViewById<androidx.constraintlayout.widget.ConstraintLayout>(
+            R.id.bannerContentLayout)
+
+        if (bannerContentLayout != null) {
+            originalBannerPaddingTop = bannerContentLayout.paddingTop
+        }
+
+        view?.let {
+            ViewCompat.setOnApplyWindowInsetsListener(it) { _, insets ->
+                val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+                bannerContentLayout?.setPadding(
+                    bannerContentLayout.paddingLeft,
+                    originalBannerPaddingTop + systemBarsInsets.top,
+                    bannerContentLayout.paddingRight,
+                    bannerContentLayout.paddingBottom
+                )
+                insets
+            }
+        }
+        // --- End WindowInsets manager ---
+
         return binding.root
     }
 
