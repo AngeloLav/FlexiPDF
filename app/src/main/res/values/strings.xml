@@ -4,7 +4,7 @@
 
     <!-- Fragments temporary strings -->
     <string name="fragmentOne">Finally i can use GitHub too!</string>
-    <string name="fragmentTwo">2</string>
+    <string name="fragmentTwo">Folders</string>
     <string name="fragmentThree">3</string>
     <string name="fragmentFour">Settings</string>
 
@@ -23,5 +23,19 @@
 
     <string name="settings_item_message">%1$s</string>
 
+    <!-- Example folders for the second menu -->
+    <string-array name="Folders">
+        <item>Folder</item>
+        <item>Folder2</item>
+        <item>Folder3</item>
+        <item>Folder4</item>
+        <item>Folder5</item>
+        <item>Folder6</item>
+    </string-array>
+
+    <string name="file_name">File</string>
+    <string name="folder_name">Folder</string>
+    <string name="file_icon_description">PDF File icon</string>
+    <string name="folders_icon_description">Folders icon</string>
 
 </resources>
