@@ -16,7 +16,10 @@ import it.lavorodigruppo.flexipdf.databinding.CustomPopupMenuBinding
 
 //Animations
 import android.animation.ObjectAnimator
+import android.content.Intent
 import android.view.animation.OvershootInterpolator
+import it.lavorodigruppo.flexipdf.activities.MainActivity
+import it.lavorodigruppo.flexipdf.activities.PDFViewerActivity
 
 class FoldersFragment : Fragment() {
 
@@ -86,8 +89,12 @@ class FoldersFragment : Fragment() {
 
         // --- Listeners ---
         popupBinding.optionImportPdf.setOnClickListener {
-            Toast.makeText(context, "Import PDF clicked!", Toast.LENGTH_SHORT).show()
-            popupWindow.dismiss()
+
+            val intent = Intent(this@FoldersFragment.requireContext(), PDFViewerActivity::class.java)
+            startActivity(intent)
+
+
+
         }
 
         popupBinding.optionCreateFolder.setOnClickListener {
