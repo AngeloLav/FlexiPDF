@@ -2,6 +2,21 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.FlexiPDF" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="colorPrimary">@color/light_gray</item>
+        <item name="colorPrimaryVariant">@color/mild_gray</item>
+        <item name="colorOnPrimary">@color/mild_red</item>
+
+        <!-->item name="colorSecondary">@color/my_dark_secondary</item>
+        <item name="colorSecondaryVariant">@color/my_dark_secondary_variant</item>
+        <item name="colorOnSecondary">@color/my_dark_on_secondary</item>-->
+
+        <!--<item name="">@color/mild_red</item>-->
+
+        <item name="android:statusBarColor">@color/mild_red</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+
+        <item name="android:windowBackground">@color/dark_themed_2</item>
+        <item name="colorSurface">@color/dark_themed</item>
+        <!--<item name="colorOnError">@color/my_dark_on_error</item>-->
     </style>
 </resources>
