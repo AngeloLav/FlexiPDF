@@ -20,8 +20,9 @@
         <item>Share App</item>
     </string-array>
     <string name="settings_icon_description">Settings Icon</string>
-
     <string name="settings_item_message">%1$s</string>
+
+    <string name="pdf_icon_description">PDF Icon</string>
 
 
 </resources>

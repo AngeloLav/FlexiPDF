@@ -20,59 +20,77 @@ import android.content.Context
 import android.view.animation.OvershootInterpolator
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import it.lavorodigruppo.flexipdf.R
+
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import it.lavorodigruppo.flexipdf.adapters.OnPdfFileClickListener
+import it.lavorodigruppo.flexipdf.adapters.PdfFileAdapter
+import it.lavorodigruppo.flexipdf.items.PdfFileItem
+import it.lavorodigruppo.flexipdf.viewmodels.PdfListViewModel
+import it.lavorodigruppo.flexipdf.activities.PDFViewerActivity
+import android.content.Intent
+import android.util.Log
+import androidx.core.net.toUri
+
 
 interface OnPdfPickerListener {
     fun launchPdfPicker()
 }
 
-class FoldersFragment : Fragment() {
+class FoldersFragment : Fragment(), OnPdfFileClickListener {
 
     private var _binding: FragmentFoldersBinding? = null
     private val binding get() = _binding!!
     private var listener: OnPdfPickerListener? = null
-    private var originalBannerPaddingTop = 0
+
+    private lateinit var pdfListViewModel: PdfListViewModel
+    private lateinit var pdfFileAdapter: PdfFileAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentFoldersBinding.inflate(inflater, container, false)
-
-        // --- WindowInsets management ---
-        val bannerContentLayout = view?.findViewById<androidx.constraintlayout.widget.ConstraintLayout>(
-            R.id.bannerContentLayout)
-
-        if (bannerContentLayout != null) {
-            originalBannerPaddingTop = bannerContentLayout.paddingTop
-        }
-
-        view?.let {
-            ViewCompat.setOnApplyWindowInsetsListener(it) { _, insets ->
-                val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-
-                bannerContentLayout?.setPadding(
-                    bannerContentLayout.paddingLeft,
-                    originalBannerPaddingTop + systemBarsInsets.top,
-                    bannerContentLayout.paddingRight,
-                    bannerContentLayout.paddingBottom
-                )
-                insets
-            }
-        }
-        // --- End WindowInsets manager ---
-
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        pdfListViewModel = ViewModelProvider(requireActivity())[PdfListViewModel::class.java]
+
+        pdfFileAdapter = PdfFileAdapter(this)
+
+        binding.pdfRecyclerView.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = pdfFileAdapter
+            setHasFixedSize(true)
+        }
+
+        pdfListViewModel.pdfFiles.observe(viewLifecycleOwner) { pdfFiles ->
+            pdfFileAdapter.submitList(pdfFiles)
+        }
+
+        // --- WindowInsets management ---
+        val bannerContentLayout = binding.bannerContentLayout
+
+        ViewCompat.setOnApplyWindowInsetsListener(bannerContentLayout) { v, insets ->
+            val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+            v.setPadding(
+                v.paddingLeft,
+                systemBarsInsets.top,
+                v.paddingRight,
+                v.paddingBottom
+            )
+            insets
+        }
+        // --- End WindowInsets manager ---
+
         binding.floatingActionButton.setOnClickListener {
             rotateFabForward()
             showPopupMenu()
         }
-
     }
 
     override fun onDestroyView() {
@@ -82,12 +100,22 @@ class FoldersFragment : Fragment() {
 
     // --- Other functions ---
 
+    override fun onPdfFileClick(pdfFile: PdfFileItem) {
+        Log.d("PDF_CLICK", "Attempting to open PDF: ${pdfFile.displayName}, URI String: ${pdfFile.uriString}")
+        val intent = Intent(requireContext(), PDFViewerActivity::class.java).apply {
+
+            putExtra("pdf_uri", pdfFile.uriString.toUri())
+            putExtra("pdf_display_name", pdfFile.displayName)
+        }
+        startActivity(intent)
+        Toast.makeText(context, "Opening ${pdfFile.displayName}", Toast.LENGTH_SHORT).show()
+    }
+
     private fun showPopupMenu() {
 
         val popupBinding = CustomPopupMenuBinding.inflate(LayoutInflater.from(requireContext()))
         val popupView = popupBinding.root
 
-        //Measure the popup view
         popupView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
 
         val popupWindow = PopupWindow(
@@ -132,9 +160,7 @@ class FoldersFragment : Fragment() {
 
     }
 
-
     // --- PDF Picker ---
-
     // Methods necessary for a safe attachment of PDFs during the lifecycle of the fragment
     override fun onAttach(context: Context) {
         super.onAttach(context)
