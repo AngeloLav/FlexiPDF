@@ -16,30 +16,31 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:padding="16dp"
-    android:background="@color/dark_themed"/>
+    android:background="?attr/colorSurface"/>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp"
-        android:background="@color/dark_themed">
+        android:background="?attr/colorSurface">
 
         <ImageView
-        android:id="@+id/iconImageView"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:contentDescription="@string/settings_icon_description"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        tools:srcCompat="@drawable/baseline_language_24" />
+            android:id="@+id/iconImageView"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:contentDescription="@string/settings_icon_description"
+            app:tint="?attr/colorPrimary"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:srcCompat="@drawable/baseline_language_24" />
 
         <TextView
             android:id="@+id/settingTitleTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:textColor="@android:color/white"
+            android:textColor="?attr/colorPrimary"
             android:textSize="20sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/iconImageView"
