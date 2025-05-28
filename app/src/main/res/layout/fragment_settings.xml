@@ -33,6 +33,7 @@
                 android:text="@string/fragmentFour"
                 android:textColor="@android:color/white"
                 android:textSize="26sp"
+                android:fontFamily="monospace"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"

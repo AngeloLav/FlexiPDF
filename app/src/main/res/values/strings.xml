@@ -20,8 +20,9 @@
         <item>Share App</item>
     </string-array>
     <string name="settings_icon_description">Settings Icon</string>
-
     <string name="settings_item_message">%1$s</string>
+
+    <string name="pdf_icon_description">PDF Icon</string>
 
     <!-- Example folders for the second menu -->
     <string-array name="Folders">
@@ -37,5 +38,6 @@
     <string name="folder_name">Folder</string>
     <string name="file_icon_description">PDF File icon</string>
     <string name="folders_icon_description">Folders icon</string>
+
 
 </resources>
