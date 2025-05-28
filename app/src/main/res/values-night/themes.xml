@@ -4,13 +4,12 @@
         <!-- Customize your dark theme here. -->
         <item name="colorPrimary">@color/light_gray</item>
         <item name="colorPrimaryVariant">@color/mild_gray</item>
-        <item name="colorOnPrimary">@color/mild_red</item>
+<!--        <item name="colorOnPrimary">@color/light_red</item>-->
 
-        <!-->item name="colorSecondary">@color/my_dark_secondary</item>
-        <item name="colorSecondaryVariant">@color/my_dark_secondary_variant</item>
-        <item name="colorOnSecondary">@color/my_dark_on_secondary</item>-->
-
-        <!--<item name="">@color/mild_red</item>-->
+        <item name="colorSecondary">@color/light_red</item>
+<!--        <item name="colorSecondaryVariant">@color/my_dark_secondary_variant</item>-->
+<!--        <item name="colorOnSecondary">@color/my_dark_on_secondary</item>-->
+        <item name="selectableItemBackground">@android:color/transparent</item>
 
         <item name="android:statusBarColor">@color/mild_red</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>

@@ -5,12 +5,12 @@
     <color name="light_gray">#C0C0C0</color>
     <color name="mild_gray">#808080</color>
     <color name="dark_gray">#404040</color>
-    <color name="light_red">#C00000</color>
+    <color name="light_red">#D20000</color>
     <color name="mild_red">#8B0000</color>
     <color name="dark_red">#620000</color>
     <color name="dark_themed">#2A2A2A</color>
     <color name="dark_themed_2">#1A1A1A</color>
-    <color name="light_themed">#D5D5D5</color>
-    <color name="light_themed_2">#E5E5E5</color>
+    <color name="light_themed">#E5E5E5</color>
+    <color name="light_themed_2">#D5D5D5</color>
     <color name="search_bar_background">#2A2A2A</color>"
 </resources>
