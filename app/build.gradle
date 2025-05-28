@@ -38,9 +38,6 @@ android {
 }
 
 dependencies {
-    //it is necessary for pdf viewing
-    implementation libs.androidx.pdf.viewer.fragment
-
     implementation libs.androidx.core.ktx
     implementation libs.androidx.appcompat
     implementation libs.material
