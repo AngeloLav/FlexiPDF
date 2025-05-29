@@ -36,8 +36,8 @@
 
     <string name="file_name">File</string>
     <string name="folder_name">Folder</string>
-    <string name="file_icon_description">PDF File icon</string>
-    <string name="folders_icon_description">Folders icon</string>
+    <string name="file_icon_description">1%s</string>
+    <string name="folders_icon_description">1%s</string>
 
 
 </resources>

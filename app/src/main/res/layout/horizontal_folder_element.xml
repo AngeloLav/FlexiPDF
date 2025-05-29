@@ -3,45 +3,47 @@
 
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
 
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="0dp"
-    android:layout_marginBottom="0dp"
-    android:background="@color/dark_themed"
-    app:cardElevation="8dp"
-    app:cardBackgroundColor="@android:color/black"
-    >
 
-    <LinearLayout
+    android:layout_marginTop="6dp"
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:padding="10dp"
-        android:id="@+id/container2"
-        >
+        android:background="?attr/colorSurface"
+        android:id="@+id/container" >
 
         <ImageView
-            android:id="@+id/img_folder"
+            android:id="@+id/FolderIconView"
+            android:layout_width="40dp"
+            android:layout_height="65dp"
             android:contentDescription="@string/folders_icon_description"
-            android:layout_width="45dp"
-            android:layout_height="60dp"
-            android:layout_marginStart="10dp"
-            android:layout_marginEnd="10dp"
-            android:layout_marginTop="5dp"
-            android:src="@drawable/folder">
-        </ImageView>
+            app:layout_constraintTop_toTopOf="@id/container"
+            app:layout_constraintStart_toStartOf="@id/container"
+            app:layout_constraintBottom_toBottomOf="@id/container"
+            android:src="@drawable/iconsfolder"/>
 
         <TextView
-            android:id="@+id/name_pdf"
+            android:id="@+id/name_folder"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="20dp"
-            android:layout_marginEnd="20dp"
-            android:padding="5dp"
-            android:textColor="@android:color/white"
-            android:text="@string/folder_name"
-            >
-        </TextView>
-    </LinearLayout>
+            android:layout_marginStart="55dp"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="20sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/FolderIconView"
+            app:layout_constraintBottom_toBottomOf="@+id/FolderIconView"
+            app:layout_constraintTop_toTopOf="@+id/FolderIconView"
+            tools:text="@string/folder_name" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
 </androidx.cardview.widget.CardView>
