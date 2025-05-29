@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/dark_themed_2"
+    android:background="?attr/android:windowBackground"
     tools:context=".fragments.SettingsFragment">
 
     <TextView
@@ -23,7 +23,7 @@
         android:id="@+id/topBannerCardView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:cardBackgroundColor="@color/mild_red"
+        app:cardBackgroundColor="?attr/android:statusBarColor"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">

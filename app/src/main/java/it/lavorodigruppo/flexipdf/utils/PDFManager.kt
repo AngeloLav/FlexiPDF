@@ -6,15 +6,9 @@ import android.net.Uri
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.edit
-import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
-import it.lavorodigruppo.flexipdf.activities.PDFViewerActivity
 
-class PdfManager(private val activity: AppCompatActivity) {
-
-    private val PDF_URI_KEY = "saved_pdf_uri"
-    private val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity)
+class PdfManager(private val activity: AppCompatActivity, private val onPdfSelected: (Uri, String) -> Unit) {
 
     private val pickPdfFile = activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -22,11 +16,12 @@ class PdfManager(private val activity: AppCompatActivity) {
             uri?.let {
                 Log.d("PDF_PICKER", "PDF selected: $it")
 
+                val displayName = getFileName(it)
+
                 savePdfUri(it)
-
-                // TEMPORARY, just for testing
-                openPdfViewerActivity(it)
-
+                onPdfSelected.invoke(it, displayName)
+                // Uncomment if you want it to open the PDF viewer after selecting it
+                // openPdfViewerActivity(it)
             } ?: run {
                 Snackbar.make(activity.findViewById(android.R.id.content), "No PDF selected", Snackbar.LENGTH_SHORT).show()
             }
@@ -50,19 +45,32 @@ class PdfManager(private val activity: AppCompatActivity) {
 
             contentResolver.takePersistableUriPermission(uri, takeFlags)
 
-            sharedPreferences.edit { putString(PDF_URI_KEY, uri.toString()) }
-            Snackbar.make(activity.findViewById(android.R.id.content), "PDF imported!", Snackbar.LENGTH_SHORT).show()
-
         } catch (e: Exception) {
             Log.e("PDF_PICKER", "Error in saving the permission for URI: ${e.message}")
             Snackbar.make(activity.findViewById(android.R.id.content), "Error in saving the PDF", Snackbar.LENGTH_SHORT).show()
         }
     }
 
-    private fun openPdfViewerActivity(pdfUri: Uri) {
-        val intent = Intent(activity, PDFViewerActivity::class.java).apply {
-            putExtra("pdf_uri", pdfUri)
+    private fun getFileName(uri: Uri): String {
+        var result: String? = null
+        if (uri.scheme == "content") {
+            activity.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val displayNameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (displayNameIndex != -1) {
+                        result = cursor.getString(displayNameIndex)
+                    }
+                }
+            }
         }
-        activity.startActivity(intent)
+        if (result == null) {
+            result = uri.path
+            val cut = result?.lastIndexOf('/')
+            if (cut != -1) {
+                result = result?.substring(cut!! + 1)
+            }
+        }
+        return result ?: "Unknown PDF"
     }
+
 }
