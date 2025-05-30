@@ -57,10 +57,10 @@ class SettingsAdapter(private val settingsList: List<SettingsItem>) :
                 "Theme" -> {
 
                     val currentNightMode = AppCompatDelegate.getDefaultNightMode()
-                    if (currentNightMode == AppCompatDelegate.MODE_NIGHT_YES) {
-                        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                    } else {
+                    if (currentNightMode == AppCompatDelegate.MODE_NIGHT_NO) {
                         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                    } else {
+                        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
                     }
 
                 }
