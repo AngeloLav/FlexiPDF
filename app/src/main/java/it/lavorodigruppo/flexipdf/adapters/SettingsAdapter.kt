@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.recyclerview.widget.RecyclerView
 import it.lavorodigruppo.flexipdf.R
 import it.lavorodigruppo.flexipdf.items.SettingsItem
@@ -54,7 +55,14 @@ class SettingsAdapter(private val settingsList: List<SettingsItem>) :
                     android.widget.Toast.makeText(v.context, "Language clicked", android.widget.Toast.LENGTH_SHORT).show()
                 }
                 "Theme" -> {
-                    android.widget.Toast.makeText(v.context, "Theme clicked", android.widget.Toast.LENGTH_SHORT).show()
+
+                    val currentNightMode = AppCompatDelegate.getDefaultNightMode()
+                    if (currentNightMode == AppCompatDelegate.MODE_NIGHT_YES) {
+                        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                    } else {
+                        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                    }
+
                 }
                 "About Us" -> {
                     android.widget.Toast.makeText(v.context, "About us clicked", android.widget.Toast.LENGTH_SHORT).show()
@@ -66,6 +74,7 @@ class SettingsAdapter(private val settingsList: List<SettingsItem>) :
                     android.widget.Toast.makeText(v.context, "Help clicked", android.widget.Toast.LENGTH_SHORT).show()
                 }
                 "Share App" -> {
+
                     val appUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                     val intent = Intent(Intent.ACTION_VIEW, appUrl.toUri())
                     v.context.startActivity(intent)
@@ -73,6 +82,7 @@ class SettingsAdapter(private val settingsList: List<SettingsItem>) :
                 else -> {
                     android.widget.Toast.makeText(v.context, "Unknown: ${item.title}", android.widget.Toast.LENGTH_SHORT).show()
                 }
+
             }
         }
     }

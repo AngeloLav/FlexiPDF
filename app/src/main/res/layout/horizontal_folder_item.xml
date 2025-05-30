@@ -29,7 +29,7 @@
             app:layout_constraintTop_toTopOf="@id/container"
             app:layout_constraintStart_toStartOf="@id/container"
             app:layout_constraintBottom_toBottomOf="@id/container"
-            android:src="@drawable/iconsfolder"/>
+            android:src="@drawable/folder_svgrepo_com"/>
 
         <TextView
             android:id="@+id/name_folder"
@@ -38,10 +38,10 @@
             android:layout_marginStart="55dp"
             android:textColor="?attr/colorPrimary"
             android:textSize="20sp"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/FolderIconView"
-            app:layout_constraintBottom_toBottomOf="@+id/FolderIconView"
-            app:layout_constraintTop_toTopOf="@+id/FolderIconView"
+            app:layout_constraintTop_toTopOf="parent"
             tools:text="@string/folder_name" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
