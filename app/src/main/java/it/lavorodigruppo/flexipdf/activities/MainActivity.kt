@@ -46,8 +46,6 @@
  * attualmente presente nella mia activity_main.xml (R.id.frame_layout è l'id del FrameLayout in activity_main.xml) e lo sostituisco con il nuovo
  * fragment passato come parametro. commit() è un metodo che mi permette di finalizzare questi cambiamenti.
  *
- * @author Angelo
- * @date 31/05/25
  *
  */
 
