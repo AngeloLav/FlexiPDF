@@ -18,9 +18,6 @@
  * - Centralizzare la logica di business relativa alla gestione della lista dei PDF
  * (aggiunta, rimozione, caricamento/salvataggio), separandola dalla logica dell'interfaccia utente.
  *
- * @author Angelo
- *
- * @date 31/05/25
  *
  */
 
@@ -59,14 +56,12 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
      * - **Consapevole del ciclo di vita:** LiveData notifica gli osservatori solo se sono in uno stato "attivo"
      * del loro ciclo di vita (es. `STARTED` o `RESUMED`). Questo previene memory leaks e crash,
      * poiché non invia aggiornamenti a componenti che non sono più attivi o sono stati distrutti.
-     *
      *      @see
      *      it.lavorodigruppo.flexipdf/items/PdfFileItem.kt
-     *      @see
      *      androidx.lifecycle.MutableLiveData
-     *      @see
      *      androidx.lifecycle.LiveData
      */
+
     private val _pdfFiles = MutableLiveData<List<PdfFileItem>>()
 
     /**
@@ -94,6 +89,11 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
      */
     fun addPdfFile(pdfFile: PdfFileItem) {
 
+        /*
+         * _pdfFiles.value? restituisce una lista immutabile che può essere nulla, usiamo il metodo
+         * toMutableList() per renderla mutabile; se è nulla restituisce una lista mutabile vuota grazie
+         * all'elvis operator.
+         */
         val currentList = _pdfFiles.value?.toMutableList() ?: mutableListOf()
 
         // Controlla se un PDF con lo stesso URI è già presente nella lista.
@@ -113,7 +113,7 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
      *      it.lavorodigruppo.flexipdf/items/PdfFileItem.kt
      */
 
-    // Still have to implement this feature into the RecyclerView
+    // Devo ancora implementare queto metodo nella recyclerView
     fun removePdfFile(pdfFile: PdfFileItem) {
 
         val currentList = _pdfFiles.value?.toMutableList() ?: mutableListOf()
