@@ -29,7 +29,8 @@ import com.google.android.material.snackbar.Snackbar
  * @param onPdfSelected Una funzione lambda (Uri, String) -> Unit che viene invocata quando
  * un PDF viene selezionato con successo. Riceve l'URI del PDF e il suo nome visualizzato.
  */
-class PdfManager(private val activity: AppCompatActivity, private val onPdfSelected: (Uri, String) -> Unit) {
+class PdfManager(private val activity: AppCompatActivity,
+                 private val onPdfSelected: (List<Uri>, List<String>) -> Unit) {
 
     /**
      * ActivityResultLauncher per avviare l'Activity di selezione del file PDF e gestire il suo risultato.
@@ -46,26 +47,40 @@ class PdfManager(private val activity: AppCompatActivity, private val onPdfSelec
      */
     private val pickPdfFile = activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            val uri: Uri? = result.data?.data
-            uri?.let {
+            val selectedUris = mutableListOf<Uri>()
+            val selectedDisplayNames = mutableListOf<String>()
 
-                // Ottiene il nome visualizzato del file dall'URI.
-                val displayName = getFileName(it)
+            result.data?.clipData?.let { clipData ->
+                for (i in 0 until clipData.itemCount) {
+                    val uri = clipData.getItemAt(i).uri
+                    selectedUris.add(uri)
+                    val displayName = getFileName(uri)
+                    selectedDisplayNames.add(displayName)
+                    savePdfUri(uri) // Salva i permessi per ogni URI selezionato
+                }
+            }
 
-                // Salva i permessi di accesso persistenti per l'URI.
-                savePdfUri(it)
-                // Invoca il callback fornito per notificare l'Activity/ViewModel chiamante.
-                onPdfSelected.invoke(it, displayName)
+            result.data?.data?.let { uri ->
+                if (selectedUris.isEmpty()) {
+                    selectedUris.add(uri)
+                    val displayName = getFileName(uri)
+                    selectedDisplayNames.add(displayName)
+                    savePdfUri(uri)
+                }
+            }
 
-                // Uncommenta se vuoi che venga visualizzato il pdf appena selezionato
-                // openPdfViewerActivity(it)
-            } ?: run {
-                // Se l'URI è nullo (es. l'utente ha selezionato ma il dato è vuoto).
-                Toast.makeText(activity, "Nessun PDF selezionato", Toast.LENGTH_SHORT).show()
+            if (selectedUris.isNotEmpty()) {
+                // Invoca il callback fornito con la lista completa dei PDF selezionati
+                onPdfSelected.invoke(selectedUris, selectedDisplayNames)
+                val toastMessage = if (selectedUris.size == 1) {
+                    "PDF importated: ${selectedDisplayNames.first()}"
+                } else {
+                    "${selectedUris.size} PDF imported."
+                }
+                Toast.makeText(activity, toastMessage, Toast.LENGTH_SHORT).show()
             }
         } else {
-            // Se l'operazione di selezione è stata interrotta (es. l'utente ha premuto indietro).
-            Toast.makeText(activity, "Selezione PDF interrotta", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, "PDF selection interrupted", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -81,6 +96,7 @@ class PdfManager(private val activity: AppCompatActivity, private val onPdfSelec
             addCategory(Intent.CATEGORY_OPENABLE)
             // Specifica il tipo MIME per filtrare solo i file PDF.
             type = "application/pdf"
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         }
         // Avvia l'Activity di selezione file utilizzando il launcher registrato.
         pickPdfFile.launch(intent)

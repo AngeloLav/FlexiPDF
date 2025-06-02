@@ -13,13 +13,15 @@
 
 package it.lavorodigruppo.flexipdf.adapters
 
-import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import it.lavorodigruppo.flexipdf.R
 import it.lavorodigruppo.flexipdf.databinding.PdfFileItemBinding
 import it.lavorodigruppo.flexipdf.items.PdfFileItem
+import android.view.View
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 
 /**
  * Interfaccia di callback per gestire gli eventi di click sugli elementi della lista di PDF.
@@ -32,12 +34,35 @@ interface OnPdfFileClickListener {
      * Chiamato quando un elemento PdfFileItem nella lista viene cliccato.
      * @param pdfFile L'oggetto PdfFileItem che è stato cliccato.
      */
-    fun onPdfFileClick(pdfFile: PdfFileItem)
+    fun onPdfFileClick(pdfFile: PdfFileItem, isSelectionModeActive: Boolean)
+    /**
+     * Chiamato quando un elemento PdfFileItem nella lista viene tenuto premuto a lungo.
+     * Questo è il punto di ingresso per attivare la modalità di selezione.
+     * @param pdfFile L'oggetto PdfFileItem che è stato tenuto premuto.
+     */
+    fun onPdfFileLongClick(pdfFile: PdfFileItem)
+    /**
+     * Chiamato quando l'icona del cestino di un PdfFileItem nella lista viene cliccata.
+     * @param pdfFile L'oggetto PdfFileItem la cui icona cestino è stata cliccata.
+     */
+    fun onDeleteIconClick(pdfFile: PdfFileItem)
 }
 
-class PdfFileAdapter(private val listener: OnPdfFileClickListener) : RecyclerView.Adapter<PdfFileAdapter.PdfFileViewHolder>() {
+class PdfFileAdapter(
+    private val listener: OnPdfFileClickListener,
+    private var isSelectionModeActive : Boolean = false
+) : ListAdapter<PdfFileItem, PdfFileAdapter.PdfFileViewHolder>(PdfFileDiffCallback()) {
 
-    private var pdfFiles: List<PdfFileItem> = emptyList()
+    /**
+     * Metodo per aggiornare lo stato della modalità di selezione nell'adapter.
+     * Chiamato dal Fragment per informare l'adapter quando la modalità di selezione si attiva/disattiva.
+     * @param active True se la modalità di selezione è attiva, false altrimenti.
+     */
+    fun setSelectionModeActive(active: Boolean) {
+        if (this.isSelectionModeActive != active) {
+            this.isSelectionModeActive = active
+        }
+    }
 
     /**
      * PdfFileViewHolder è la classe ViewHolder che detiene i riferimenti alle view
@@ -49,15 +74,50 @@ class PdfFileAdapter(private val listener: OnPdfFileClickListener) : RecyclerVie
     class PdfFileViewHolder(private val binding: PdfFileItemBinding) : RecyclerView.ViewHolder(binding.root) {
 
         /**
-         * Collega i dati di un PdfFileItem alle view all'interno del ViewHolder.
+         * Collega i dati di un PdfFileItem alle view all'interno del ViewHolder
+         * e imposta i listener.
          *
          * @param pdfFile L'oggetto PdfFileItem da visualizzare in questo ViewHolder.
+         * @param listener Il listener per gli eventi di click e long-click.
+         * @param isSelectionModeActive Lo stato corrente della modalità di selezione (passato dall'adapter).
          */
-        fun bind(pdfFile: PdfFileItem) {
-            // Imposta il testo del TextView con il nome visualizzato del PDF.
+        fun bind(pdfFile: PdfFileItem, listener: OnPdfFileClickListener, isSelectionModeActive: Boolean) {
             binding.titleTextView.text = pdfFile.displayName
-            // Imposta l'immagine dell'ImageView con l'icona predefinita del PDF.
             binding.iconImageView.setImageResource(R.drawable.pdf_svgrepo_com)
+
+            // --- Gestione della visualizzazione in base allo stato di selezione dell'item ---
+            if (pdfFile.isSelected) {
+                // Se l'elemento è selezionato, cambia il colore di sfondo della CardView
+                // e rendi visibile l'icona del cestino.
+                binding.cardViewRoot.setCardBackgroundColor(itemView.context.getColor(android.R.color.holo_red_dark))
+                binding.deleteIcon.visibility = View.VISIBLE
+            } else {
+                // Se l'elemento non è selezionato, ripristina il colore di sfondo
+                // e nascondi l'icona del cestino.
+                binding.cardViewRoot.setCardBackgroundColor(itemView.context.getColor(android.R.color.transparent))
+                binding.deleteIcon.visibility = View.GONE
+            }
+
+            // --- Impostazione dei Listener ---
+
+            // Listener per il click normale sull'intero elemento.
+            // Il comportamento di questo click dipenderà dalla modalità di selezione.
+            binding.root.setOnClickListener {
+                listener.onPdfFileClick(pdfFile, isSelectionModeActive)
+            }
+
+            // Listener per il long-click sull'intero elemento.
+            // Questo è il trigger per entrare nella modalità di selezione.
+            binding.root.setOnLongClickListener {
+                listener.onPdfFileLongClick(pdfFile)
+                true
+            }
+
+            // Listener per il click sull'icona del cestino.
+            // Questa è l'azione per eliminare un elemento specifico.
+            binding.deleteIcon.setOnClickListener {
+                listener.onDeleteIconClick(pdfFile)
+            }
         }
     }
 
@@ -86,43 +146,29 @@ class PdfFileAdapter(private val listener: OnPdfFileClickListener) : RecyclerVie
      */
     override fun onBindViewHolder(holder: PdfFileViewHolder, position: Int) {
         // Recupera l'oggetto PdfFileItem dalla lista dei dati in base alla posizione.
-        val pdfFile = pdfFiles[position]
+        val pdfFile = getItem(position)
         // Binda i dati del PdfFileItem al ViewHolder.
-        holder.bind(pdfFile)
-
-        // Imposta un click listener per l'intera view dell'elemento (itemView).
-        // Quando l'elemento viene cliccato, viene invocato il callback onPdfFileClick
-        // sull'interfaccia del listener fornita al costruttore dell'adapter.
-        holder.itemView.setOnClickListener {
-            listener.onPdfFileClick(pdfFile)
+        holder.bind(pdfFile, listener, this.isSelectionModeActive)
         }
     }
 
     /**
-     * Restituisce il numero totale di elementi nel set di dati tenuto dall'adapter.
-     * Obbligatorio da implemetare per le recyclerView
-     * @return Il numero di elementi nella lista pdfFiles.
+     * Callback per calcolare le differenze tra due liste di PdfFileItem.
+     * Usato da ListAdapter per aggiornare la RecyclerView in modo efficiente.
      */
-    override fun getItemCount(): Int {
-        return pdfFiles.size
+    class PdfFileDiffCallback : DiffUtil.ItemCallback<PdfFileItem>() {
+        override fun areItemsTheSame(oldItem: PdfFileItem, newItem: PdfFileItem): Boolean {
+            // Controlla se gli elementi rappresentano lo stesso "oggetto" (stesso URI)
+            // Questo è importante per le riorganizzazioni della lista.
+            return oldItem.uriString == newItem.uriString
+        }
+
+        override fun areContentsTheSame(oldItem: PdfFileItem, newItem: PdfFileItem): Boolean {
+            // Controlla se i contenuti degli elementi sono gli stessi.
+            // Poiché PdfFileItem è una data class, il confronto '==' verifica tutte le proprietà.
+            // Questo è fondamentale per rilevare cambiamenti come 'isSelected'.
+            return oldItem == newItem
+        }
     }
 
-    /**
-     * Aggiorna la lista di PdfFileItem visualizzata dall'adapter e notifica il RecyclerView
-     * che il set di dati è cambiato.
-     *
-     * `@SuppressLint("NotifyDataSetChanged")`: Questa annotazione sopprime il warning
-     * che sconsiglia l'uso di `notifyDataSetChanged()` per motivi di performance e animazioni.
-     *
-     * @param newList La nuova [List] di [PdfFileItem] da visualizzare.
-     */
-    @SuppressLint("NotifyDataSetChanged")
-    fun submitList(newList: List<PdfFileItem>) {
-        // Aggiorna la lista interna dell'adapter.
-        pdfFiles = newList
 
-        // Notifica al RecyclerView che l'intero set di dati è cambiato,
-        // forzando un ridisegno completo della lista.
-        notifyDataSetChanged()
-    }
-}

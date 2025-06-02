@@ -25,11 +25,13 @@ import androidx.core.net.toUri
  * Uri non è direttamente serializzabile a JSON da Gson senza un TypeAdapter personalizzato,
  * e memorizzare l'URI come Stringa è più semplice per la persistenza.
  * @property displayName Il nome visualizzato del file PDF.
+ * @property isSelected Indica se il file PDF è selezionato o meno dalla recyclerView.
  */
 
 data class PdfFileItem(
     val uriString: String,
-    val displayName: String
+    val displayName: String,
+    var isSelected: Boolean = false
 )
 
 /**
