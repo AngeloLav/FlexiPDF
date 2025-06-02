@@ -168,7 +168,6 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
      * Estrae la dimensione del file per ciascun URI.
      * @param pdfUris A list di URI che puntano ai file PDF.
      * @param displayNames A list di nomi visualizzati corrispondenti ai pdfUris.
-     * @param context Application context needed to resolve content URIs for file size.
      */
     fun addPdfFilesFromUris(pdfUris: List<Uri>, displayNames: List<String>) {
         val currentList = _pdfFiles.value.orEmpty().toMutableList()
