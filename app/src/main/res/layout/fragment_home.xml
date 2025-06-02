@@ -6,18 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/android:windowBackground"
-    tools:context=".fragments.SettingsFragment">
-
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/fragmentOne"
-        android:textSize="26sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/topBannerCardView" />
+    tools:context=".fragments.HomeFragment">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/topBannerCardView"
@@ -33,14 +22,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingStart="16dp"
-            android:paddingEnd="0dp"
+            android:paddingEnd="16dp"
             android:paddingTop="20dp"
-            android:paddingBottom="20dp">
+            android:paddingBottom="13dp">
 
             <TextView
-                android:id="@+id/settingsTitleTextView"
+                android:id="@+id/homeTitleTextView"
                 android:layout_width="130dp"
-                android:layout_height="27dp"
+                android:layout_height="wrap_content"
                 android:fontFamily="@font/short_baby"
                 android:text="@string/app_name"
                 android:textColor="@android:color/white"
@@ -53,5 +42,122 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/recentTitleCardView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        app:cardElevation="2dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/topBannerCardView">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:background="?attr/colorSurface">
+
+            <ImageView
+                android:id="@+id/recentIconHome"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:contentDescription="@string/recent_icon_description"
+                app:tint="?attr/colorPrimary"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:src="@drawable/history_2_24dp_999999_fill0_wght400_grad0_opsz24"/>
+
+            <TextView
+                android:id="@+id/recentTitle"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="@string/recent_pdfs_title"
+                android:textColor="?attr/colorPrimaryDark"
+                android:textSize="20sp"
+                android:fontFamily="@font/montserrat_regular"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/recentIconHome"
+                app:layout_constraintTop_toTopOf="@+id/recentIconHome"
+                app:layout_constraintBottom_toBottomOf="@+id/recentIconHome" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recentPdfRecyclerView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="8dp"
+        android:clipToPadding="false"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/recentTitleCardView"
+        android:orientation="horizontal"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        tools:listitem="@layout/pdf_file_horizontal_item" />
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/favoritesTitleCardView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        app:cardElevation="2dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/recentPdfRecyclerView">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:background="?attr/colorSurface">
+
+            <ImageView
+                android:id="@+id/favoriteIconHome"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:contentDescription="@string/favorite_icon_description"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:src="@drawable/star_24dp_f19e39_fill0_wght400_grad0_opsz24__1_" />
+
+            <TextView
+                android:id="@+id/favoritesTitle"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="@string/favorite_pdfs_title"
+                android:fontFamily="@font/montserrat_regular"
+                android:textStyle="bold"
+                android:textColor="?attr/colorPrimaryDark"
+                android:textSize="20sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/favoriteIconHome"
+                app:layout_constraintTop_toTopOf="@+id/favoriteIconHome"
+                app:layout_constraintBottom_toBottomOf="@+id/favoriteIconHome" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/favoritePdfRecyclerView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="8dp"
+        android:clipToPadding="false"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/favoritesTitleCardView"
+        android:orientation="horizontal"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        tools:listitem="@layout/pdf_file_horizontal_item" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

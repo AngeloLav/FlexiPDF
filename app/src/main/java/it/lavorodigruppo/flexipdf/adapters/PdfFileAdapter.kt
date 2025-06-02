@@ -100,14 +100,12 @@ class PdfFileAdapter(
             if (pdfFile.isSelected) {
                 // Se l'elemento è selezionato, cambia il colore di sfondo della CardView
                 // e rendi visibile l'icona del cestino.
-                binding.cardViewRoot.setCardBackgroundColor(itemView.context.getColor(android.R.color.holo_red_dark))
                 binding.deleteIcon.visibility = View.VISIBLE
                 binding.favoriteIcon.visibility = View.GONE
                 startShakeAnimation(binding.root)
             } else {
                 // Se l'elemento non è selezionato, ripristina il colore di sfondo
                 // e nascondi l'icona del cestino.
-                binding.cardViewRoot.setCardBackgroundColor(itemView.context.getColor(android.R.color.transparent))
                 binding.deleteIcon.visibility = View.GONE
                 binding.favoriteIcon.visibility = View.VISIBLE
                 stopShakeAnimation()

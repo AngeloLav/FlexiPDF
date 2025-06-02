@@ -32,6 +32,7 @@ data class PdfFileItem(
     val uriString: String,
     val displayName: String,
     var isSelected: Boolean = false,
+    val lastModified: Long = 0,
     var isFavorite: Boolean = false
 )
 

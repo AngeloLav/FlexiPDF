@@ -18,83 +18,134 @@ import android.view.ViewGroup
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+
+import androidx.recyclerview.widget.LinearLayoutManager
 import it.lavorodigruppo.flexipdf.R
+import it.lavorodigruppo.flexipdf.adapters.OnPdfFileClickListener
+import it.lavorodigruppo.flexipdf.adapters.PdfHorizontalAdapter
+import it.lavorodigruppo.flexipdf.databinding.FragmentHomeBinding
+import it.lavorodigruppo.flexipdf.items.PdfFileItem
+import it.lavorodigruppo.flexipdf.viewmodels.PdfListViewModel
+
+import android.content.Intent
+import android.util.Log
+import android.widget.Toast
+import androidx.core.net.toUri
+import it.lavorodigruppo.flexipdf.activities.PDFViewerActivity
 
 
-class HomeFragment : Fragment() {
+class HomeFragment : Fragment(), OnPdfFileClickListener {
 
-    /*
-     * Memorizza il padding superiore originale del layout del banner.
-     * Utilizzato per aggiungere il padding degli insets senza sovrascrivere il padding esistente.
-     */
+    private var _binding: FragmentHomeBinding? = null
+    private val binding get() = _binding!!
+
+    // Ottieni il ViewModel con lo scope dell'Activity
+    private lateinit var pdfListViewModel: PdfListViewModel
+
+    private lateinit var recentPdfsAdapter: PdfHorizontalAdapter
+    private lateinit var favoritePdfsAdapter: PdfHorizontalAdapter
+
     private var originalBannerPaddingTop = 0
 
-    /**
-     * Metodo chiamato alla creazione del Fragment.
-     * In questo caso, viene utilizzato solo per recuperare gli argomenti se presenti,
-     * ma attualmente non ne vengono passati.
-     *
-     * @param savedInstanceState Se il Fragment viene ricreato dopo essere stato terminato,
-     * questo Bundle contiene i dati forniti più recentemente in onSaveInstanceState.
-     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            // Logica per recuperare gli argomenti se presenti.
-            // Attualmente, non ci sono argomenti definiti per HomeFragment.
-        }
     }
 
-    /**
-     * Metodo chiamato per creare e restituire la View gerarchica associata al Fragment.
-     * Questo è il punto in cui il layout XML del Fragment viene gonfiato.
-     *
-     * @param inflater L'LayoutInflater che può essere utilizzato per gonfiare qualsiasi View nel Fragment.
-     * @param container Se non nullo, questo è il [ViewGroup] genitore a cui la UI del Fragment dovrebbe essere attaccata.
-     * @param savedInstanceState Se non nullo, questo Fragment sta venendo ricreato da un precedente stato salvato.
-     * @return La View radice del layout del Fragment.
-     */
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
+        _binding = FragmentHomeBinding.inflate(inflater, container, false)
+        val view = binding.root
 
-        // Gonfia il layout del Fragment dal file XML 'fragment_home.xml'.
-        val view = inflater.inflate(R.layout.fragment_home, container, false)
+        val bannerContentLayout = binding.bannerContentLayout
 
-        // --- Gestione degli WindowInsets ---
-        // Trova il layout del banner all'interno della View del Fragment.
-        // 'bannerContentLayout' è un ConstraintLayout con ID 'bannerContentLayout' nel layout 'fragment_home.xml'.
-        val bannerContentLayout = view?.findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.bannerContentLayout)
+        // Assicurati che bannerContentLayout non sia null prima di accedere a paddingTop
+        originalBannerPaddingTop = bannerContentLayout.paddingTop
 
-        // Se il layout del banner è stato trovato, memorizza il suo padding superiore originale.
-        if (bannerContentLayout != null) {
-            originalBannerPaddingTop = bannerContentLayout.paddingTop
+        ViewCompat.setOnApplyWindowInsetsListener(view) { _, insets ->
+            val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+            bannerContentLayout.setPadding(
+                bannerContentLayout.paddingLeft,
+                originalBannerPaddingTop + systemBarsInsets.top,
+                bannerContentLayout.paddingRight,
+                bannerContentLayout.paddingBottom
+            )
+            insets
         }
-
-        // Imposta un listener per gli WindowInsets sulla View radice del Fragment.
-        // Questo listener viene chiamato ogni volta che le barre di sistema cambiano posizione o dimensione.
-        view?.let {
-            ViewCompat.setOnApplyWindowInsetsListener(it) { _, insets ->
-
-                val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-
-                // Applica il padding superiore al layout del banner.
-                // Il nuovo padding superiore è la somma del padding originale e l'altezza della status bar.
-                // Questo spinge il contenuto del banner sotto la status bar, evitando sovrapposizioni.
-                bannerContentLayout?.setPadding(
-                    bannerContentLayout.paddingLeft,
-                    originalBannerPaddingTop + systemBarsInsets.top,
-                    bannerContentLayout.paddingRight,
-                    bannerContentLayout.paddingBottom
-                )
-                // Restituisce gli insets per permettere che vengano propagati ad altre viste se necessario.
-                insets
-            }
-        }
-        // --- Fine della gestione degli WindowInsets ---
 
         return view
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // Inizializza il ViewModel con lo scope dell'Activity
+        pdfListViewModel = ViewModelProvider(requireActivity())[PdfListViewModel::class.java]
+
+        setupRecentPdfsRecyclerView()
+        setupFavoritePdfsRecyclerView()
+
+        observePdfsFromViewModel()
+    }
+
+    private fun setupRecentPdfsRecyclerView() {
+        recentPdfsAdapter = PdfHorizontalAdapter(this)
+        binding.recentPdfRecyclerView.apply {
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            adapter = recentPdfsAdapter
+        }
+    }
+
+    private fun setupFavoritePdfsRecyclerView() {
+        favoritePdfsAdapter = PdfHorizontalAdapter(this)
+        binding.favoritePdfRecyclerView.apply {
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            adapter = favoritePdfsAdapter
+        }
+    }
+
+    private fun observePdfsFromViewModel() {
+        pdfListViewModel.recentPdfs.observe(viewLifecycleOwner) { pdfs ->
+            pdfs?.let {
+                recentPdfsAdapter.submitList(it)
+            }
+
+        }
+
+        pdfListViewModel.favoritePdfs.observe(viewLifecycleOwner) { pdfs ->
+            pdfs?.let {
+                favoritePdfsAdapter.submitList(it)
+            }
+
+        }
+    }
+
+    override fun onPdfFileClick(pdfFile: PdfFileItem) {
+        val intent = Intent(requireContext(), PDFViewerActivity::class.java).apply {
+            putExtra("pdf_uri", pdfFile.uriString.toUri())
+            putExtra("pdf_display_name", pdfFile.displayName)
+        }
+        startActivity(intent)
+        Toast.makeText(context, "Opening ${pdfFile.displayName}", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onPdfFileLongClick(pdfFile: PdfFileItem) {
+        pdfListViewModel.toggleFavorite(pdfFile)
+    }
+
+    override fun onDeleteIconClick(pdfFile: PdfFileItem) {
+        // Nessuna azione qui per HomeFragment
+    }
+
+    override fun onFavoriteIconClick(pdfFile: PdfFileItem) {
+        // Nessuna azione qui per HomeFragment
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
 }
