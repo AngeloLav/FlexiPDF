@@ -193,5 +193,4 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
             _pdfFiles.value = currentList.sortedBy { it.displayName.lowercase() }
         }
     }
-
 }
