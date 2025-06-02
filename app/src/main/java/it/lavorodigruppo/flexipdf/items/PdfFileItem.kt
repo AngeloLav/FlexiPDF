@@ -31,7 +31,8 @@ import androidx.core.net.toUri
 data class PdfFileItem(
     val uriString: String,
     val displayName: String,
-    var isSelected: Boolean = false
+    var isSelected: Boolean = false,
+    var isFavorite: Boolean = false
 )
 
 /**

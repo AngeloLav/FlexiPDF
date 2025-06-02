@@ -203,6 +203,25 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
+     * NUOVO: Toggla lo stato isFavorite di un PdfFileItem e salva la lista aggiornata.
+     * @param pdfFile L'oggetto PdfFileItem di cui togglare lo stato preferito.
+     */
+    fun toggleFavorite(pdfFile: PdfFileItem) {
+        viewModelScope.launch {
+            val currentAllList = _allPdfFiles.value.orEmpty().toMutableList()
+            val index = currentAllList.indexOfFirst { it.uriString == pdfFile.uriString }
+            if (index != -1) {
+                // Crea una nuova istanza con isFavorite invertito
+                val updatedPdf = currentAllList[index].copy(isFavorite = !currentAllList[index].isFavorite)
+                currentAllList[index] = updatedPdf // Sostituisci l'elemento nella lista
+                datasource.savePdfFiles(currentAllList) // Salva la lista aggiornata in persistenza
+                _allPdfFiles.value = currentAllList // Aggiorna il LiveData della lista completa
+                applyFilter(currentSearchQuery) // Riapplica il filtro per aggiornare _pdfFilesFiltered e l'UI
+            }
+        }
+    }
+
+    /**
      * Applica un filtro alla lista completa dei PDF e aggiorna la lista filtrata.
      * @param query La stringa di ricerca da applicare. Se vuota, mostra tutti i PDF.
      */
