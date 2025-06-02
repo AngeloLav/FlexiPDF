@@ -170,7 +170,7 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
      * @param displayNames A list di nomi visualizzati corrispondenti ai pdfUris.
      * @param context Application context needed to resolve content URIs for file size.
      */
-    fun addPdfFilesFromUris(pdfUris: List<Uri>, displayNames: List<String>, context: Context) {
+    fun addPdfFilesFromUris(pdfUris: List<Uri>, displayNames: List<String>) {
         val currentList = _pdfFiles.value.orEmpty().toMutableList()
         val newPdfItems = mutableListOf<PdfFileItem>()
 

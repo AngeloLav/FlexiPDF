@@ -95,7 +95,7 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
         pdfManager = PdfManager(this) { uris: List<Uri>, displayNames: List<String> ->
             // Passa l'intera lista di URI al ViewModel per l'elaborazione.
             // Il ViewModel si occuperà di creare i PdfFileItem e aggiungerli.
-            pdfListViewModel.addPdfFilesFromUris(uris,displayNames, applicationContext) // Passiamo applicationContext
+            pdfListViewModel.addPdfFilesFromUris(uris,displayNames)
         }
 
         if (savedInstanceState == null) {
