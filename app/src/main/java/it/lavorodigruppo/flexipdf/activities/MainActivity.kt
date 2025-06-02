@@ -53,7 +53,6 @@ package it.lavorodigruppo.flexipdf.activities
 
 import android.net.Uri
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
@@ -68,7 +67,6 @@ import it.lavorodigruppo.flexipdf.fragments.SharedFragment
 
 import it.lavorodigruppo.flexipdf.fragments.OnPdfPickerListener
 import it.lavorodigruppo.flexipdf.utils.PdfManager
-import it.lavorodigruppo.flexipdf.items.PdfFileItem
 import it.lavorodigruppo.flexipdf.viewmodels.PdfListViewModel
 
 
@@ -94,10 +92,10 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
 
         pdfListViewModel = ViewModelProvider(this)[PdfListViewModel::class.java]
 
-        pdfManager = PdfManager(this) { uri: Uri, displayName: String ->
-            val newPdfFile = PdfFileItem(uri.toString(), displayName)
-            pdfListViewModel.addPdfFile(newPdfFile)
-            Toast.makeText(this, "PDF imported: $displayName", Toast.LENGTH_SHORT).show()
+        pdfManager = PdfManager(this) { uris: List<Uri>, displayNames: List<String> ->
+            // Passa l'intera lista di URI al ViewModel per l'elaborazione.
+            // Il ViewModel si occuperà di creare i PdfFileItem e aggiungerli.
+            pdfListViewModel.addPdfFilesFromUris(uris,displayNames, applicationContext) // Passiamo applicationContext
         }
 
         if (savedInstanceState == null) {

@@ -40,6 +40,7 @@ import it.lavorodigruppo.flexipdf.activities.PDFViewerActivity
 import android.content.Intent
 import android.util.Log
 import androidx.core.net.toUri
+import android.app.AlertDialog
 
 
 /**
@@ -72,6 +73,24 @@ class FoldersFragment : Fragment(), OnPdfFileClickListener {
     // ViewModel e Adapter per la gestione della lista dei PDF.
     private lateinit var pdfListViewModel: PdfListViewModel
     private lateinit var pdfFileAdapter: PdfFileAdapter
+
+    // Traccia lo stato della modalità di selezione all'interno del Fragment
+    private var isSelectionModeActive: Boolean = false
+        set(value) {
+            field = value // Assegna il valore alla proprietà sottostante
+            // Quando la modalità cambia, informa l'adapter e il ViewModel
+            pdfFileAdapter.setSelectionModeActive(value)
+            if (!value) { // Se la modalità si disattiva
+                pdfListViewModel.clearAllSelections() // Deseleziona tutti gli elementi
+            }
+            pdfFileAdapter.notifyDataSetChanged()
+
+            if (value) {
+                binding.floatingActionButton.visibility = View.GONE
+            } else {
+                binding.floatingActionButton.visibility = View.VISIBLE
+            }
+        }
 
     /**
      * @param inflater L'LayoutInflater per gonfiare il layout.
@@ -106,7 +125,7 @@ class FoldersFragment : Fragment(), OnPdfFileClickListener {
         pdfListViewModel = ViewModelProvider(requireActivity())[PdfListViewModel::class.java]
 
         // Inizializza l'adapter per la RecyclerView, passando 'this' (il Fragment) come listener per i click.
-        pdfFileAdapter = PdfFileAdapter(this)
+        pdfFileAdapter = PdfFileAdapter(this, isSelectionModeActive)
 
         // Configura la RecyclerView:
         binding.pdfRecyclerView.apply {
@@ -120,6 +139,17 @@ class FoldersFragment : Fragment(), OnPdfFileClickListener {
         // con la nuova lista tramite submitList(), e la RecyclerView si ridisegna.
         pdfListViewModel.pdfFiles.observe(viewLifecycleOwner) { pdfFiles ->
             pdfFileAdapter.submitList(pdfFiles)
+
+            val selectedCount = pdfFiles.count { it.isSelected }
+
+            if (selectedCount == 0 && isSelectionModeActive) {
+                // Se nessun elemento è selezionato MA la modalità è attiva, disattivala.
+                // Questo copre il caso in cui l'utente deseleziona l'ultimo elemento.
+                isSelectionModeActive = false // Il setter sopra verrà chiamato e farà notifyDataSetChanged().
+            } else if (selectedCount > 0 && !isSelectionModeActive) {
+                // Se ci sono elementi selezionati MA la modalità NON è attiva, attivala.
+                isSelectionModeActive = true
+            }
         }
 
         // --- Gestione degli WindowInsets ---
@@ -143,6 +173,7 @@ class FoldersFragment : Fragment(), OnPdfFileClickListener {
             rotateFabForward()
             showPopupMenu()
         }
+
     }
 
     /**
@@ -152,6 +183,9 @@ class FoldersFragment : Fragment(), OnPdfFileClickListener {
      */
     override fun onDestroyView() {
         super.onDestroyView()
+        if (isSelectionModeActive) { // Solo se è attiva per evitare operazioni inutili
+            isSelectionModeActive = false
+        }
         _binding = null
     }
 
@@ -165,17 +199,82 @@ class FoldersFragment : Fragment(), OnPdfFileClickListener {
      *
      * @param pdfFile L'oggetto [PdfFileItem] del PDF cliccato.
      */
-    override fun onPdfFileClick(pdfFile: PdfFileItem) {
-
-        val intent = Intent(requireContext(), PDFViewerActivity::class.java).apply {
-            // Passa l'URI del PDF come Stringa convertita in Uri.
-            putExtra("pdf_uri", pdfFile.uriString.toUri())
-            // Passa il nome visualizzato del PDF.
-            putExtra("pdf_display_name", pdfFile.displayName)
+    override fun onPdfFileClick(pdfFile: PdfFileItem, isSelectionModeActive: Boolean) {
+        if (isSelectionModeActive) {
+            // Se la modalità di selezione è attiva, un click su un item toggla la sua selezione.
+            pdfListViewModel.togglePdfSelection(pdfFile)
+            // L'adapter si occuperà di aggiornare la UI della card specifica.
+            // Non è necessario disattivare la modalità qui, perché l'utente potrebbe voler selezionare altri item.
+        } else {
+            // Se la modalità di selezione NON è attiva, un click normale apre il PDF.
+            val intent = Intent(requireContext(), PDFViewerActivity::class.java).apply {
+                putExtra("pdf_uri", pdfFile.uriString.toUri())
+                putExtra("pdf_display_name", pdfFile.displayName)
+            }
+            startActivity(intent)
+            Toast.makeText(context, "Opening ${pdfFile.displayName}", Toast.LENGTH_SHORT).show()
         }
-        startActivity(intent)
-        // Mostra un Toast di conferma all'utente.
-        Toast.makeText(context, "Opening ${pdfFile.displayName}", Toast.LENGTH_SHORT).show()
+    }
+
+    /**
+     * Chiamato quando un elemento PdfFileItem nella lista viene tenuto premuto a lungo.
+     * Questo attiva la modalità di selezione e seleziona l'elemento.
+     * @param pdfFile L'oggetto PdfFileItem che è stato tenuto premuto.
+     */
+    override fun onPdfFileLongClick(pdfFile: PdfFileItem) {
+        if (!isSelectionModeActive) {
+            isSelectionModeActive = true
+        }
+        pdfListViewModel.togglePdfSelection(pdfFile)
+        Toast.makeText(context, "Selection mode activated!", Toast.LENGTH_SHORT).show()
+
+    }
+
+    /**
+     * Mostra un AlertDialog di conferma prima di procedere con l'eliminazione dei PDF selezionati.
+     * @param itemCount Il numero di PDF che stanno per essere eliminati.
+     */
+    private fun showDeleteConfirmationDialog(itemCount: Int) {
+        AlertDialog.Builder(requireContext()) // Utilizza requireContext() per garantire un Context valido
+            .setTitle("Confirm deletion")
+            .setMessage("Are you sure you want to delete $itemCount PDF?")
+            .setPositiveButton("Eliminate") { dialog, _ ->
+
+                // Ottieni di nuovo la lista dei file selezionati (per sicurezza, nel caso sia cambiata).
+                val selectedFiles = pdfListViewModel.getSelectedPdfFiles()
+                if (selectedFiles.isNotEmpty()) {
+                    // Chiama il metodo del ViewModel per rimuovere TUTTI i file selezionati.
+                    pdfListViewModel.removePdfFiles(selectedFiles)
+                    Toast.makeText(requireContext(), "${selectedFiles.size} PDF(s) removed", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                isSelectionModeActive = false
+                dialog.dismiss()
+            }
+            .create()
+            .show()
+    }
+
+    /**
+     * Chiamato quando l'icona del cestino di un PdfFileItem nella lista viene cliccata.
+     * Ora, questo metodo innesca una richiesta di conferma prima di procedere con l'eliminazione
+     * di TUTTI i PDF selezionati.
+     * @param pdfFile L'oggetto PdfFileItem la cui icona cestino è stata cliccata (il parametro
+     * è ancora richiesto dall'interfaccia, ma non viene usato direttamente per l'eliminazione).
+     */
+    override fun onDeleteIconClick(pdfFile: PdfFileItem) {
+        // Recupera TUTTI i PDF attualmente selezionati dal ViewModel.
+        val selectedFiles = pdfListViewModel.getSelectedPdfFiles()
+
+        if (selectedFiles.isNotEmpty()) {
+            // Se ci sono file selezionati, mostra il dialog di conferma.
+            showDeleteConfirmationDialog(selectedFiles.size)
+        }
+        // Nota: La logica per disattivare la modalità di selezione (isSelectionModeActive = false)
+        // e aggiornare la UI è gestita automaticamente dall'observer di pdfFiles in onViewCreated
+        // una volta che i file vengono effettivamente rimossi dal ViewModel.
     }
 
     /**

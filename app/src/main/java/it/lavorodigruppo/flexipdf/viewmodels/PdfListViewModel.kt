@@ -25,11 +25,20 @@
 package it.lavorodigruppo.flexipdf.viewmodels
 
 import android.app.Application
+import android.content.Context
+import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import it.lavorodigruppo.flexipdf.data.PdfDatasource
 import it.lavorodigruppo.flexipdf.items.PdfFileItem
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class PdfListViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -75,7 +84,9 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
      * e assegniamo il valore a _pdfFiles, rendendolo disponibile agli osservatori.
      */
     init {
-        _pdfFiles.value = datasource.loadPdfFiles()
+        viewModelScope.launch {
+            _pdfFiles.value = datasource.loadPdfFiles()
+        }
     }
 
     /**
@@ -84,44 +95,104 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
      * Dopo l'aggiunta, la lista viene aggiornata e salvata tramite il datasource.
      *
      * @param pdfFile L'oggetto PdfFileItem da aggiungere alla lista.
-     *      @see
-     *      it.lavorodigruppo.flexipdf/items/PdfFileItem.kt
      */
-    fun addPdfFile(pdfFile: PdfFileItem) {
+    fun addPdfFile(pdfFile: PdfFileItem) { // <-- MODIFICATO: Reso asincrono
+        CoroutineScope(Dispatchers.IO).launch {
+            val currentList = _pdfFiles.value?.toMutableList() ?: mutableListOf()
 
-        /*
-         * _pdfFiles.value? restituisce una lista immutabile che può essere nulla, usiamo il metodo
-         * toMutableList() per renderla mutabile; se è nulla restituisce una lista mutabile vuota grazie
-         * all'elvis operator.
-         */
-        val currentList = _pdfFiles.value?.toMutableList() ?: mutableListOf()
-
-        // Controlla se un PDF con lo stesso URI è già presente nella lista.
-        if (currentList.none { it.uriString == pdfFile.uriString }) {
-            currentList.add(0, pdfFile)
-            _pdfFiles.value = currentList
-            datasource.savePdfFiles(currentList)
+            // Controlla se un PDF con lo stesso URI è già presente nella lista.
+            if (currentList.none { it.uriString == pdfFile.uriString }) {
+                currentList.add(0, pdfFile.copy(isSelected = false)) // Assicurati che il nuovo file non sia selezionato
+                datasource.savePdfFiles(currentList) // Salva la lista aggiornata
+                withContext(Dispatchers.Main) {
+                    _pdfFiles.value = currentList // Aggiorna il LiveData sul thread principale
+                }
+            }
         }
     }
 
     /**
-     * Rimuove un PdfFileItem dalla lista dei PDF.
-     * Se il PDF viene trovato e rimosso, la lista viene aggiornata e salvata.
-     *
-     * @param pdfFile L'oggetto PdfFileItem da rimuovere dalla lista.
-     *      @see
-     *      it.lavorodigruppo.flexipdf/items/PdfFileItem.kt
+     * Restituisce una lista di tutti i PdfFileItem attualmente selezionati.
+     * @return Una lista di PdfFileItem selezionati.
      */
+    fun getSelectedPdfFiles(): List<PdfFileItem> {
+        return _pdfFiles.value?.filter { it.isSelected } ?: emptyList()
+    }
 
-    // Devo ancora implementare queto metodo nella recyclerView
-    fun removePdfFile(pdfFile: PdfFileItem) {
+    /**
+     * Rimuove una lista specifica di PdfFileItem dalla lista principale.
+     * Dopo la rimozione, gli elementi rimanenti vengono ri-assegnati al LiveData.
+     * @param filesToRemove La lista di PdfFileItem da rimuovere.
+     */
+    fun removePdfFiles(filesToRemove: List<PdfFileItem>) {
+        val currentList = _pdfFiles.value.orEmpty().toMutableList()
+        // Rimuove tutti gli elementi presenti in 'filesToRemove' dalla 'currentList'.
+        // Usiamo toSet() per una rimozione più efficiente se le liste sono grandi.
+        currentList.removeAll(filesToRemove.toSet())
+        _pdfFiles.value = currentList
+    }
 
+    /**
+     * Toggla lo stato di selezione (isSelected) di un PdfFileItem.
+     * Questo metodo crea una nuova lista con l'item aggiornato e la emette tramite LiveData.
+     * Non salva lo stato di selezione in persistenza, in quanto è uno stato transitorio per la UI.
+     *
+     * @param pdfFile L'oggetto PdfFileItem di cui togglare la selezione.
+     */
+    fun togglePdfSelection(pdfFile: PdfFileItem) {
         val currentList = _pdfFiles.value?.toMutableList() ?: mutableListOf()
+        val updatedList = currentList.map { item ->
+            if (item.uriString == pdfFile.uriString) {
+                // Crea una nuova istanza dell'oggetto con lo stato isSelected invertito
+                item.copy(isSelected = !item.isSelected)
+            } else {
+                item // Restituisce l'elemento invariato
+            }
+        }
+        _pdfFiles.value = updatedList // Aggiorna il LiveData, che notificherà l'Adapter
+    }
 
-        //Non lancia eccezioni se l'elemento non viene trovato
-        if (currentList.remove(pdfFile)) {
-            _pdfFiles.value = currentList
-            datasource.savePdfFiles(currentList)
+    /**
+     * Deseleziona tutti i PdfFileItem nella lista.
+     * Utile quando si esce dalla modalità di selezione.
+     * Emette una nuova lista tramite LiveData.
+     */
+    fun clearAllSelections() {
+        val currentList = _pdfFiles.value.orEmpty()
+        val updatedList = currentList.map { it.copy(isSelected = false) } // Crea una nuova lista con tutti isSelected a false
+        _pdfFiles.value = updatedList // Aggiorna il LiveData, che notificherà l'Adapter
+    }
+
+    /**
+     * Aggiunge più file PDF alla lista del ViewModel partendo dai loro URI e nomi visualizzati.
+     * Estrae la dimensione del file per ciascun URI.
+     * @param pdfUris A list di URI che puntano ai file PDF.
+     * @param displayNames A list di nomi visualizzati corrispondenti ai pdfUris.
+     * @param context Application context needed to resolve content URIs for file size.
+     */
+    fun addPdfFilesFromUris(pdfUris: List<Uri>, displayNames: List<String>, context: Context) {
+        val currentList = _pdfFiles.value.orEmpty().toMutableList()
+        val newPdfItems = mutableListOf<PdfFileItem>()
+
+        for (i in pdfUris.indices) {
+            val uri = pdfUris[i]
+            val displayName = displayNames[i]
+
+            val newPdfItem = PdfFileItem(
+                uriString = uri.toString(),
+                displayName = displayName,
+                isSelected = false
+            )
+
+            if (!currentList.any { it.uriString == newPdfItem.uriString }) {
+                newPdfItems.add(newPdfItem)
+            }
+        }
+
+        if (newPdfItems.isNotEmpty()) {
+            currentList.addAll(newPdfItems)
+            _pdfFiles.value = currentList.sortedBy { it.displayName.lowercase() }
         }
     }
+
 }

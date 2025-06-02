@@ -39,7 +39,7 @@
     <string name="file_icon_description">1%s</string>
     <string name="folders_icon_description">1%s</string>
 
-    <string name="test">Test</string>
+    <string name="delete_pdf_description">Delete PDF</string>
 
 
 </resources>
