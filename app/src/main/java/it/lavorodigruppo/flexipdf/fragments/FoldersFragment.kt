@@ -24,6 +24,7 @@ import android.view.ViewGroup
 import it.lavorodigruppo.flexipdf.databinding.FragmentFoldersBinding
 import android.widget.PopupWindow
 import android.widget.Toast
+import android.widget.SearchView
 import it.lavorodigruppo.flexipdf.databinding.CustomPopupMenuBinding
 import android.animation.ObjectAnimator
 import android.content.Context
@@ -77,18 +78,32 @@ class FoldersFragment : Fragment(), OnPdfFileClickListener {
     // Traccia lo stato della modalità di selezione all'interno del Fragment
     private var isSelectionModeActive: Boolean = false
         set(value) {
-            field = value // Assegna il valore alla proprietà sottostante
-            // Quando la modalità cambia, informa l'adapter e il ViewModel
-            pdfFileAdapter.setSelectionModeActive(value)
-            if (!value) { // Se la modalità si disattiva
-                pdfListViewModel.clearAllSelections() // Deseleziona tutti gli elementi
-            }
-            pdfFileAdapter.notifyDataSetChanged()
+            // Solo se il valore sta effettivamente cambiando
+            if (field != value) {
+                field = value // Assegna il valore alla proprietà sottostante
 
-            if (value) {
-                binding.floatingActionButton.visibility = View.GONE
-            } else {
-                binding.floatingActionButton.visibility = View.VISIBLE
+                // Quando la modalità cambia, informa l'adapter
+                pdfFileAdapter.setSelectionModeActive(value)
+
+                if (!value) { // Se la modalità si disattiva
+                    pdfListViewModel.clearAllSelections() // Deseleziona tutti gli elementi
+                }
+
+                // **NUOVO: Forziamo l'aggiornamento dell'adapter con la lista corrente**
+                // Questo è cruciale perché la RecyclerView ricolleghi gli item
+                // e applichi il nuovo stato di isSelectionModeActive per la visibilità del cestino.
+                // Otteniamo la lista corrente filtrata dal ViewModel.
+                pdfListViewModel.pdfFiles.value?.let { currentFilteredList ->
+                    pdfFileAdapter.submitList(currentFilteredList)
+                }
+
+
+                // Logica per la visibilità del FAB
+                if (value) {
+                    binding.floatingActionButton.visibility = View.GONE
+                } else {
+                    binding.floatingActionButton.visibility = View.VISIBLE
+                }
             }
         }
 
@@ -152,6 +167,26 @@ class FoldersFragment : Fragment(), OnPdfFileClickListener {
             }
         }
 
+        // Logica per la searchView
+        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            // Chiamato quando l'utente preme "Invio" o completa la query di ricerca.
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                // Quando la query viene sottomessa, applica il filtro
+                pdfListViewModel.applyFilter(query ?: "")
+                // Nascondi la tastiera
+                binding.searchView.clearFocus()
+                return true
+            }
+
+            // Chiamato ogni volta che il testo della query cambia.
+            override fun onQueryTextChange(newText: String?): Boolean {
+                // Ogni volta che il testo cambia, applica il filtro.
+                // Questo crea un'esperienza di ricerca "live".
+                pdfListViewModel.applyFilter(newText ?: "")
+                return true
+            }
+        })
+
         // --- Gestione degli WindowInsets ---
         val bannerContentLayout = binding.bannerContentLayout
 
@@ -183,7 +218,18 @@ class FoldersFragment : Fragment(), OnPdfFileClickListener {
      */
     override fun onDestroyView() {
         super.onDestroyView()
-        if (isSelectionModeActive) { // Solo se è attiva per evitare operazioni inutili
+        Log.d("SEARCH_DEBUG", "FoldersFragment: onDestroyView chiamato. Resetto la ricerca.")
+
+        // 1. Resetta la query di ricerca nel ViewModel.
+        //    Questo farà sì che il ViewModel emetta una lista non filtrata.
+        pdfListViewModel.applyFilter("")
+        binding.searchView.setQuery("", false)
+
+        // 2. Resetta visualmente la barra di ricerca nel Fragment.
+        //    Questo è importante per l'esperienza utente, così la barra è vuota al ritorno.
+        binding.searchView.setQuery("", false) // Il secondo parametro 'false' evita di inviare la query subito
+
+        if (isSelectionModeActive) {
             isSelectionModeActive = false
         }
         _binding = null
@@ -199,8 +245,8 @@ class FoldersFragment : Fragment(), OnPdfFileClickListener {
      *
      * @param pdfFile L'oggetto [PdfFileItem] del PDF cliccato.
      */
-    override fun onPdfFileClick(pdfFile: PdfFileItem, isSelectionModeActive: Boolean) {
-        if (isSelectionModeActive) {
+    override fun onPdfFileClick(pdfFile: PdfFileItem) {
+        if (this.isSelectionModeActive) {
             // Se la modalità di selezione è attiva, un click su un item toggla la sua selezione.
             pdfListViewModel.togglePdfSelection(pdfFile)
             // L'adapter si occuperà di aggiornare la UI della card specifica.
@@ -222,8 +268,8 @@ class FoldersFragment : Fragment(), OnPdfFileClickListener {
      * @param pdfFile L'oggetto PdfFileItem che è stato tenuto premuto.
      */
     override fun onPdfFileLongClick(pdfFile: PdfFileItem) {
-        if (!isSelectionModeActive) {
-            isSelectionModeActive = true
+        if (!this.isSelectionModeActive) {
+            this.isSelectionModeActive = true
         }
         pdfListViewModel.togglePdfSelection(pdfFile)
         Toast.makeText(context, "Selection mode activated!", Toast.LENGTH_SHORT).show()

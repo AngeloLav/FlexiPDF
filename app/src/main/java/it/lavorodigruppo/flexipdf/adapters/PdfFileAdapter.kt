@@ -34,7 +34,7 @@ interface OnPdfFileClickListener {
      * Chiamato quando un elemento PdfFileItem nella lista viene cliccato.
      * @param pdfFile L'oggetto PdfFileItem che è stato cliccato.
      */
-    fun onPdfFileClick(pdfFile: PdfFileItem, isSelectionModeActive: Boolean)
+    fun onPdfFileClick(pdfFile: PdfFileItem)
     /**
      * Chiamato quando un elemento PdfFileItem nella lista viene tenuto premuto a lungo.
      * Questo è il punto di ingresso per attivare la modalità di selezione.
@@ -81,7 +81,7 @@ class PdfFileAdapter(
          * @param listener Il listener per gli eventi di click e long-click.
          * @param isSelectionModeActive Lo stato corrente della modalità di selezione (passato dall'adapter).
          */
-        fun bind(pdfFile: PdfFileItem, listener: OnPdfFileClickListener, isSelectionModeActive: Boolean) {
+        fun bind(pdfFile: PdfFileItem, listener: OnPdfFileClickListener) {
             binding.titleTextView.text = pdfFile.displayName
             binding.iconImageView.setImageResource(R.drawable.pdf_svgrepo_com)
 
@@ -103,7 +103,7 @@ class PdfFileAdapter(
             // Listener per il click normale sull'intero elemento.
             // Il comportamento di questo click dipenderà dalla modalità di selezione.
             binding.root.setOnClickListener {
-                listener.onPdfFileClick(pdfFile, isSelectionModeActive)
+                listener.onPdfFileClick(pdfFile)
             }
 
             // Listener per il long-click sull'intero elemento.
@@ -148,7 +148,7 @@ class PdfFileAdapter(
         // Recupera l'oggetto PdfFileItem dalla lista dei dati in base alla posizione.
         val pdfFile = getItem(position)
         // Binda i dati del PdfFileItem al ViewHolder.
-        holder.bind(pdfFile, listener, this.isSelectionModeActive)
+        holder.bind(pdfFile, listener)
         }
     }
 
