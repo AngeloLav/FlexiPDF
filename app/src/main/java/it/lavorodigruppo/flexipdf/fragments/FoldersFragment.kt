@@ -218,16 +218,10 @@ class FoldersFragment : Fragment(), OnPdfFileClickListener {
      */
     override fun onDestroyView() {
         super.onDestroyView()
-        Log.d("SEARCH_DEBUG", "FoldersFragment: onDestroyView chiamato. Resetto la ricerca.")
 
-        // 1. Resetta la query di ricerca nel ViewModel.
-        //    Questo farà sì che il ViewModel emetta una lista non filtrata.
         pdfListViewModel.applyFilter("")
         binding.searchView.setQuery("", false)
 
-        // 2. Resetta visualmente la barra di ricerca nel Fragment.
-        //    Questo è importante per l'esperienza utente, così la barra è vuota al ritorno.
-        binding.searchView.setQuery("", false) // Il secondo parametro 'false' evita di inviare la query subito
 
         if (isSelectionModeActive) {
             isSelectionModeActive = false
@@ -272,7 +266,6 @@ class FoldersFragment : Fragment(), OnPdfFileClickListener {
             this.isSelectionModeActive = true
         }
         pdfListViewModel.togglePdfSelection(pdfFile)
-        Toast.makeText(context, "Selection mode activated!", Toast.LENGTH_SHORT).show()
 
     }
 

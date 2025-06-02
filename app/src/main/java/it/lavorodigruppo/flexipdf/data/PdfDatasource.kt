@@ -33,6 +33,11 @@ import it.lavorodigruppo.flexipdf.items.toPdfFileList
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import android.content.ContentUris
+import android.net.Uri
+import android.provider.MediaStore
+import android.util.Log
+import java.util.Date
 
 class PdfDatasource(context: Context) {
 

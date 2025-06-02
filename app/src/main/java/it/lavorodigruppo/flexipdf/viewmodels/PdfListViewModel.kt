@@ -30,6 +30,7 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import it.lavorodigruppo.flexipdf.data.PdfDatasource
 import it.lavorodigruppo.flexipdf.items.PdfFileItem
@@ -49,7 +50,7 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
      */
     private val datasource = PdfDatasource(application)
 
-    // NUOVO: Questa è la lista completa di TUTTI i PDF, non filtrata.
+    //Questa è la lista completa di TUTTI i PDF, non filtrata.
     private val _allPdfFiles = MutableLiveData<List<PdfFileItem>>(emptyList())
 
     /**
@@ -74,14 +75,12 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
      */
     private val _pdfFilesFiltered = MutableLiveData<List<PdfFileItem>>(emptyList())
 
-
-
     /**
      * LiveData pubblico e immutabile che espone la lista dei PdfFileItem alla UI.
      */
     val pdfFiles: LiveData<List<PdfFileItem>> = _pdfFilesFiltered
 
-    // NUOVO: Stringa di query di ricerca corrente.
+    //Stringa di query di ricerca corrente.
     private var currentSearchQuery: String = ""
 
     /**
@@ -91,10 +90,28 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
      */
     init {
         viewModelScope.launch {
+            Log.d("PdfListViewModel", "INIT: Avvio caricamento PDF.")
             val loadedFiles = datasource.loadPdfFiles()
+            Log.d("PdfListViewModel", "INIT: PDF caricati dal datasource, numero: ${loadedFiles.size}")
             _allPdfFiles.value = loadedFiles // Carica tutti i file nella lista completa
+            Log.d("PdfListViewModel", "INIT: _allPdfFiles.value aggiornato. Ora applico filtro.")
             applyFilter(currentSearchQuery)
+            Log.d("PdfListViewModel", "INIT: Filtro applicato. _pdfFilesFiltered size: ${_pdfFilesFiltered.value?.size}")
         }
+    }
+
+    // --- NUOVE LIVE DATA PER HOME FRAGMENT ---
+
+    // LiveData per i PDF più recenti (ordinati per lastModified, dal più recente al meno recente)
+    val recentPdfs: LiveData<List<PdfFileItem>> = _allPdfFiles.map { allFiles ->
+        // Ordina per lastModified in ordine decrescente (più recente prima)
+        // Limita a un certo numero (es. 10), se vuoi, altrimenti rimuovi .take(10)
+        allFiles.sortedByDescending { it.lastModified }.take(15)
+    }
+
+    // LiveData per i PDF preferiti
+    val favoritePdfs: LiveData<List<PdfFileItem>> = _allPdfFiles.map { allFiles ->
+        allFiles.filter { it.isFavorite }
     }
 
     /**
@@ -102,7 +119,7 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
      * @return Una lista di PdfFileItem selezionati.
      */
     fun getSelectedPdfFiles(): List<PdfFileItem> {
-        return _allPdfFiles.value?.filter { it.isSelected } ?: emptyList() // MODIFICATO: Filtra da _allPdfFiles
+        return _allPdfFiles.value?.filter { it.isSelected } ?: emptyList() //Filtra da _allPdfFiles
     }
 
     /**
@@ -117,7 +134,7 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
             currentAllList.removeAll(filesToRemove.toSet())
             datasource.savePdfFiles(currentAllList) // Salva la lista completa aggiornata
             _allPdfFiles.value = currentAllList // Aggiorna la lista completa
-            applyFilter(currentSearchQuery) // MODIFICATO: Riapplica il filtro dopo la rimozione
+            applyFilter(currentSearchQuery) //Riapplica il filtro dopo la rimozione
         }
     }
 
@@ -134,7 +151,7 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
         if (index != -1) {
             val updatedPdf = pdfFile.copy(isSelected = !pdfFile.isSelected)
             currentAllList[index] = updatedPdf
-            _allPdfFiles.value = currentAllList // MODIFICATO: Aggiorna _allPdfFiles
+            _allPdfFiles.value = currentAllList // Aggiorna _allPdfFiles
             // Non è necessario chiamare applyFilter qui, a meno che tu non voglia che la selezione
             // influenzi la visibilità (es. nascondere elementi non selezionati in modalità ricerca).
             // Per ora, la selezione non influisce sul filtro di ricerca.
@@ -148,8 +165,8 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
      * Emette una nuova lista tramite LiveData.
      */
     fun clearAllSelections() {
-        val currentAllList = _allPdfFiles.value.orEmpty().map { it.copy(isSelected = false) } // MODIFICATO: Lavora su _allPdfFiles
-        _allPdfFiles.value = currentAllList // MODIFICATO: Aggiorna _allPdfFiles
+        val currentAllList = _allPdfFiles.value.orEmpty().map { it.copy(isSelected = false) } // Lavora su _allPdfFiles
+        _allPdfFiles.value = currentAllList // Aggiorna _allPdfFiles
         // Non è necessario chiamare applyFilter qui, a meno che tu non voglia che la deselezione
         // influenzi il filtro di ricerca.
         applyFilter(currentSearchQuery)
@@ -176,10 +193,11 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
                 val displayName = displayNames[i]
 
                 val newPdfItem = PdfFileItem(
-
                     uriString = uri.toString(),
                     displayName = displayName,
-                    isSelected = false
+                    isSelected = false,
+                    lastModified = System.currentTimeMillis(),
+                    isFavorite = false
                 )
 
                 if (!currentAllList.any { it.uriString == newPdfItem.uriString }) {
@@ -191,13 +209,12 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
 
             if (newPdfItems.isNotEmpty()) {
                 currentAllList.addAll(newPdfItems)
-                val sortedList = currentAllList.sortedBy { it.displayName.lowercase() }
-                datasource.savePdfFiles(sortedList) // Salva la lista completa aggiornata
-                _allPdfFiles.value = sortedList // Aggiorna la lista completa
-                applyFilter(currentSearchQuery) // MODIFICATO: Applica il filtro dopo aver aggiunto nuovi elementi
-                Log.d("PdfListViewModel", "Aggiunti ${newPdfItems.size} nuovi PDF alla lista completa.")
+                datasource.savePdfFiles(currentAllList) // Salva la lista completa aggiornata
+                _allPdfFiles.value = currentAllList // Aggiorna la lista completa
+                applyFilter(currentSearchQuery) // Applica il filtro dopo aver aggiunto nuovi elementi
+                Log.d("PdfListViewModel", "Added ${newPdfItems.size} new PDF(s) to the list.")
             } else {
-                Log.d("PdfListViewModel", "Nessun nuovo PDF da aggiungere o tutti già presenti.")
+                Log.d("PdfListViewModel", "No PDF to add.")
             }
         }
     }
@@ -237,6 +254,5 @@ class PdfListViewModel(application: Application) : AndroidViewModel(application)
             }.sortedBy { it.displayName.lowercase() } // Riordina anche la lista filtrata
             _pdfFilesFiltered.value = filteredList
         }
-        Log.d("PdfListViewModel", "Filtro applicato: '$query'. Risultati: ${_pdfFilesFiltered.value?.size}")
     }
 }
