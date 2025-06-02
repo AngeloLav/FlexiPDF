@@ -13,6 +13,7 @@
 
 package it.lavorodigruppo.flexipdf.adapters
 
+import android.animation.ObjectAnimator
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -20,6 +21,7 @@ import it.lavorodigruppo.flexipdf.R
 import it.lavorodigruppo.flexipdf.databinding.PdfFileItemBinding
 import it.lavorodigruppo.flexipdf.items.PdfFileItem
 import android.view.View
+import android.view.animation.LinearInterpolator
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 
@@ -73,6 +75,8 @@ class PdfFileAdapter(
      */
     class PdfFileViewHolder(private val binding: PdfFileItemBinding) : RecyclerView.ViewHolder(binding.root) {
 
+        private var shakeAnimator: ObjectAnimator? = null
+
         /**
          * Collega i dati di un PdfFileItem alle view all'interno del ViewHolder
          * e imposta i listener.
@@ -91,11 +95,13 @@ class PdfFileAdapter(
                 // e rendi visibile l'icona del cestino.
                 binding.cardViewRoot.setCardBackgroundColor(itemView.context.getColor(android.R.color.holo_red_dark))
                 binding.deleteIcon.visibility = View.VISIBLE
+                startShakeAnimation(binding.root)
             } else {
                 // Se l'elemento non è selezionato, ripristina il colore di sfondo
                 // e nascondi l'icona del cestino.
                 binding.cardViewRoot.setCardBackgroundColor(itemView.context.getColor(android.R.color.transparent))
                 binding.deleteIcon.visibility = View.GONE
+                stopShakeAnimation()
             }
 
             // --- Impostazione dei Listener ---
@@ -118,6 +124,29 @@ class PdfFileAdapter(
             binding.deleteIcon.setOnClickListener {
                 listener.onDeleteIconClick(pdfFile)
             }
+        }
+
+        // Metodo per avviare l'animazione di tremolio
+        private fun startShakeAnimation(view: View) {
+            // Se un animatore è già in esecuzione o è stato creato, fermalo e annullalo per evitarne duplicati
+            shakeAnimator?.cancel()
+
+            // Crea un ObjectAnimator che anima la proprietà "translationX" (spostamento sull'asse X)
+            // L'animazione va da -5f a 5f e poi torna a 0f per creare il tremolio.
+            shakeAnimator = ObjectAnimator.ofFloat(view, "translationX", 0f, -5f, 5f, -3f, 3f, -2f, 2f, 0f).apply {
+                duration = 500 // Durata dell'intera sequenza di tremolio in millisecondi
+                repeatCount = ObjectAnimator.INFINITE // Ripeti l'animazione all'infinito
+                repeatMode = ObjectAnimator.RESTART // Ripeti dall'inizio ogni volta
+                interpolator = LinearInterpolator() // Interopolatore lineare per un movimento più secco
+                start() // Avvia l'animazione
+            }
+        }
+
+        // Metodo per fermare l'animazione di tremolio
+        fun stopShakeAnimation() {
+            shakeAnimator?.cancel() // Annulla l'animazione corrente
+            binding.root.translationX = 0f // Reimposta la posizione X della vista a 0 per sicurezza
+            shakeAnimator = null // Rilascia l'animatore
         }
     }
 
