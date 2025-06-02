@@ -324,6 +324,17 @@ class FoldersFragment : Fragment(), OnPdfFileClickListener {
     }
 
     /**
+     * NUOVO: Implementazione del metodo onFavoriteIconClick dell'interfaccia OnPdfFileClickListener.
+     * Chiamato quando l'icona della stella di un elemento PDF viene cliccata.
+     * Toggla lo stato 'isFavorite' del PDF corrispondente nel ViewModel.
+     *
+     * @param pdfFile L'oggetto [PdfFileItem] la cui icona preferiti è stata cliccata.
+     */
+    override fun onFavoriteIconClick(pdfFile: PdfFileItem) {
+        pdfListViewModel.toggleFavorite(pdfFile) // Chiamata al nuovo metodo del ViewModel
+    }
+
+    /**
      * Mostra un popup menu personalizzato centrato sopra il Floating Action Button (FAB).
      * Il popup offre opzioni come l'importazione di PDF o la creazione di cartelle.
      * Gestisce il posizionamento del popup per apparire correttamente rispetto al FAB.

@@ -40,6 +40,7 @@
     <string name="folders_icon_description">1%s</string>
 
     <string name="delete_pdf_description">Delete PDF</string>
+    <string name="favorite_icon_description">Favourite</string>
 
 
 </resources>

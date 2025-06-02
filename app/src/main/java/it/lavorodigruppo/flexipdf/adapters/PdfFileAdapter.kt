@@ -48,6 +48,7 @@ interface OnPdfFileClickListener {
      * @param pdfFile L'oggetto PdfFileItem la cui icona cestino è stata cliccata.
      */
     fun onDeleteIconClick(pdfFile: PdfFileItem)
+    fun onFavoriteIconClick(pdfFile: PdfFileItem)
 }
 
 class PdfFileAdapter(
@@ -89,18 +90,26 @@ class PdfFileAdapter(
             binding.titleTextView.text = pdfFile.displayName
             binding.iconImageView.setImageResource(R.drawable.pdf_svgrepo_com)
 
+            //Imposta l'icona della stella in base allo stato isFavorite
+            binding.favoriteIcon.setImageResource(
+                if (pdfFile.isFavorite) R.drawable.star_24dp_f19e39_fill0_wght400_grad0_opsz24__1_
+                else R.drawable.star_24dp_999999_fill0_wght400_grad0_opsz24
+            )
+
             // --- Gestione della visualizzazione in base allo stato di selezione dell'item ---
             if (pdfFile.isSelected) {
                 // Se l'elemento è selezionato, cambia il colore di sfondo della CardView
                 // e rendi visibile l'icona del cestino.
                 binding.cardViewRoot.setCardBackgroundColor(itemView.context.getColor(android.R.color.holo_red_dark))
                 binding.deleteIcon.visibility = View.VISIBLE
+                binding.favoriteIcon.visibility = View.GONE
                 startShakeAnimation(binding.root)
             } else {
                 // Se l'elemento non è selezionato, ripristina il colore di sfondo
                 // e nascondi l'icona del cestino.
                 binding.cardViewRoot.setCardBackgroundColor(itemView.context.getColor(android.R.color.transparent))
                 binding.deleteIcon.visibility = View.GONE
+                binding.favoriteIcon.visibility = View.VISIBLE
                 stopShakeAnimation()
             }
 
@@ -123,6 +132,10 @@ class PdfFileAdapter(
             // Questa è l'azione per eliminare un elemento specifico.
             binding.deleteIcon.setOnClickListener {
                 listener.onDeleteIconClick(pdfFile)
+            }
+
+            binding.favoriteIcon.setOnClickListener {
+                listener.onFavoriteIconClick(pdfFile)
             }
         }
 
