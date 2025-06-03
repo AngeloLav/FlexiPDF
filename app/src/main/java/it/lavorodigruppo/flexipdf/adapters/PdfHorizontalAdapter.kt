@@ -33,7 +33,7 @@ class PdfHorizontalAdapter(
             // --- Logica di visualizzazione per HomeFragment ---
             // Nelle liste Home, di solito non c'è una "modalità di selezione" con cestino visibile.
             // Il cestino è sempre nascosto.
-            binding.horizontalDeleteIcon.visibility = View.GONE
+
 
             // La CardView cambia colore e l'animazione di shake solo se l'item è selezionato (es. per long press)
             if (pdfFile.isSelected) {
@@ -61,11 +61,6 @@ class PdfHorizontalAdapter(
             binding.root.setOnLongClickListener {
                 listener.onPdfFileLongClick(pdfFile) // Chiamerà il long click handler in HomeFragment
                 true
-            }
-
-            // Questo listener non sarà chiamato se horizontalDeleteIcon.visibility è GONE
-            binding.horizontalDeleteIcon.setOnClickListener {
-                listener.onDeleteIconClick(pdfFile)
             }
 
             binding.horizontalFavoriteIcon.setOnClickListener {
