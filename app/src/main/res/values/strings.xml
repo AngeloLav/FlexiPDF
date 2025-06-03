@@ -8,6 +8,10 @@
     <string name="fragmentThree">3</string>
     <string name="fragmentFour">Settings</string>
 
+    <!-- Fragment Home -->
+    <string name="recent_pdfs_title">Recently Imported</string>
+    <string name="favorite_pdfs_title">Favorites</string>
+
     <string name="searchbar_message">Search between imported PDF…</string>
 
     <!-- Settings Options -->
@@ -38,6 +42,10 @@
     <string name="folder_name">Folder</string>
     <string name="file_icon_description">1%s</string>
     <string name="folders_icon_description">1%s</string>
+
+    <string name="delete_pdf_description">Delete PDF</string>
+    <string name="favorite_icon_description">Favourite Pdf</string>
+    <string name="recent_icon_description">Recent Pdf</string>"
 
 
 </resources>

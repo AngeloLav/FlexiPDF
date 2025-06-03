@@ -1,4 +1,4 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <!-- Base application theme. -->
     <style name="Base.Theme.FlexiPDF" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
@@ -6,7 +6,7 @@
         <item name="colorPrimaryVariant">@color/mild_gray</item>
 <!--        <item name="colorOnPrimary">@color/mild_red</item>-->
 
-        <item name="colorSecondary">@color/mild_red</item>
+        <item name="colorSecondary">@color/less_light_red</item>
 <!--        <item name="colorSecondaryVariant">@color/my_dark_secondary_variant</item>-->
 <!--        <item name="colorOnSecondary">@color/my_dark_on_secondary</item>-->
         <item name="selectableItemBackground">@android:color/transparent</item>
