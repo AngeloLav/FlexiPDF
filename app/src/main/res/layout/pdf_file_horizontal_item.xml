@@ -60,19 +60,5 @@
             android:layout_marginTop="0dp"
             tools:visibility="visible" />
 
-        <ImageView
-            android:id="@+id/horizontal_deleteIcon"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:contentDescription="@string/delete_pdf_description"
-            android:clickable="true"
-            android:focusable="true"
-            android:visibility="gone"
-            app:srcCompat="@drawable/delete_24dp_ea3323_fill0_wght400_grad0_opsz24"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            android:layout_marginEnd="0dp"
-            android:layout_marginTop="0dp" />
-
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>
