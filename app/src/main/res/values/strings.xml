@@ -53,7 +53,7 @@
     <string name="delete">Elimina</string>
     <string name="go_back">Go back</string>
     <string name="move">move</string>
-    <string name="cancel">cancel</string>
+    <string name="cancel">Cancel</string>
     <string name="move_here">move_here</string>
 
     <plurals name="move_items_message">

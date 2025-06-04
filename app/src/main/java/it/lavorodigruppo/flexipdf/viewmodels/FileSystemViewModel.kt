@@ -66,7 +66,6 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     val selectedItems: StateFlow<Set<FileSystemItem>> = _selectedItems.asStateFlow()
 
     private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     private val _itemsToMove = MutableStateFlow<List<FileSystemItem>>(emptyList())
     val itemsToMove: StateFlow<List<FileSystemItem>> = _itemsToMove.asStateFlow()
@@ -201,32 +200,6 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         _allPdfFiles.value = _allPdfFiles.value.map { it.copy(isSelected = false) }
         _allFolders.value = _allFolders.value.map { it.copy(isSelected = false) }
         Log.d("FSViewModel", "clearAllSelections: isSelectionModeActive dopo l'azione: ${_isSelectionModeActive.value}")
-    }
-
-    fun selectAllItems() {
-        val currentFolderId = _currentFolder.value?.id ?: FileSystemDatasource.ROOT_FOLDER_ID
-        val itemsInCurrentFolder = _allPdfFiles.value.filter { it.parentFolderId == currentFolderId } +
-                _allFolders.value.filter { it.parentFolderId == currentFolderId }
-
-        val allSelected = itemsInCurrentFolder.map { item ->
-            when (item) {
-                is PdfFileItem -> item.copy(isSelected = true)
-                is FolderItem -> item.copy(isSelected = true)
-                else -> item // Fallback per esaustività, non dovrebbe accadere
-            }
-        }.toSet()
-
-        _selectedItems.value = allSelected
-
-        _allPdfFiles.value = _allPdfFiles.value.map { pdf ->
-            if (pdf.parentFolderId == currentFolderId) pdf.copy(isSelected = true) else pdf
-        }
-        _allFolders.value = _allFolders.value.map { folder ->
-            if (folder.parentFolderId == currentFolderId) folder.copy(isSelected = true) else folder
-        }
-
-        _isSelectionModeActive.value = true
-        Log.d("FSViewModel", "selectAllItems: isSelectionModeActive dopo l'azione: ${_isSelectionModeActive.value}")
     }
 
     fun deleteSelectedItems() {

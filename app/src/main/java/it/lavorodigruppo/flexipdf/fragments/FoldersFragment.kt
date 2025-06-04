@@ -106,7 +106,6 @@ class FoldersFragment : Fragment() {
                 // Aggiorna il titolo di "Seleziona tutto"
                 val currentFolderId = fileSystemViewModel.currentFolder.value?.id ?: FileSystemDatasource.ROOT_FOLDER_ID
                 val allItemsInCurrentFolder = fileSystemViewModel.filteredAndDisplayedItems.value.filter { it.parentFolderId == currentFolderId }
-                val allSelectedInCurrentFolder = allItemsInCurrentFolder.all { it.isSelected }
 
             }
             return true

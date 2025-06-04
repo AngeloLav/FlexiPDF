@@ -22,7 +22,7 @@ import java.util.UUID // Importa UUID per generare ID univoci
 /**
  * @property id ID univoco del file PDF. Generato automaticamente se non fornito.
  * @property uriString La stringa che rappresenta l'URI del file PDF.
- * @property name Il nome visualizzato del file PDF (sostituisce displayName).
+ * @property displayName Il nome visualizzato del file PDF (sostituisce displayName).
  * @property isSelected Indica se il file PDF è selezionato o meno dalla UI.
  * @property lastModified La data e ora dell'ultima modifica/apertura del file (timestamp).
  * @property isFavorite Indica se il file PDF è contrassegnato come preferito.
