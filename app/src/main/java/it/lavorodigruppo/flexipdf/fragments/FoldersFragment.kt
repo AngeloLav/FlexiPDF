@@ -144,6 +144,7 @@ class FoldersFragment : Fragment() {
             }
         }
 
+
         override fun onDestroyActionMode(mode: ActionMode?) {
             actionMode = null
             fileSystemViewModel.clearAllSelections()
