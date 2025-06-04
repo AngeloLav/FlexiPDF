@@ -147,6 +147,7 @@ class FoldersFragment : Fragment() {
         override fun onDestroyActionMode(mode: ActionMode?) {
             actionMode = null
             fileSystemViewModel.clearAllSelections()
+            fileSystemViewModel.cancelMoveOperation()
         }
     }
 
@@ -353,7 +354,10 @@ class FoldersFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        actionMode?.finish()
+        actionMode = null
         _binding = null
+
     }
 
     // --- Metodi per il FAB Popup ---
