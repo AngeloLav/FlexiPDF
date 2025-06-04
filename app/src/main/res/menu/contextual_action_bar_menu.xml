@@ -20,6 +20,12 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/action_move_back"
+        android:icon="@drawable/arrow_back_24dp_efefef_fill0_wght400_grad0_opsz24"
+        android:title="@string/go_back"
+        android:visible="false"
+    app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/action_move_here"
         android:icon="@drawable/arrow_downward_24dp_f3f3f3_fill0_wght400_grad0_opsz24"
         android:title="@string/move_here"

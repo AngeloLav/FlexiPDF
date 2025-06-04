@@ -81,6 +81,7 @@ class FoldersFragment : Fragment() {
             // Voci di menu per la modalità di spostamento
             val moveHereItem = menu?.findItem(R.id.action_move_here)
             val cancelMoveItem = menu?.findItem(R.id.action_cancel_move)
+            val moveBackItem = menu?.findItem(R.id.action_move_back)
 
             if (isMoving) {
                 // Modalità di spostamento: mostra "Sposta qui" e "Annulla"
@@ -91,15 +92,20 @@ class FoldersFragment : Fragment() {
                 moveHereItem?.isVisible = true
                 cancelMoveItem?.isVisible = true
 
+
+                // Rendi visibile "Indietro" solo se non siamo nella root
+                moveBackItem?.isVisible = fileSystemViewModel.currentFolder.value != null
+
                 mode?.title = resources.getQuantityString(R.plurals.move_items_message, itemsToMoveCount, itemsToMoveCount)
             } else {
-                // Modalità di selezione standard: mostra "Elimina", "Preferito", "Seleziona tutto", "Sposta"
+                // Modalità di selezione standard: mostra "Elimina", "Preferito", "Sposta"
                 deleteItem?.isVisible = true
                 favoriteItem?.isVisible = fileSystemViewModel.selectedItems.value.any { it is PdfFileItem }
                 moveItem?.isVisible = true
 
                 moveHereItem?.isVisible = false
                 cancelMoveItem?.isVisible = false
+                moveBackItem?.isVisible = false
 
                 mode?.title = "$selectedCount selezionati"
 
@@ -140,6 +146,11 @@ class FoldersFragment : Fragment() {
                     mode?.finish() // Chiude la CAB
                     true
                 }
+                R.id.action_move_back -> { // GESTIONE "INDIETRO" IN MODALITÀ SPOSTAMENTO
+                    fileSystemViewModel.goBack()
+                    mode?.invalidate() // Invalida la CAB per aggiornare la visibilità del pulsante "Indietro" (se si torna alla root)
+                    true
+                }
                 else -> false
             }
         }
@@ -176,14 +187,33 @@ class FoldersFragment : Fragment() {
 
     private fun setupRecyclerView() {
         fileSystemAdapter = FileSystemAdapter(
-            onItemClick = { item ->
+            onItemClick = onItemClick@{ item ->
+
+                if (fileSystemViewModel.isMovingItems.value) {
+                    if (item is PdfFileItem) {
+                        // Se siamo in modalità spostamento e clicchiamo un PDF, non aprirlo.
+                        // Invece, mostra un messaggio all'utente chiamando il ViewModel.
+                        fileSystemViewModel.showUserMessage("Clicca su una cartella per navigare o 'Sposta qui' per confermare.")
+                        Log.d("FoldersFragment", "Tentativo di aprire PDF in modalità spostamento, impedito: ${item.displayName}")
+                        return@onItemClick // Esci dalla lambda onItemClick
+                    }
+                    // Se è una cartella in modalità spostamento, permetti la navigazione
+                    // La logica di enterFolder gestirà se la navigazione è permessa o meno.
+                    else if (item is FolderItem) {
+                        fileSystemViewModel.enterFolder(item)
+                        return@onItemClick // Esci dalla lambda onItemClick dopo aver gestito la cartella
+                    }
+                }
+
+                // Questa parte del codice viene eseguita solo se:
+                // 1. Non siamo in modalità spostamento (isMovingItems.value è false)
+                // 2. Siamo in modalità spostamento, ma l'elemento cliccato non è un PdfFileItem
+                //    (cioè, è una FolderItem e la navigazione è stata permessa sopra).
                 when (item) {
                     is PdfFileItem -> {
                         val pdfUri = item.uriString.toUri()
                         Log.d("FoldersFragment", "Tentativo di aprire PDF con URI: $pdfUri")
 
-                        // NON USARE contentResolver.takePersistableUriPermission QUI.
-                        // Ci affidiamo a grantUriPermission in PDFViewerActivity per i permessi temporanei.
                         val intent = Intent(requireContext(), PDFViewerActivity::class.java).apply {
                             putExtra("pdf_uri", pdfUri)
                             putExtra("pdf_display_name", item.displayName)
@@ -194,6 +224,8 @@ class FoldersFragment : Fragment() {
                         Toast.makeText(requireContext(), "Apertura PDF: ${item.displayName}", Toast.LENGTH_SHORT).show()
                     }
                     is FolderItem -> {
+                        // Questa parte verrà eseguita solo se non eravamo in modalità spostamento
+                        // o se la navigazione in modalità spostamento è stata gestita sopra.
                         fileSystemViewModel.enterFolder(item)
                     }
                 }
@@ -276,6 +308,11 @@ class FoldersFragment : Fragment() {
                     binding.backButton.visibility = View.GONE
                 }
                 Log.d("FoldersFragment", "Cartella corrente cambiata: ${folder?.displayName ?: "Root"}")
+
+                if (actionMode != null) {
+                    actionMode?.invalidate() // Forza la CAB a ri-valutare le voci di menu (es. pulsante "Indietro")
+                    Log.d("FoldersFragment", "CAB invalidata a causa del cambio cartella.")
+                }
             }
         }
 

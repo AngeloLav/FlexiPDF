@@ -36,10 +36,12 @@ import it.lavorodigruppo.flexipdf.data.FileSystemDatasource
 import it.lavorodigruppo.flexipdf.items.FileSystemItem
 import it.lavorodigruppo.flexipdf.items.FolderItem
 import it.lavorodigruppo.flexipdf.items.PdfFileItem
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -48,6 +50,20 @@ import kotlinx.coroutines.launch
 import java.util.Stack
 
 class FileSystemViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val _userMessage = MutableSharedFlow<String>()
+    val userMessage: Flow<String> = _userMessage.asSharedFlow()
+
+    /**
+     * Emette un messaggio da visualizzare all'utente tramite l'UI.
+     * Questo metodo viene chiamato dal Fragment.
+     */
+    fun showUserMessage(message: String) {
+        viewModelScope.launch {
+            _userMessage.emit(message) // Qui chiamiamo emit sulla variabile privata
+        }
+    }
+
 
     private val datasource = FileSystemDatasource(application)
 
