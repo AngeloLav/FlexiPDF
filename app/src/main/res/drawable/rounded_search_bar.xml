@@ -1,6 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="@color/mild_red" />
-    <corners android:radius="200dp" />
+    <solid android:color="?attr/colorSecondary" /> <!-- Colore di sfondo della search bar, es. bianco -->
+    <corners android:radius="150dp" /> <!-- Raggio degli angoli arrotondati. Regola se vuoi più/meno arrotondamento. -->
+    <padding
+        android:left="12dp"
+        android:top="8dp"
+        android:right="12dp"
+        android:bottom="8dp" /> <!-- Aggiunge padding interno al drawable -->
 </shape>

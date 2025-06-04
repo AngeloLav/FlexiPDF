@@ -12,35 +12,35 @@
  *
  */
 
+// it.lavorodigruppo.flexipdf.items/PdfFileItem.kt
 package it.lavorodigruppo.flexipdf.items
 
-import android.net.Uri
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import androidx.core.net.toUri
+import java.util.UUID // Importa UUID per generare ID univoci
 
 /**
+ * @property id ID univoco del file PDF. Generato automaticamente se non fornito.
  * @property uriString La stringa che rappresenta l'URI del file PDF.
- * Viene memorizzata come Stringa e non direttamente come Uri perché
- * Uri non è direttamente serializzabile a JSON da Gson senza un TypeAdapter personalizzato,
- * e memorizzare l'URI come Stringa è più semplice per la persistenza.
- * @property displayName Il nome visualizzato del file PDF.
- * @property isSelected Indica se il file PDF è selezionato o meno dalla recyclerView.
+ * @property name Il nome visualizzato del file PDF (sostituisce displayName).
+ * @property isSelected Indica se il file PDF è selezionato o meno dalla UI.
+ * @property lastModified La data e ora dell'ultima modifica/apertura del file (timestamp).
+ * @property isFavorite Indica se il file PDF è contrassegnato come preferito.
+ * @property parentFolderId L'ID della cartella genitore. Null se è nella root.
  */
-
 data class PdfFileItem(
+    override val id: String = UUID.randomUUID().toString(), // Genera un UUID come ID predefinito
     val uriString: String,
-    val displayName: String,
-    var isSelected: Boolean = false,
+    override val displayName: String, // Cambiato da displayName a name per coerenza con FileSystemItem
+    override var isSelected: Boolean = false,
     val lastModified: Long = 0,
-    var isFavorite: Boolean = false
-)
+    var isFavorite: Boolean = false,
+    override val parentFolderId: String? // Aggiunto per la gestione delle cartelle
+) : FileSystemItem // Implementa la nuova interfaccia
 
 /**
  * Funzione di estensione per List di PdfFileItem.
  * Converte una lista di PdfFileItem in una stringa JSON.
- *
- * Utilizzata dal PdfDatasource per salvare la lista dei PDF nelle SharedPreferences.
  *
  * @return Una String JSON che rappresenta la lista di PdfFileItem.
  */
@@ -52,12 +52,9 @@ fun List<PdfFileItem>.toJson(): String {
  * Funzione di estensione per String.
  * Converte una stringa JSON in una List di PdfFileItem.
  *
- * Utilizzata dal PdfDatasource per caricare la lista dei PDF dalle SharedPreferences.
- *
  * @return Una List di PdfFileItem deserializzata dalla stringa JSON.
  * Restituisce una emptyList se la stringa non è un JSON valido o se si verifica un errore durante la deserializzazione.
  */
-
 fun String.toPdfFileList(): List<PdfFileItem> {
     return try {
         Gson().fromJson(this, object : TypeToken<List<PdfFileItem>>() {}.type)
