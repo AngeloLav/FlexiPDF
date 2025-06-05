@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FlexiPDF</string>
+    <string name="floating_action_button_description">Neuer Ordner oder PDF-Dokument hinzufügen</string>
+
+    <!-- Fragments temporary strings -->
+    <string name="fragmentOne">Startseite</string>
+    <string name="fragmentTwo">Ordner</string>
+    <string name="fragmentThree">Geteilt</string>
+    <string name="fragmentFour">Einstellungen</string>
+
+    <!-- Fragment Home -->
+    <string name="recent_pdfs_title">Verlauf</string>
+    <string name="favorite_pdfs_title">Favoriten</string>
+
+    <string name="searchbar_message">Suchen..</string>
+
+    <!-- Settings Options -->
+    <string-array name="settings_options">
+        <item>Sprache</item>
+        <item>Thema</item>
+        <item>Über uns</item>
+        <item>Credits</item>
+        <item>Hilfe</item>
+        <item>App teilen</item>
+    </string-array>
+    <string name="settings_icon_description">Einstellungen Symbol</string>
+    <string name="settings_item_message">%1$s</string>
+
+    <string name="import_pdf">PDF importieren</string>
+    <string name="create_folder">den Ordnern erstellen</string>
+
+    <string name="changed_language">Die Sprache auswählt ist Deutsch</string>
+
+    <string name="pdf_icon_description">PDF Symbol</string>
+
+    <string name="file_name">Dokument</string>
+    <string name="folder_name">Ordner</string>
+    <string name="file_icon_description">1%s</string>
+    <string name="folders_icon_description">1%s</string>
+
+    <string name="delete_pdf_description">Löschen PDF</string>
+    <string name="favorite_icon_description">Favoriten PDF</string>
+    <string name="recent_icon_description">Verlauf PDF</string>"
+
+    <string name="select_all">Alles auswählen</string>
+    <string name="favourite">Favoriten</string>
+    <string name="unfavourite">Aus den Favoriten entfernen</string>
+    <string name="delete">Löschen</string>
+    <string name="go_back">Geh zurück</string>
+    <string name="move">Position verändern</string>
+    <string name="cancel">Fertig</string>
+    <string name="move_here">hierher_ziehen</string>
+
+    <plurals name="move_items_message" >
+        <item quantity="one">Ein Objekt kann verschoben werden. Navigieren Sie zum Zielordner.</item>
+        <item quantity="other">%d Objekte können verschoben werden. Navigieren Sie zum Zielordner.</item>
+    </plurals>
+</resources>
