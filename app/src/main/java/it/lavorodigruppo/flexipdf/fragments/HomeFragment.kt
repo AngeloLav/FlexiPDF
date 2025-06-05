@@ -11,37 +11,40 @@
 
 package it.lavorodigruppo.flexipdf.fragments
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import it.lavorodigruppo.flexipdf.R
-import it.lavorodigruppo.flexipdf.adapters.OnPdfFileClickListener
+import it.lavorodigruppo.flexipdf.activities.PDFViewerActivity
+import it.lavorodigruppo.flexipdf.adapters.OnPdfItemClick // Importa le nuove typealias
+import it.lavorodigruppo.flexipdf.adapters.OnPdfItemLongClick // Importa le nuove typealias
 import it.lavorodigruppo.flexipdf.adapters.PdfHorizontalAdapter
 import it.lavorodigruppo.flexipdf.databinding.FragmentHomeBinding
 import it.lavorodigruppo.flexipdf.items.PdfFileItem
-import it.lavorodigruppo.flexipdf.viewmodels.PdfListViewModel
-
-import android.content.Intent
-import android.util.Log
-import android.widget.Toast
-import androidx.core.net.toUri
-import it.lavorodigruppo.flexipdf.activities.PDFViewerActivity
+import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel
+import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel.FileSystemViewModelFactory
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import android.content.ContentResolver
 
 
-class HomeFragment : Fragment(), OnPdfFileClickListener {
+class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
-    // Ottieni il ViewModel con lo scope dell'Activity
-    private lateinit var pdfListViewModel: PdfListViewModel
+    private lateinit var fileSystemViewModel: FileSystemViewModel
 
     private lateinit var recentPdfsAdapter: PdfHorizontalAdapter
     private lateinit var favoritePdfsAdapter: PdfHorizontalAdapter
@@ -61,7 +64,6 @@ class HomeFragment : Fragment(), OnPdfFileClickListener {
 
         val bannerContentLayout = binding.bannerContentLayout
 
-        // Assicurati che bannerContentLayout non sia null prima di accedere a paddingTop
         originalBannerPaddingTop = bannerContentLayout.paddingTop
 
         ViewCompat.setOnApplyWindowInsetsListener(view) { _, insets ->
@@ -82,8 +84,10 @@ class HomeFragment : Fragment(), OnPdfFileClickListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Inizializza il ViewModel con lo scope dell'Activity
-        pdfListViewModel = ViewModelProvider(requireActivity())[PdfListViewModel::class.java]
+        // Inizializza il ViewModel con lo scope dell'Activity usando la Factory
+        fileSystemViewModel = ViewModelProvider(requireActivity(),
+            FileSystemViewModel.FileSystemViewModelFactory(requireActivity().application)
+        )[FileSystemViewModel::class.java]
 
         setupRecentPdfsRecyclerView()
         setupFavoritePdfsRecyclerView()
@@ -92,7 +96,17 @@ class HomeFragment : Fragment(), OnPdfFileClickListener {
     }
 
     private fun setupRecentPdfsRecyclerView() {
-        recentPdfsAdapter = PdfHorizontalAdapter(this)
+        // Passa le lambda corrette al costruttore dell'adapter
+        recentPdfsAdapter = PdfHorizontalAdapter(
+            onPdfItemClick = { pdfFile ->
+                openPdfFile(pdfFile)
+            },
+            onPdfItemLongClick = { pdfFile ->
+                // Per la HomeFragment, un long click può togglare il preferito
+                fileSystemViewModel.toggleFavorite(pdfFile)
+                true // Consuma l'evento
+            }
+        )
         binding.recentPdfRecyclerView.apply {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             adapter = recentPdfsAdapter
@@ -100,7 +114,17 @@ class HomeFragment : Fragment(), OnPdfFileClickListener {
     }
 
     private fun setupFavoritePdfsRecyclerView() {
-        favoritePdfsAdapter = PdfHorizontalAdapter(this)
+        // Passa le lambda corrette al costruttore dell'adapter
+        favoritePdfsAdapter = PdfHorizontalAdapter(
+            onPdfItemClick = { pdfFile ->
+                openPdfFile(pdfFile)
+            },
+            onPdfItemLongClick = { pdfFile ->
+                // Per la HomeFragment, un long click può togglare il preferito
+                fileSystemViewModel.toggleFavorite(pdfFile)
+                true // Consuma l'evento
+            }
+        )
         binding.favoritePdfRecyclerView.apply {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             adapter = favoritePdfsAdapter
@@ -108,40 +132,32 @@ class HomeFragment : Fragment(), OnPdfFileClickListener {
     }
 
     private fun observePdfsFromViewModel() {
-        pdfListViewModel.recentPdfs.observe(viewLifecycleOwner) { pdfs ->
-            pdfs?.let {
-                recentPdfsAdapter.submitList(it)
+        // Osserva recentPdfs come StateFlow
+        viewLifecycleOwner.lifecycleScope.launch {
+            fileSystemViewModel.recentPdfs.collectLatest { pdfs ->
+                recentPdfsAdapter.submitList(pdfs)
             }
-
         }
 
-        pdfListViewModel.favoritePdfs.observe(viewLifecycleOwner) { pdfs ->
-            pdfs?.let {
-                favoritePdfsAdapter.submitList(it)
+        // Osserva favoritePdfs come StateFlow
+        viewLifecycleOwner.lifecycleScope.launch {
+            fileSystemViewModel.favoritePdfs.collectLatest { pdfs ->
+                favoritePdfsAdapter.submitList(pdfs)
             }
-
         }
     }
 
-    override fun onPdfFileClick(pdfFile: PdfFileItem) {
+    // Metodo helper per aprire un PDF (spostato dalla vecchia onPdfFileClick)
+    private fun openPdfFile(pdfFile: PdfFileItem) {
+        val uri = pdfFile.uriString.toUri()
+        Log.d("HomeFragment", "Tentativo di aprire PDF con URI: $uri") // <--- AGGIUNTO LOG
         val intent = Intent(requireContext(), PDFViewerActivity::class.java).apply {
-            putExtra("pdf_uri", pdfFile.uriString.toUri())
+            putExtra("pdf_uri", uri)
             putExtra("pdf_display_name", pdfFile.displayName)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         startActivity(intent)
         Toast.makeText(context, "Opening ${pdfFile.displayName}", Toast.LENGTH_SHORT).show()
-    }
-
-    override fun onPdfFileLongClick(pdfFile: PdfFileItem) {
-        pdfListViewModel.toggleFavorite(pdfFile)
-    }
-
-    override fun onDeleteIconClick(pdfFile: PdfFileItem) {
-        // Nessuna azione qui per HomeFragment
-    }
-
-    override fun onFavoriteIconClick(pdfFile: PdfFileItem) {
-        // Nessuna azione qui per HomeFragment
     }
 
     override fun onDestroyView() {

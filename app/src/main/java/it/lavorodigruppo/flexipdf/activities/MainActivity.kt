@@ -51,6 +51,8 @@
 
 package it.lavorodigruppo.flexipdf.activities
 
+import android.content.Context // Importa Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
@@ -65,20 +67,39 @@ import it.lavorodigruppo.flexipdf.fragments.HomeFragment
 import it.lavorodigruppo.flexipdf.fragments.SettingsFragment
 import it.lavorodigruppo.flexipdf.fragments.SharedFragment
 
-import it.lavorodigruppo.flexipdf.fragments.OnPdfPickerListener
+import it.lavorodigruppo.flexipdf.fragments.OnPdfPickerListener // L'interfaccia OnPdfPickerListener è nel package fragments
 import it.lavorodigruppo.flexipdf.utils.PdfManager
-import it.lavorodigruppo.flexipdf.viewmodels.PdfListViewModel
-
+import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel // Importa il nuovo ViewModel
+import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel.FileSystemViewModelFactory // Importa la Factory
 
 class MainActivity : AppCompatActivity(), OnPdfPickerListener {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var pdfManager: PdfManager
-    private lateinit var pdfListViewModel: PdfListViewModel
+    private lateinit var fileSystemViewModel: FileSystemViewModel
 
+    // ActivityResultLauncher per selezionare i PDF
+    // Questo è il modo moderno per gestire i risultati delle Activity
+    private val pickPdfLauncher = registerForActivityResult(
+        object : androidx.activity.result.contract.ActivityResultContracts.OpenMultipleDocuments() {
+            override fun createIntent(context: Context, input: Array<String>): Intent {
+                return super.createIntent(context, input).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "application/pdf" // Filtra solo i PDF
+                }
+            }
+        }
+    ) { uris: List<Uri>? ->
+        uris?.let {
+            // Chiama il metodo importPdfs del ViewModel
+            fileSystemViewModel.importPdfs(it)
+        }
+    }
 
+    // Implementazione del metodo dell'interfaccia OnPdfPickerListener
     override fun launchPdfPicker() {
-        pdfManager.launchPdfPicker()
+        // Avvia il selettore di PDF usando il launcher
+        pickPdfLauncher.launch(arrayOf("application/pdf"))
     }
 
     // --- MainActivity Lifecycle ---
@@ -90,10 +111,13 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        pdfListViewModel = ViewModelProvider(this)[PdfListViewModel::class.java]
+        // Inizializza il ViewModel usando la Factory
+        fileSystemViewModel = ViewModelProvider(this, FileSystemViewModel.FileSystemViewModelFactory(application))[FileSystemViewModel::class.java]
 
-        pdfManager = PdfManager(this) { uris: List<Uri>, displayNames: List<String> ->
-            pdfListViewModel.addPdfFilesFromUris(uris, displayNames)
+        // Inizializza PdfManager. La callback ora passa solo la lista di URI.
+        // La logica per i displayNames è stata spostata nel ViewModel.
+        pdfManager = PdfManager(this) { uris: List<Uri> ->
+            fileSystemViewModel.importPdfs(uris)
         }
 
         if (savedInstanceState == null) {
@@ -119,5 +143,6 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
             .replace(R.id.frame_layout, fragment)
             .commit()
     }
+
 }
 

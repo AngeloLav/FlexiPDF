@@ -1,3 +1,4 @@
+// it.lavorodigruppo.flexipdf.adapters/PdfHorizontalAdapter.kt
 package it.lavorodigruppo.flexipdf.adapters
 
 import android.animation.ObjectAnimator
@@ -5,22 +6,31 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.LinearInterpolator
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import it.lavorodigruppo.flexipdf.R
 import it.lavorodigruppo.flexipdf.databinding.PdfFileHorizontalItemBinding
 import it.lavorodigruppo.flexipdf.items.PdfFileItem
 
+// Definiamo delle typealias per le callback specifiche di questo adapter
+typealias OnPdfItemClick = (PdfFileItem) -> Unit
+typealias OnPdfItemLongClick = (PdfFileItem) -> Boolean // Restituisce Boolean per consumare l'evento
 
 class PdfHorizontalAdapter(
-    private val listener: OnPdfFileClickListener
-) : ListAdapter<PdfFileItem, PdfHorizontalAdapter.PdfHorizontalViewHolder>(PdfFileDiffCallback()) {
+    private val onPdfItemClick: OnPdfItemClick,
+    private val onPdfItemLongClick: OnPdfItemLongClick
+) : ListAdapter<PdfFileItem, PdfHorizontalAdapter.PdfHorizontalViewHolder>(PdfHorizontalDiffCallback()) {
 
     class PdfHorizontalViewHolder(private val binding: PdfFileHorizontalItemBinding) : RecyclerView.ViewHolder(binding.root) {
 
         private var shakeAnimator: ObjectAnimator? = null
 
-        fun bind(pdfFile: PdfFileItem, listener: OnPdfFileClickListener) {
+        fun bind(
+            pdfFile: PdfFileItem,
+            onPdfItemClick: OnPdfItemClick,
+            onPdfItemLongClick: OnPdfItemLongClick
+        ) {
             binding.horizontalTitleTextView.text = pdfFile.displayName
             binding.horizontalIconImageView.setImageResource(R.drawable.pdf_svgrepo_com)
 
@@ -30,46 +40,29 @@ class PdfHorizontalAdapter(
                 else R.drawable.star_24dp_999999_fill0_wght400_grad0_opsz24
             )
 
-            // --- Logica di visualizzazione per HomeFragment ---
-            // Nelle liste Home, di solito non c'è una "modalità di selezione" con cestino visibile.
-            // Il cestino è sempre nascosto.
-            binding.horizontalDeleteIcon.visibility = View.GONE
-
             // La CardView cambia colore e l'animazione di shake solo se l'item è selezionato (es. per long press)
+            // In HomeFragment, la selezione non è per la modalità CAB, ma per indicare un long click
             if (pdfFile.isSelected) {
-                // Utilizza un colore per lo sfondo dell'item selezionato (definisci in colors.xml)
-
-                // Potresti decidere di nascondere la stella e mostrare il cestino anche qui se il long click attiva una "selezione leggera"
-                // binding.horizontalFavoriteIcon.visibility = View.GONE
-                // binding.horizontalDeleteIcon.visibility = View.VISIBLE
+                // Puoi aggiungere un colore di sfondo qui se vuoi evidenziare l'elemento selezionato
+                // binding.cardView.setCardBackgroundColor(itemView.context.getColor(R.color.selected_item_background))
                 startShakeAnimation(binding.root)
             } else {
-
-                // Assicurati che la stella sia visibile quando l'item non è selezionato
-                // binding.horizontalFavoriteIcon.visibility = View.VISIBLE
+                // binding.cardView.setCardBackgroundColor(itemView.context.getColor(android.R.color.transparent))
                 stopShakeAnimation()
             }
 
-
             // --- Impostazione dei Listener ---
             binding.root.setOnClickListener {
-                listener.onPdfFileClick(pdfFile)
+                onPdfItemClick(pdfFile)
             }
 
-            // Per la HomeFragment, un long click può essere utilizzato per togglare il preferito
-            // o attivare una selezione se lo desideri.
             binding.root.setOnLongClickListener {
-                listener.onPdfFileLongClick(pdfFile) // Chiamerà il long click handler in HomeFragment
-                true
+                onPdfItemLongClick(pdfFile)
             }
 
-            // Questo listener non sarà chiamato se horizontalDeleteIcon.visibility è GONE
-            binding.horizontalDeleteIcon.setOnClickListener {
-                listener.onDeleteIconClick(pdfFile)
-            }
-
+            // Il pulsante preferiti qui toggla direttamente lo stato
             binding.horizontalFavoriteIcon.setOnClickListener {
-                listener.onFavoriteIconClick(pdfFile)
+                onPdfItemLongClick(pdfFile) // Riutilizziamo la long click callback per togglare il preferito
             }
         }
 
@@ -98,7 +91,7 @@ class PdfHorizontalAdapter(
 
     override fun onBindViewHolder(holder: PdfHorizontalViewHolder, position: Int) {
         val pdfFile = getItem(position)
-        holder.bind(pdfFile, listener)
+        holder.bind(pdfFile, onPdfItemClick, onPdfItemLongClick)
     }
 
     override fun onViewRecycled(holder: PdfHorizontalViewHolder) {
@@ -106,6 +99,22 @@ class PdfHorizontalAdapter(
         holder.stopShakeAnimation()
     }
 
+    /**
+     * Callback per calcolare le differenze tra due liste di PdfFileItem.
+     * Usato da ListAdapter per aggiornare la RecyclerView in modo efficiente.
+     */
+    class PdfHorizontalDiffCallback : DiffUtil.ItemCallback<PdfFileItem>() {
+        override fun areItemsTheSame(oldItem: PdfFileItem, newItem: PdfFileItem): Boolean {
+            // Ora confrontiamo per ID, che è univoco per ogni PdfFileItem
+            return oldItem.id == newItem.id
+        }
+
+        @Suppress("SuspiciousEquals") // Sopprimi il warning, poiché PdfFileItem è una data class
+        override fun areContentsTheSame(oldItem: PdfFileItem, newItem: PdfFileItem): Boolean {
+            // Poiché PdfFileItem è una data class, il confronto '==' verifica tutte le proprietà.
+            return oldItem == newItem
+        }
+    }
 }
 
 

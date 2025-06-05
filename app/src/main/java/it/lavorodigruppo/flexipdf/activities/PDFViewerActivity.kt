@@ -9,6 +9,7 @@
  * per un rendering efficiente e interattivo dei PDF.
  *
  */
+// it.lavorodigruppo.flexipdf.activities/PDFViewerActivity.kt
 package it.lavorodigruppo.flexipdf.activities
 
 import android.os.Bundle
@@ -17,61 +18,65 @@ import androidx.appcompat.app.AppCompatActivity
 import it.lavorodigruppo.flexipdf.R
 import androidx.activity.enableEdgeToEdge
 
+import android.content.Intent // Importa Intent per grantUriPermission
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
 import com.github.barteksc.pdfviewer.PDFView
 import com.github.barteksc.pdfviewer.scroll.DefaultScrollHandle
+import com.github.barteksc.pdfviewer.listener.OnErrorListener // <--- IMPORT CORRETTO
 
-class PDFViewerActivity : AppCompatActivity() {
+class PDFViewerActivity : AppCompatActivity(), OnErrorListener { // <--- INTERFACCIA CORRETTA
 
-    /**
-     * Metodo chiamato alla creazione dell'Activity.
-     * Inizializza il layout, abilita la visualizzazione edge-to-edge e carica il PDF
-     * recuperato dall'Intent.
-     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Imposta il layout dell'Activity dal file XML 'activity_pdfviewer.xml'.
         setContentView(R.layout.activity_pdfviewer)
-
-        // Abilita la visualizzazione edge-to-edge, estendendo il contenuto sotto
-        // le barre di sistema (stato e navigazione) per un'esperienza a schermo intero.
         enableEdgeToEdge()
 
-        // Trova il componente PDFView nel layout tramite il suo ID.
-        // Nota: Qui si usa findViewById() perché questa Activity non utilizza View Binding,
-        // a differenza di MainActivity.
         val pdfView = findViewById<PDFView>(R.id.pdfView)
 
-        // Recupera l'URI del PDF dall'Intent che ha avviato questa Activity.
-        // Il metodo getParcelableExtra("pdf_uri") è usato per estrarre un oggetto Parcelable
-        // (come Uri) associato alla chiave "pdf_uri".
-        // Il metodo è deprecato, ma funziona con questa libreria
         val pdfUri: Uri? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Per Android 13 (API 33) e superiori
             intent.getParcelableExtra("pdf_uri", Uri::class.java)
         } else {
-            // Per versioni di Android inferiori a 13 (API 32 e precedenti)
-            // Qui è necessario sopprimere il warning di deprecazione se si vuole supportare
-            // versioni più vecchie e non si vuole che il compilatore si lamenti.
             @Suppress("DEPRECATION")
             intent.getParcelableExtra("pdf_uri")
         }
 
         if (pdfUri != null) {
-            // Carica il PDF nel componente PDFView utilizzando l'URI fornito. Si possono aggiungere anche altre
-            // feature alla visualizzazione del PDF. Visionare la documentazione della libreria com.github.barteksc.pdfviewer
-            pdfView.fromUri(pdfUri)
-                .scrollHandle(DefaultScrollHandle(this))
-                .enableSwipe(true)
-                .enableDoubletap(true)
-                .load()
+            Log.d("PDFViewerActivity", "Tentativo di caricare PDF da URI: $pdfUri")
+
+            try {
+                // WORKAROUND: Concedi un permesso temporaneo all'Activity corrente
+                // Questo dovrebbe garantire che l'Activity possa leggere l'URI,
+                // anche se il permesso persistente non è stato correttamente salvato.
+                grantUriPermission(packageName, pdfUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                Log.d("PDFViewerActivity", "Permesso URI temporaneo concesso per: $pdfUri")
+
+                pdfView.fromUri(pdfUri)
+                    .scrollHandle(DefaultScrollHandle(this))
+                    .enableSwipe(true)
+                    .enableDoubletap(true)
+                    .onError(this) // <--- IMPOSTA IL LISTENER DI ERRORE QUI
+                    .load()
+            } catch (e: Exception) {
+                Log.e("PDFViewerActivity", "Errore durante la concessione del permesso o caricamento del PDF: ${e.message}", e)
+                Toast.makeText(this, "Errore nel caricamento del PDF: ${e.message}", Toast.LENGTH_LONG).show()
+                finish()
+            }
+
         } else {
-            // Messaggio Toast per informare l'utente che non è stato possibile caricare il PDF.
+            Log.e("PDFViewerActivity", "Errore: URI PDF nullo nell'Intent.")
             Toast.makeText(this, "Errore: nessun PDF da visualizzare.", Toast.LENGTH_LONG).show()
             finish()
         }
+    }
+
+    // <--- METODO onError CORRETTO ---
+    override fun onError(e: Throwable?) {
+        Log.e("PDFViewerActivity", "Errore dalla libreria PDF: ${e?.message}", e)
+        Toast.makeText(this, "Errore durante il caricamento del PDF: ${e?.message}", Toast.LENGTH_LONG).show()
+        // Puoi decidere di chiudere l'Activity qui o mostrare un messaggio più dettagliato
+        // finish()
     }
 }

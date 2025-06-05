@@ -15,475 +15,453 @@
  */
 package it.lavorodigruppo.flexipdf.fragments
 
+import android.animation.ObjectAnimator
+import android.content.ContentResolver
+import android.content.Intent
+import android.net.Uri
+import androidx.core.net.toUri
 import android.os.Bundle
-import android.view.Gravity
-import androidx.fragment.app.Fragment
+import android.util.Log
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import it.lavorodigruppo.flexipdf.databinding.FragmentFoldersBinding
-import android.widget.PopupWindow
+import android.widget.TextView
 import android.widget.Toast
-import android.widget.SearchView
-import it.lavorodigruppo.flexipdf.databinding.CustomPopupMenuBinding
-import android.animation.ObjectAnimator
-import android.content.Context
-import android.view.animation.OvershootInterpolator
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ActionMode
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import it.lavorodigruppo.flexipdf.adapters.OnPdfFileClickListener
-import it.lavorodigruppo.flexipdf.adapters.PdfFileAdapter
-import it.lavorodigruppo.flexipdf.items.PdfFileItem
-import it.lavorodigruppo.flexipdf.viewmodels.PdfListViewModel
+import it.lavorodigruppo.flexipdf.R
+import it.lavorodigruppo.flexipdf.activities.MainActivity
 import it.lavorodigruppo.flexipdf.activities.PDFViewerActivity
-import android.content.Intent
-import android.util.Log
-import androidx.core.net.toUri
-import android.app.AlertDialog
+import it.lavorodigruppo.flexipdf.adapters.FileSystemAdapter
+import it.lavorodigruppo.flexipdf.databinding.FragmentFoldersBinding // Assicurati che il nome del binding sia corretto
+import it.lavorodigruppo.flexipdf.items.FileSystemItem
+import it.lavorodigruppo.flexipdf.items.FolderItem
+import it.lavorodigruppo.flexipdf.items.PdfFileItem
+import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import android.widget.EditText
+import com.google.android.material.snackbar.Snackbar
+import it.lavorodigruppo.flexipdf.data.FileSystemDatasource
 
-
-/**
- * Interfaccia di callback per notificare all'Activity ospitante che è necessario
- * avviare il selettore di file PDF.
- * Questo pattern garantisce una comunicazione pulita tra Fragment e Activity.
- */
-interface OnPdfPickerListener {
-    /**
-     * Chiamato quando è necessario avviare il selettore di file PDF.
-     */
-    fun launchPdfPicker()
-}
-
-/**
- * FoldersFragment è il Fragment principale che visualizza la lista dei file PDF.
- * Implementa OnPdfFileClickListener per gestire i click sui singoli elementi della lista.
- *
- * Gestisce anche l'interazione con un Floating Action Button (FAB) per mostrare un popup
- * con opzioni aggiuntive come l'importazione di PDF o la creazione di cartelle.
- */
-class FoldersFragment : Fragment(), OnPdfFileClickListener {
+class FoldersFragment : Fragment() {
 
     private var _binding: FragmentFoldersBinding? = null
     private val binding get() = _binding!!
 
-    // Listener per la comunicazione con l'Activity per l'apertura del PDF picker.
-    private var listener: OnPdfPickerListener? = null
+    private lateinit var fileSystemViewModel: FileSystemViewModel
+    private lateinit var fileSystemAdapter: FileSystemAdapter
 
-    // ViewModel e Adapter per la gestione della lista dei PDF.
-    private lateinit var pdfListViewModel: PdfListViewModel
-    private lateinit var pdfFileAdapter: PdfFileAdapter
+    private var actionMode: ActionMode? = null
+    private val actionModeCallback = object : ActionMode.Callback {
+        override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+            val inflater: MenuInflater = mode!!.menuInflater
+            inflater.inflate(R.menu.contextual_action_bar_menu, menu)
+            return true
+        }
 
-    // Traccia lo stato della modalità di selezione all'interno del Fragment
-    private var isSelectionModeActive: Boolean = false
-        set(value) {
-            // Solo se il valore sta effettivamente cambiando
-            if (field != value) {
-                field = value // Assegna il valore alla proprietà sottostante
+        override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+            val isMoving = fileSystemViewModel.isMovingItems.value
+            val selectedCount = fileSystemViewModel.selectedItems.value.size
+            val itemsToMoveCount = fileSystemViewModel.itemsToMove.value.size
 
-                // Quando la modalità cambia, informa l'adapter
-                pdfFileAdapter.setSelectionModeActive(value)
+            // Voci di menu per la modalità di selezione standard
+            val deleteItem = menu?.findItem(R.id.action_delete_selected)
+            val favoriteItem = menu?.findItem(R.id.action_favorite_selected)
+            val moveItem = menu?.findItem(R.id.action_move)
 
-                if (!value) { // Se la modalità si disattiva
-                    pdfListViewModel.clearAllSelections() // Deseleziona tutti gli elementi
+            // Voci di menu per la modalità di spostamento
+            val moveHereItem = menu?.findItem(R.id.action_move_here)
+            val cancelMoveItem = menu?.findItem(R.id.action_cancel_move)
+            val moveBackItem = menu?.findItem(R.id.action_move_back)
+
+            if (isMoving) {
+                // Modalità di spostamento: mostra "Sposta qui" e "Annulla"
+                deleteItem?.isVisible = false
+                favoriteItem?.isVisible = false
+                moveItem?.isVisible = false
+
+                moveHereItem?.isVisible = true
+                cancelMoveItem?.isVisible = true
+
+
+                // Rendi visibile "Indietro" solo se non siamo nella root
+                moveBackItem?.isVisible = fileSystemViewModel.currentFolder.value != null
+
+                mode?.title = resources.getQuantityString(R.plurals.move_items_message, itemsToMoveCount, itemsToMoveCount)
+            } else {
+                // Modalità di selezione standard: mostra "Elimina", "Preferito", "Sposta"
+                deleteItem?.isVisible = true
+                favoriteItem?.isVisible = fileSystemViewModel.selectedItems.value.any { it is PdfFileItem }
+                moveItem?.isVisible = true
+
+                moveHereItem?.isVisible = false
+                cancelMoveItem?.isVisible = false
+                moveBackItem?.isVisible = false
+
+                mode?.title = "$selectedCount selezionati"
+
+                // Aggiorna il titolo di "Seleziona tutto"
+                val currentFolderId = fileSystemViewModel.currentFolder.value?.id ?: FileSystemDatasource.ROOT_FOLDER_ID
+                val allItemsInCurrentFolder = fileSystemViewModel.filteredAndDisplayedItems.value.filter { it.parentFolderId == currentFolderId }
+
+            }
+            return true
+        }
+
+        override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
+            return when (item?.itemId) {
+                R.id.action_delete_selected -> {
+                    showDeleteConfirmationDialog()
+                    true
                 }
-
-                // **NUOVO: Forziamo l'aggiornamento dell'adapter con la lista corrente**
-                // Questo è cruciale perché la RecyclerView ricolleghi gli item
-                // e applichi il nuovo stato di isSelectionModeActive per la visibilità del cestino.
-                // Otteniamo la lista corrente filtrata dal ViewModel.
-                pdfListViewModel.pdfFiles.value?.let { currentFilteredList ->
-                    pdfFileAdapter.submitList(currentFilteredList)
+                R.id.action_favorite_selected -> {
+                    fileSystemViewModel.toggleFavoriteSelectedPdfs()
+                    mode?.finish()
+                    true
                 }
-
-
-                // Logica per la visibilità del FAB
-                if (value) {
-                    binding.floatingActionButton.visibility = View.GONE
-                } else {
-                    binding.floatingActionButton.visibility = View.VISIBLE
+                R.id.action_move -> {
+                    fileSystemViewModel.initiateMove() // Inizia l'operazione di spostamento
+                    mode?.invalidate() // Invalida la CAB per mostrare le nuove opzioni
+                    Snackbar.make(binding.root, "Elementi pronti per lo spostamento. Naviga nella cartella di destinazione.", Snackbar.LENGTH_LONG).show()
+                    true
                 }
+                R.id.action_move_here -> { // GESTIONE "SPOSTA QUI"
+                    fileSystemViewModel.moveItemsToCurrentFolder()
+                    Snackbar.make(binding.root, "Elementi spostati con successo!", Snackbar.LENGTH_SHORT).show()
+                    mode?.finish()
+                    true
+                }
+                R.id.action_cancel_move -> { // GESTIONE "ANNULLA SPOSTAMENTO"
+                    fileSystemViewModel.cancelMoveOperation()
+                    Snackbar.make(binding.root, "Operazione di spostamento annullata.", Snackbar.LENGTH_SHORT).show()
+                    mode?.finish() // Chiude la CAB
+                    true
+                }
+                R.id.action_move_back -> { // GESTIONE "INDIETRO" IN MODALITÀ SPOSTAMENTO
+                    fileSystemViewModel.goBack()
+                    mode?.invalidate() // Invalida la CAB per aggiornare la visibilità del pulsante "Indietro" (se si torna alla root)
+                    true
+                }
+                else -> false
             }
         }
 
-    /**
-     * @param inflater L'LayoutInflater per gonfiare il layout.
-     * @param container Il ViewGroup genitore a cui la UI del Fragment dovrebbe essere attaccata.
-     * @param savedInstanceState Se non nullo, questo Fragment sta venendo ricreato da un precedente stato salvato.
-     * @return La View radice del layout del Fragment.
-     */
+
+        override fun onDestroyActionMode(mode: ActionMode?) {
+            actionMode = null
+            fileSystemViewModel.clearAllSelections()
+            fileSystemViewModel.cancelMoveOperation()
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Gonfia il layout 'fragment_folders.xml' utilizzando View Binding.
         _binding = FragmentFoldersBinding.inflate(inflater, container, false)
         return binding.root
     }
 
-    /**
-     * Metodo chiamato subito dopo che onCreateView ha restituito la View,
-     * e la gerarchia delle View del Fragment è stata completamente creata.
-     * Questo è il luogo ideale per inizializzare le View, impostare i listener,
-     * e osservare i LiveData dal ViewModel.
-     *
-     * @param view La View radice del Fragment (uguale a `binding.root`).
-     * @param savedInstanceState Lo stato salvato del Fragment.
-     */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Ottiene un'istanza del PdfListViewModel.
-        // `requireActivity()` garantisce che il ViewModel sia con scope all'Activity,
-        // permettendo la condivisione tra più Fragment nella stessa Activity.
-        pdfListViewModel = ViewModelProvider(requireActivity())[PdfListViewModel::class.java]
+        fileSystemViewModel = ViewModelProvider(requireActivity(),
+            FileSystemViewModel.FileSystemViewModelFactory(requireActivity().application)
+        )[FileSystemViewModel::class.java]
 
-        // Inizializza l'adapter per la RecyclerView, passando 'this' (il Fragment) come listener per i click.
-        pdfFileAdapter = PdfFileAdapter(this, isSelectionModeActive)
+        fileSystemViewModel.goToRoot()
 
-        // Configura la RecyclerView:
+        setupRecyclerView()
+        setupListeners()
+        observeViewModel()
+    }
+
+    private fun setupRecyclerView() {
+        fileSystemAdapter = FileSystemAdapter(
+            onItemClick = onItemClick@{ item ->
+
+                if (fileSystemViewModel.isMovingItems.value) {
+                    if (item is PdfFileItem) {
+                        // Se siamo in modalità spostamento e clicchiamo un PDF, non aprirlo.
+                        // Invece, mostra un messaggio all'utente chiamando il ViewModel.
+                        fileSystemViewModel.showUserMessage("Clicca su una cartella per navigare o 'Sposta qui' per confermare.")
+                        Log.d("FoldersFragment", "Tentativo di aprire PDF in modalità spostamento, impedito: ${item.displayName}")
+                        return@onItemClick // Esci dalla lambda onItemClick
+                    }
+                    // Se è una cartella in modalità spostamento, permetti la navigazione
+                    // La logica di enterFolder gestirà se la navigazione è permessa o meno.
+                    else if (item is FolderItem) {
+                        fileSystemViewModel.enterFolder(item)
+                        return@onItemClick // Esci dalla lambda onItemClick dopo aver gestito la cartella
+                    }
+                }
+
+                // Questa parte del codice viene eseguita solo se:
+                // 1. Non siamo in modalità spostamento (isMovingItems.value è false)
+                // 2. Siamo in modalità spostamento, ma l'elemento cliccato non è un PdfFileItem
+                //    (cioè, è una FolderItem e la navigazione è stata permessa sopra).
+                when (item) {
+                    is PdfFileItem -> {
+                        val pdfUri = item.uriString.toUri()
+                        Log.d("FoldersFragment", "Tentativo di aprire PDF con URI: $pdfUri")
+
+                        val intent = Intent(requireContext(), PDFViewerActivity::class.java).apply {
+                            putExtra("pdf_uri", pdfUri)
+                            putExtra("pdf_display_name", item.displayName)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        startActivity(intent)
+                        Toast.makeText(requireContext(), "Apertura PDF: ${item.displayName}", Toast.LENGTH_SHORT).show()
+                    }
+                    is FolderItem -> {
+                        // Questa parte verrà eseguita solo se non eravamo in modalità spostamento
+                        // o se la navigazione in modalità spostamento è stata gestita sopra.
+                        fileSystemViewModel.enterFolder(item)
+                    }
+                }
+            },
+            onItemLongClick = { item ->
+                fileSystemViewModel.toggleSelection(item)
+                true
+            },
+            onSelectionToggle = { item ->
+                fileSystemViewModel.toggleSelection(item)
+            },
+            onFavoriteToggle = { pdfFile ->
+                Log.d("FoldersFragment", "Received favorite toggle for: ${pdfFile.displayName}")
+                fileSystemViewModel.toggleFavorite(pdfFile)
+            }
+        )
+
         binding.pdfRecyclerView.apply {
             layoutManager = LinearLayoutManager(context)
-            adapter = pdfFileAdapter
-            setHasFixedSize(true) // Ottimizzazione per performance se la dimensione degli item non cambia.
+            adapter = fileSystemAdapter
         }
+    }
 
-        // Osserva il LiveData 'pdfFiles' dal ViewModel.
-        // Ogni volta che la lista di PDF cambia nel ViewModel, l'adapter viene aggiornato
-        // con la nuova lista tramite submitList(), e la RecyclerView si ridisegna.
-        pdfListViewModel.pdfFiles.observe(viewLifecycleOwner) { pdfFiles ->
-            pdfFileAdapter.submitList(pdfFiles)
-
-            val selectedCount = pdfFiles.count { it.isSelected }
-
-            if (selectedCount == 0 && isSelectionModeActive) {
-                // Se nessun elemento è selezionato MA la modalità è attiva, disattivala.
-                // Questo copre il caso in cui l'utente deseleziona l'ultimo elemento.
-                isSelectionModeActive = false // Il setter sopra verrà chiamato e farà notifyDataSetChanged().
-            } else if (selectedCount > 0 && !isSelectionModeActive) {
-                // Se ci sono elementi selezionati MA la modalità NON è attiva, attivala.
-                isSelectionModeActive = true
-            }
-        }
-
-        // Logica per la searchView
-        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            // Chiamato quando l'utente preme "Invio" o completa la query di ricerca.
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                // Quando la query viene sottomessa, applica il filtro
-                pdfListViewModel.applyFilter(query ?: "")
-                // Nascondi la tastiera
-                binding.searchView.clearFocus()
-                return true
-            }
-
-            // Chiamato ogni volta che il testo della query cambia.
-            override fun onQueryTextChange(newText: String?): Boolean {
-                // Ogni volta che il testo cambia, applica il filtro.
-                // Questo crea un'esperienza di ricerca "live".
-                pdfListViewModel.applyFilter(newText ?: "")
-                return true
-            }
-        })
-
-        // --- Gestione degli WindowInsets ---
-        val bannerContentLayout = binding.bannerContentLayout
-
-        ViewCompat.setOnApplyWindowInsetsListener(bannerContentLayout) { v, insets ->
-            val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-
-            v.setPadding(
-                v.paddingLeft,
-                systemBarsInsets.top,
-                v.paddingRight,
-                v.paddingBottom
-            )
-            insets
-        }
-        // --- Fine della gestione degli WindowInsets ---
-
-        // Imposta il click listener per il Floating Action Button (FAB).
+    private fun setupListeners() {
+        // --- RIPRISTINATO IL COMPORTAMENTO DEL FAB ---
         binding.floatingActionButton.setOnClickListener {
             rotateFabForward()
             showPopupMenu()
         }
 
-    }
-
-    /**
-     * Metodo chiamato quando la View del Fragment sta per essere distrutta.
-     * È cruciale nullificare l'oggetto View Binding qui per prevenire memory leak,
-     * poiché la View non è più valida e il binding conterrebbe riferimenti a essa.
-     */
-    override fun onDestroyView() {
-        super.onDestroyView()
-
-        pdfListViewModel.applyFilter("")
-        binding.searchView.setQuery("", false)
-
-
-        if (isSelectionModeActive) {
-            isSelectionModeActive = false
+        val searchEditText = binding.searchView.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)
+        searchEditText?.let {
+            it.background = null // Questo è cruciale per rimuovere la sottolineatura predefinita
+            it.setTextColor(requireContext().getColor(android.R.color.white)) // <--- CAMBIATO QUI: Testo bianco
+            it.setHintTextColor(requireContext().getColor(android.R.color.darker_gray)) // Suggerimento grigio scuro
+            Log.d("FoldersFragment", "SearchView EditText configurato (background, testo, suggerimento).")
+        } ?: run {
+            Log.e("FoldersFragment", "Errore: Impossibile trovare l'EditText interno della SearchView!")
         }
-        _binding = null
-    }
 
-    // --- Altre funzioni ---
-
-    /**
-     * Implementazione del metodo onPdfFileClick dell'interfaccia OnPdfFileClickListener.
-     * Chiamato quando un elemento PDF nella lista viene cliccato.
-     * Avvia il PDFViewerActivity per visualizzare il PDF selezionato, passando
-     * l'URI e il nome visualizzato del file tramite un Intent.
-     *
-     * @param pdfFile L'oggetto [PdfFileItem] del PDF cliccato.
-     */
-    override fun onPdfFileClick(pdfFile: PdfFileItem) {
-        if (this.isSelectionModeActive) {
-            // Se la modalità di selezione è attiva, un click su un item toggla la sua selezione.
-            pdfListViewModel.togglePdfSelection(pdfFile)
-            // L'adapter si occuperà di aggiornare la UI della card specifica.
-            // Non è necessario disattivare la modalità qui, perché l'utente potrebbe voler selezionare altri item.
-        } else {
-            // Se la modalità di selezione NON è attiva, un click normale apre il PDF.
-            val intent = Intent(requireContext(), PDFViewerActivity::class.java).apply {
-                putExtra("pdf_uri", pdfFile.uriString.toUri())
-                putExtra("pdf_display_name", pdfFile.displayName)
+        binding.searchView.setOnQueryTextListener(object : androidx.appcompat.widget.SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                fileSystemViewModel.setSearchQuery(query ?: "")
+                binding.searchView.clearFocus()
+                return true
             }
-            startActivity(intent)
-            Toast.makeText(context, "Opening ${pdfFile.displayName}", Toast.LENGTH_SHORT).show()
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                fileSystemViewModel.setSearchQuery(newText ?: "")
+                return true
+            }
+        })
+
+        binding.backButton.setOnClickListener {
+            if (fileSystemViewModel.isSelectionModeActive.value) {
+                fileSystemViewModel.exitSelectionMode()
+            } else {
+                fileSystemViewModel.goBack()
+            }
         }
     }
 
-    /**
-     * Chiamato quando un elemento PdfFileItem nella lista viene tenuto premuto a lungo.
-     * Questo attiva la modalità di selezione e seleziona l'elemento.
-     * @param pdfFile L'oggetto PdfFileItem che è stato tenuto premuto.
-     */
-    override fun onPdfFileLongClick(pdfFile: PdfFileItem) {
-        if (!this.isSelectionModeActive) {
-            this.isSelectionModeActive = true
+    private fun observeViewModel() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            fileSystemViewModel.filteredAndDisplayedItems.collectLatest { items ->
+                Log.d("FoldersFragment", "Aggiornamento lista: ${items.size} elementi.")
+                Log.d("FoldersFragment", "Adapter riceve lista: ${items.size} elementi.")
+                fileSystemAdapter.submitList(items)
+            }
         }
-        pdfListViewModel.togglePdfSelection(pdfFile)
 
-    }
+        viewLifecycleOwner.lifecycleScope.launch {
+            fileSystemViewModel.currentFolder.collectLatest { folder ->
+                val title = folder?.displayName ?: getString(R.string.fragmentTwo)
+                binding.settingsTitleTextView.text = title
 
-    /**
-     * Mostra un AlertDialog di conferma prima di procedere con l'eliminazione dei PDF selezionati.
-     * @param itemCount Il numero di PDF che stanno per essere eliminati.
-     */
-    private fun showDeleteConfirmationDialog(itemCount: Int) {
-        AlertDialog.Builder(requireContext()) // Utilizza requireContext() per garantire un Context valido
-            .setTitle("Confirm deletion")
-            .setMessage("Are you sure you want to delete $itemCount PDF?")
-            .setPositiveButton("Eliminate") { dialog, _ ->
-
-                // Ottieni di nuovo la lista dei file selezionati (per sicurezza, nel caso sia cambiata).
-                val selectedFiles = pdfListViewModel.getSelectedPdfFiles()
-                if (selectedFiles.isNotEmpty()) {
-                    // Chiama il metodo del ViewModel per rimuovere TUTTI i file selezionati.
-                    pdfListViewModel.removePdfFiles(selectedFiles)
-                    Toast.makeText(requireContext(), "${selectedFiles.size} PDF(s) removed", Toast.LENGTH_SHORT).show()
+                if (folder != null) {
+                    binding.backButton.visibility = View.VISIBLE
+                } else {
+                    binding.backButton.visibility = View.GONE
                 }
-                dialog.dismiss()
+                Log.d("FoldersFragment", "Cartella corrente cambiata: ${folder?.displayName ?: "Root"}")
+
+                if (actionMode != null) {
+                    actionMode?.invalidate() // Forza la CAB a ri-valutare le voci di menu (es. pulsante "Indietro")
+                    Log.d("FoldersFragment", "CAB invalidata a causa del cambio cartella.")
+                }
             }
-            .setNegativeButton("Cancel") { dialog, _ ->
-                isSelectionModeActive = false
-                dialog.dismiss()
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            fileSystemViewModel.isSelectionModeActive.collectLatest { isActive ->
+                Log.d("FoldersFragment", "isSelectionModeActive cambiato a: $isActive")
+                if (isActive) {
+                    if (actionMode == null) {
+                        actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(actionModeCallback)
+                    }
+                    actionMode?.title = "${fileSystemViewModel.selectedItems.value.size} selezionati"
+                    actionMode?.invalidate() // Invalida per aggiornare le voci di menu
+                } else {
+                    // Chiude la CAB solo se NON siamo in modalità di spostamento
+                    if (!fileSystemViewModel.isMovingItems.value) { // <--- AGGIUNTA QUESTA CONDIZIONE
+                        actionMode?.finish()
+                        Log.d("FoldersFragment", "CAB chiusa perché non in modalità selezione e non in modalità spostamento.")
+                    } else {
+                        Log.d("FoldersFragment", "CAB non chiusa perché in modalità spostamento.")
+                    }
+                }
+                fileSystemAdapter.setSelectionMode(isActive)
             }
-            .create()
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            fileSystemViewModel.selectedItems.collectLatest { selectedItems ->
+                actionMode?.title = "${selectedItems.size} selezionati"
+                actionMode?.invalidate()
+            }
+        }
+    }
+
+    private fun showNewFolderDialog() {
+        val builder = AlertDialog.Builder(requireContext())
+        builder.setTitle("Nuova Cartella")
+
+        val input = android.widget.EditText(requireContext())
+        builder.setView(input)
+
+        builder.setPositiveButton("Crea") { dialog, _ ->
+            val folderName = input.text.toString().trim()
+            if (folderName.isNotBlank()) {
+                fileSystemViewModel.createNewFolder(folderName)
+            } else {
+                Toast.makeText(requireContext(), "Il nome della cartella non può essere vuoto", Toast.LENGTH_SHORT).show()
+            }
+            dialog.dismiss()
+        }
+        builder.setNegativeButton("Annulla") { dialog, _ ->
+            dialog.cancel()
+        }
+        builder.show()
+    }
+
+    private fun showDeleteConfirmationDialog() {
+        val selectedCount = fileSystemViewModel.selectedItems.value.size
+        val message = if (selectedCount == 1) {
+            "Sei sicuro di voler eliminare l'elemento selezionato?"
+        } else {
+            "Sei sicuro di voler eliminare i $selectedCount elementi selezionati?"
+        }
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Conferma Eliminazione")
+            .setMessage(message)
+            .setPositiveButton("Elimina") { dialog, _ ->
+                fileSystemViewModel.deleteSelectedItems()
+                dialog.dismiss()
+                actionMode?.finish()
+            }
+            .setNegativeButton("Annulla") { dialog, _ ->
+                dialog.cancel()
+            }
             .show()
     }
 
-    /**
-     * Chiamato quando l'icona del cestino di un PdfFileItem nella lista viene cliccata.
-     * Ora, questo metodo innesca una richiesta di conferma prima di procedere con l'eliminazione
-     * di TUTTI i PDF selezionati.
-     * @param pdfFile L'oggetto PdfFileItem la cui icona cestino è stata cliccata (il parametro
-     * è ancora richiesto dall'interfaccia, ma non viene usato direttamente per l'eliminazione).
-     */
-    override fun onDeleteIconClick(pdfFile: PdfFileItem) {
-        // Recupera TUTTI i PDF attualmente selezionati dal ViewModel.
-        val selectedFiles = pdfListViewModel.getSelectedPdfFiles()
+    override fun onDestroyView() {
+        super.onDestroyView()
+        actionMode?.finish()
+        actionMode = null
+        _binding = null
 
-        if (selectedFiles.isNotEmpty()) {
-            // Se ci sono file selezionati, mostra il dialog di conferma.
-            showDeleteConfirmationDialog(selectedFiles.size)
-        }
-        // Nota: La logica per disattivare la modalità di selezione (isSelectionModeActive = false)
-        // e aggiornare la UI è gestita automaticamente dall'observer di pdfFiles in onViewCreated
-        // una volta che i file vengono effettivamente rimossi dal ViewModel.
     }
 
-    /**
-     * NUOVO: Implementazione del metodo onFavoriteIconClick dell'interfaccia OnPdfFileClickListener.
-     * Chiamato quando l'icona della stella di un elemento PDF viene cliccata.
-     * Toggla lo stato 'isFavorite' del PDF corrispondente nel ViewModel.
-     *
-     * @param pdfFile L'oggetto [PdfFileItem] la cui icona preferiti è stata cliccata.
-     */
-    override fun onFavoriteIconClick(pdfFile: PdfFileItem) {
-        pdfListViewModel.toggleFavorite(pdfFile) // Chiamata al nuovo metodo del ViewModel
-    }
-
-    /**
-     * Mostra un popup menu personalizzato centrato sopra il Floating Action Button (FAB).
-     * Il popup offre opzioni come l'importazione di PDF o la creazione di cartelle.
-     * Gestisce il posizionamento del popup per apparire correttamente rispetto al FAB.
-     */
+    // --- Metodi per il FAB Popup ---
     private fun showPopupMenu() {
-        // Gonfia il layout del popup menu utilizzando View Binding.
-        val popupBinding = CustomPopupMenuBinding.inflate(LayoutInflater.from(requireContext()))
-        // La proprietà .root di questo oggetto popupBinding
-        // ti restituisce direttamente la View genitore più esterna (quella che racchiude tutte le altre)
-        // del layout custom_popup_menu.xml
+        val popupBinding = it.lavorodigruppo.flexipdf.databinding.CustomPopupMenuBinding.inflate(LayoutInflater.from(requireContext()))
         val popupView = popupBinding.root
 
-        // Misura la view del popup per calcolare le sue dimensioni prima di mostrarla.
-        // Questo è necessario per posizionare correttamente il popup rispetto al FAB.
         popupView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
 
-        // Crea un'istanza di PopupWindow.
-        val popupWindow = PopupWindow(
+        val popupWindow = android.widget.PopupWindow(
             popupView,
-            ViewGroup.LayoutParams.WRAP_CONTENT, // Larghezza del popup
-            ViewGroup.LayoutParams.WRAP_CONTENT, // Altezza del popup
-            true // Rendere il popup focusable per poterlo chiudere cliccando fuori.
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            true
         )
 
-        // Ottiene la posizione (X, Y) del FAB sullo schermo.
         val location = IntArray(2)
         binding.floatingActionButton.getLocationOnScreen(location)
 
-        val fabX = location[0] // Coordinata X del FAB
-        val fabY = location[1] // Coordinata Y del FAB
-        val popupWidth = popupView.measuredWidth // Larghezza misurata del popup
-        val fabWidth = binding.floatingActionButton.width // Larghezza del FAB
+        val fabX = location[0]
+        val fabY = location[1]
+        val popupWidth = popupView.measuredWidth
+        val fabWidth = binding.floatingActionButton.width
 
-        // Calcola l'offset X per posizionare il popup leggermente a sinistra del centro del FAB.
-        val xOffset = fabX - popupWidth + fabWidth/3
-        // Calcola l'offset Y per posizionare il popup sopra il FAB.
+        val xOffset = fabX - popupWidth + fabWidth / 3
         val yOffset = fabY - popupView.measuredHeight
 
-        // Aggiunge un margine extra per separare il popup dal FAB.
         val margin = (15 * resources.displayMetrics.density).toInt()
         val finalYOffset = yOffset - margin
 
-        // Mostra il popup in una posizione specifica sullo schermo.
         popupWindow.showAtLocation(
             binding.root,
-            Gravity.NO_GRAVITY,
+            android.view.Gravity.NO_GRAVITY,
             xOffset,
             finalYOffset
         )
 
-        // --- Listeners per le opzioni del popup ---
-
-        // Listener per l'opzione "Importa PDF".
         popupBinding.optionImportPdf.setOnClickListener {
-            // Notifica all'Activity tramite il listener di avviare il selettore PDF.
-            listener?.launchPdfPicker()
+            (activity as? OnPdfPickerListener)?.launchPdfPicker()
             popupWindow.dismiss()
         }
 
-        // Listener per l'opzione "Crea nuova cartella".
         popupBinding.optionCreateFolder.setOnClickListener {
-            Toast.makeText(context, "Create new folder clicked!", Toast.LENGTH_SHORT).show()
+            showNewFolderDialog() // Chiama il dialog per creare la cartella
             popupWindow.dismiss()
         }
-    }
 
-    // --- Gestione del PDF Picker ---
-
-    /**
-     *
-     * Questi metodi assicurano che il listener verso l'Activity sia gestito correttamente
-     * durante il ciclo di vita del Fragment.
-     *
-     * Questa sezione del codice gestisce la comunicazione tra il FoldersFragment e l'Activity
-     * che lo ospita MainActivity, per richiedere l'avvio del selettore
-     * di file PDF. Questo pattern di comunicazione è una best practice per garantire
-     * disaccoppiamento, sicurezza del tipo e corretta gestione del ciclo di vita.
-     *
-     * Definizione dell'Interfaccia: OnPdfPickerListener (all'inizio di questo file)
-     * Questa interfaccia agisce come un contratto. Dichiarando `fun launchPdfPicker()`,
-     * impone che qualsiasi classe che voglia ricevere richieste
-     * da questo Fragment per avviare il PDF picker, debba implementare tale metodo.
-     * Questo assicura che il Fragment non abbia conoscenze dirette sulla classe specifica
-     * dell'Activity, promuovendo il disaccoppiamento.
-     *
-     * FoldersFragment richiede un listener
-     * Il Fragment ha il compito di reagire all'interazione dell'utente (es. clic sull'opzione
-     * "Importa PDF" nel popup del FAB). Tuttavia, l'azione concreta di avviare un selettore
-     * di file di sistema e gestire il risultato è un compito che idealmente spetta all'Activity
-     * (poiché l'Activity è più adatta a gestire permessi, risultati di altre Activity, ecc.).
-     * Perciò, il Fragment "richiede" un listener (l'Activity) che si faccia carico di questa operazione.
-     * La variabile `listener: OnPdfPickerListener?` nel Fragment è il riferimento a questo "qualcuno".
-     *
-     * L'Activity implementa l'interfaccia
-     * L'Activity ospitante (ad esempio, la tua `MainActivity`) deve dichiarare esplicitamente
-     * che implementa il contratto OnPdfPickerListener
-     *
-     *
-     * Associazione in onAttach(context: Context)
-     * Questo metodo del ciclo di vita del Fragment viene chiamato quando il Fragment
-     * è stato associato al suo Context (che è l'Activity).
-     * - `context` è il riferimento all'Activity ospitante.
-     * - La condizione `if (context is OnPdfPickerListener)` verifica dinamicamente
-     * se l'Activity che ospita il Fragment implementa il contratto definito.
-     * - Se la condizione è vera, `listener = context` assegna il riferimento all'Activity
-     * alla variabile `listener` del Fragment. Ora il Fragment ha un modo sicuro e tipizzato
-     * per chiamare i metodi definiti nell'interfaccia sull'Activity.
-     * - La `throw RuntimeException(...)` agisce come un "fallimento rapido": se, per errore,
-     * il Fragment fosse ospitato da un'Activity che non implementa OnPdfPickerListener,
-     * un'eccezione chiara avvertirebbe immediatamente dello sbaglio di implementazione.
-     *
-     * Comunicazione dal Fragment all'Activity
-     * Quando l'utente attiva l'azione che richiede l'avvio del PDF picker (es. cliccando
-     * sull'opzione "Importa PDF" nel popup), il Fragment chiama `listener?.launchPdfPicker()`.
-     * Dato che `listener` punta all'istanza della tua `MainActivity` (o equivalente),
-     * questa chiamata si traduce nell'esecuzione del metodo `launchPdfPicker()` definito
-     * nell'Activity.
-     *
-     * Disassociazione in onDetach()]
-     * Questo metodo del ciclo di vita viene chiamato quando il Fragment sta per essere
-     * disassociato dal suo Context (l'Activity).
-     * - `listener = null` rimuove il riferimento all'Activity dalla variabile `listener`.
-     * - Questa pulizia è fondamentale per prevenire memory leak. Se il riferimento
-     * all'Activity non venisse nullificato, e l'Activity dovesse essere distrutta
-     * (es. a seguito di un cambio di configurazione o chiusura dell'app), il Fragment
-     * manterrebbe un riferimento a un'istanza "morta" dell'Activity, impedendone
-     * la raccolta da parte del garbage collector e sprecando memoria.
-     *
-     */
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        if (context is OnPdfPickerListener) {
-            listener = context
-        } else {
-            // Lancia un'eccezione se l'Activity non implementa il listener richiesto.
-            throw RuntimeException("$context must implement OnPdfPickerListener")
+        // Aggiungi un listener per quando il popup si chiude (es. cliccando fuori)
+        popupWindow.setOnDismissListener {
+            rotateFabBackward() // Riporta il FAB alla posizione originale
         }
     }
 
-    override fun onDetach() {
-        super.onDetach()
-        listener = null
-    }
-    // --- Fine della gestione del PDF Picker ---
-
-    /**
-     * Esegue un'animazione di rotazione sul Floating Action Button (FAB).
-     * Utilizza ObjectAnimator per ruotare il FAB di 90 gradi con un effetto di "overshoot"
-     * (rimbalzo) per una migliore sensazione utente.
-     */
     private fun rotateFabForward() {
         ObjectAnimator.ofFloat(binding.floatingActionButton, "rotation", 0f, 90f).apply {
-            duration = 500 // Durata dell'animazione in millisecondi.
-            interpolator = OvershootInterpolator()
+            duration = 500
+            interpolator = android.view.animation.OvershootInterpolator()
             start()
         }
     }
 
+    private fun rotateFabBackward() {
+        ObjectAnimator.ofFloat(binding.floatingActionButton, "rotation", 90f, 0f).apply {
+            duration = 500
+            interpolator = android.view.animation.OvershootInterpolator()
+            start()
+        }
+    }
 }
