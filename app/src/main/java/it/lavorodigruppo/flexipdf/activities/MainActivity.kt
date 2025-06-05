@@ -84,48 +84,7 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
     private lateinit var binding: ActivityMainBinding
     private lateinit var pdfManager: PdfManager
     private lateinit var fileSystemViewModel: FileSystemViewModel
-/*
-    private val STORAGE_PERMISSION_CODE = 100
-    private val mTag = "PERMISSION_TAG"
 
-    private fun requestPermission() {
-        try {
-            Log.d(mTag, "requestPermission: try")
-            val intent = Intent()
-            intent.action = Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION
-            val uri = Uri.fromParts("package", this.packageName, null)
-            intent.data = uri
-        }
-        catch (e: Exception) {
-            Log.e(mTag, "requestPermission: ", e)
-            val intent = Intent()
-            intent.action = Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION
-        }
-    }
-
-    private fun checkPermission() : Boolean {
-        return Environment.isExternalStorageManager()
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray,
-        deviceId: Int
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
-        if (requestCode == STORAGE_PERMISSION_CODE) {
-            if(grantResults.isNotEmpty()) {
-                val write = grantResults[0] == PackageManager.PERMISSION_GRANTED
-                val read = grantResults[1] == PackageManager.PERMISSION_GRANTED
-                if (write && read) {
-                    Log.d (mTag, "onRequestPermissionResult: ")
-
-                }
-            }
-        }
-    }
-*/
     // ActivityResultLauncher per selezionare i PDF
     // Questo è il modo moderno per gestire i risultati delle Activity
     private val pickPdfLauncher = registerForActivityResult(

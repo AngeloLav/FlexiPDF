@@ -16,9 +16,7 @@
 package it.lavorodigruppo.flexipdf.fragments
 
 import android.animation.ObjectAnimator
-import android.content.ContentResolver
 import android.content.Intent
-import android.net.Uri
 import androidx.core.net.toUri
 import android.os.Bundle
 import android.util.Log
@@ -28,7 +26,6 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -38,11 +35,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import it.lavorodigruppo.flexipdf.R
-import it.lavorodigruppo.flexipdf.activities.MainActivity
 import it.lavorodigruppo.flexipdf.activities.PDFViewerActivity
 import it.lavorodigruppo.flexipdf.adapters.FileSystemAdapter
 import it.lavorodigruppo.flexipdf.databinding.FragmentFoldersBinding // Assicurati che il nome del binding sia corretto
-import it.lavorodigruppo.flexipdf.items.FileSystemItem
 import it.lavorodigruppo.flexipdf.items.FolderItem
 import it.lavorodigruppo.flexipdf.items.PdfFileItem
 import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel
@@ -111,7 +106,7 @@ class FoldersFragment : Fragment() {
 
                 // Aggiorna il titolo di "Seleziona tutto"
                 val currentFolderId = fileSystemViewModel.currentFolder.value?.id ?: FileSystemDatasource.ROOT_FOLDER_ID
-                val allItemsInCurrentFolder = fileSystemViewModel.filteredAndDisplayedItems.value.filter { it.parentFolderId == currentFolderId }
+              //  val allItemsInCurrentFolder = fileSystemViewModel.filteredAndDisplayedItems.value.filter { it.parentFolderId == currentFolderId }
 
             }
             return true
@@ -350,7 +345,7 @@ class FoldersFragment : Fragment() {
         val builder = AlertDialog.Builder(requireContext())
         builder.setTitle(R.string.new_folder)
 
-        val input = android.widget.EditText(requireContext())
+        val input = EditText(requireContext())
         builder.setView(input)
 
         builder.setPositiveButton(R.string.create) { dialog, _ ->
