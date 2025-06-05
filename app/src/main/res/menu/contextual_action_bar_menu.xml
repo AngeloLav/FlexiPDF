@@ -5,6 +5,7 @@
         android:id="@+id/action_move"
         android:icon="@drawable/content_cut_24dp_f3f3f3_fill0_wght400_grad0_opsz24"
         android:title="@string/move"
+        app:iconTint="?attr/colorPrimary"
         app:showAsAction="ifRoom" />
 
     <item
@@ -23,12 +24,14 @@
         android:id="@+id/action_move_back"
         android:icon="@drawable/arrow_back_24dp_efefef_fill0_wght400_grad0_opsz24"
         android:title="@string/go_back"
+        app:iconTint="?attr/colorPrimary"
         android:visible="false"
     app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_move_here"
         android:icon="@drawable/arrow_downward_24dp_f3f3f3_fill0_wght400_grad0_opsz24"
         android:title="@string/move_here"
+        app:iconTint="?attr/colorPrimary"
         android:visible="false"
         app:showAsAction="ifRoom" />
 
@@ -36,6 +39,7 @@
         android:id="@+id/action_cancel_move"
         android:icon="@drawable/close_24dp_f3f3f3_fill0_wght400_grad0_opsz24"
         android:title="@string/cancel"
+        app:iconTint="?attr/colorPrimary"
         android:visible="false"
         app:showAsAction="ifRoom" />
 </menu>
