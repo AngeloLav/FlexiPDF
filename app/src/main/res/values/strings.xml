@@ -51,8 +51,8 @@
     <string name="cancel">Cancel</string>
     <string name="move_here">move_here</string>
 
-    <others name="move_items_message" >
+    <plurals name="move_items_message" >
         <item quantity="one">One element is ready to be moved. Go to the destination folder.</item>
         <item quantity="other">%d elements ready to be moved.Go to the destination folder.</item>
-    </others>
+    </plurals>
 </resources>

@@ -53,8 +53,8 @@
     <string name="cancel">Cancella</string>
     <string name="move_here">muovi_qua</string>
 
-    <many name="move_items_message">
+    <plurals name="move_items_message">
         <item quantity="one">1 elemento pronto per lo spostamento. Naviga nella cartella di destinazione.</item>
-        <item quantity="other">%d elementi pronti per lo spostamento. Naviga nella cartella di destinazione.</item>
-    </many>
+        <item quantity="many">%d elementi pronti per lo spostamento. Naviga nella cartella di destinazione.</item>
+    </plurals>
 </resources>
