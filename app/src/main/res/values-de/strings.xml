@@ -52,8 +52,8 @@
     <string name="cancel">Fertig</string>
     <string name="move_here">hierher_ziehen</string>
 
-    <plurals name="move_items_message" >
+    <others name="move_items_message" >
         <item quantity="one">Ein Objekt kann verschoben werden. Navigieren Sie zum Zielordner.</item>
         <item quantity="other">%d Objekte können verschoben werden. Navigieren Sie zum Zielordner.</item>
-    </plurals>
+    </others>
 </resources>
