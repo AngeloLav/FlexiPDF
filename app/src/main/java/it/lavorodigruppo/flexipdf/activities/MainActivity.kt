@@ -52,9 +52,12 @@
 package it.lavorodigruppo.flexipdf.activities
 
 import android.net.Uri
+import android.nfc.Tag
+import android.os.Build
 import android.os.Bundle
 import android.view.MenuItem
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider

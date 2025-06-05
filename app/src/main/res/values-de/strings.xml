@@ -39,21 +39,29 @@
     <string name="file_icon_description">1%s</string>
     <string name="folders_icon_description">1%s</string>
 
-    <string name="delete_pdf_description">Löschen PDF</string>
+    <string name="delete_pdf_description">Löschen bestätigen</string>
     <string name="favorite_icon_description">Favoriten PDF</string>
     <string name="recent_icon_description">Verlauf PDF</string>"
 
     <string name="select_all">Alles auswählen</string>
     <string name="favourite">Favoriten</string>
     <string name="unfavourite">Aus den Favoriten entfernen</string>
+    <string name="new_folder">Neuer Ordner</string>
     <string name="delete">Löschen</string>
     <string name="go_back">Geh zurück</string>
     <string name="move">Position verändern</string>
     <string name="cancel">Fertig</string>
     <string name="move_here">hierher_ziehen</string>
+    <string name="create">Erstellen</string>
+    <string name="selected"> ausgewählt</string>
+
+    <string name="message_empty_name">Der Ordnername darf nicht leer sein</string>
 
     <plurals name="move_items_message" >
         <item quantity="one">Ein Objekt kann verschoben werden. Navigieren Sie zum Zielordner.</item>
         <item quantity="other">%d Objekte können verschoben werden. Navigieren Sie zum Zielordner.</item>
     </plurals>
+
+    <string name="one_deletion_message">Möchten Sie das ausgewählte Element wirklich löschen?</string>
+    <string name="multiple_deletion_message">Sind Sie sicher, dass Sie %d ausgewählte Elemente löschen möchten?</string>
 </resources>
