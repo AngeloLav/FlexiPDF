@@ -107,7 +107,7 @@ class FoldersFragment : Fragment() {
                 cancelMoveItem?.isVisible = false
                 moveBackItem?.isVisible = false
 
-                mode?.title = "$selectedCount selezionati"
+                mode?.title = "$selectedCount" + getString(R.string.selected)
 
                 // Aggiorna il titolo di "Seleziona tutto"
                 val currentFolderId = fileSystemViewModel.currentFolder.value?.id ?: FileSystemDatasource.ROOT_FOLDER_ID
@@ -323,7 +323,7 @@ class FoldersFragment : Fragment() {
                     if (actionMode == null) {
                         actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(actionModeCallback)
                     }
-                    actionMode?.title = "${fileSystemViewModel.selectedItems.value.size} selezionati"
+                    actionMode?.title = "${fileSystemViewModel.selectedItems.value.size}" + getString(R.string.selected)
                     actionMode?.invalidate() // Invalida per aggiornare le voci di menu
                 } else {
                     // Chiude la CAB solo se NON siamo in modalità di spostamento
@@ -340,7 +340,7 @@ class FoldersFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             fileSystemViewModel.selectedItems.collectLatest { selectedItems ->
-                actionMode?.title = "${selectedItems.size} selezionati"
+                actionMode?.title = "${selectedItems.size}" + getString(R.string.selected)
                 actionMode?.invalidate()
             }
         }
@@ -348,21 +348,21 @@ class FoldersFragment : Fragment() {
 
     private fun showNewFolderDialog() {
         val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle("Nuova Cartella")
+        builder.setTitle(R.string.new_folder)
 
         val input = android.widget.EditText(requireContext())
         builder.setView(input)
 
-        builder.setPositiveButton("Crea") { dialog, _ ->
+        builder.setPositiveButton(R.string.create) { dialog, _ ->
             val folderName = input.text.toString().trim()
             if (folderName.isNotBlank()) {
                 fileSystemViewModel.createNewFolder(folderName)
             } else {
-                Toast.makeText(requireContext(), "Il nome della cartella non può essere vuoto", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.message_empty_name), Toast.LENGTH_SHORT).show()
             }
             dialog.dismiss()
         }
-        builder.setNegativeButton("Annulla") { dialog, _ ->
+        builder.setNegativeButton(R.string.cancel) { dialog, _ ->
             dialog.cancel()
         }
         builder.show()
@@ -371,20 +371,20 @@ class FoldersFragment : Fragment() {
     private fun showDeleteConfirmationDialog() {
         val selectedCount = fileSystemViewModel.selectedItems.value.size
         val message = if (selectedCount == 1) {
-            "Sei sicuro di voler eliminare l'elemento selezionato?"
+            R.string.one_deletion_message
         } else {
-            "Sei sicuro di voler eliminare i $selectedCount elementi selezionati?"
+            R.string.multiple_deletion_message
         }
 
         AlertDialog.Builder(requireContext())
-            .setTitle("Conferma Eliminazione")
+            .setTitle(R.string.delete_pdf_description)
             .setMessage(message)
-            .setPositiveButton("Elimina") { dialog, _ ->
+            .setPositiveButton(R.string.delete) { dialog, _ ->
                 fileSystemViewModel.deleteSelectedItems()
                 dialog.dismiss()
                 actionMode?.finish()
             }
-            .setNegativeButton("Annulla") { dialog, _ ->
+            .setNegativeButton(R.string.cancel) { dialog, _ ->
                 dialog.cancel()
             }
             .show()

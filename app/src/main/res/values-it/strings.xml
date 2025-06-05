@@ -40,21 +40,29 @@
     <string name="file_icon_description">1%s</string>
     <string name="folders_icon_description">1%s</string>
 
-    <string name="delete_pdf_description">Elimina PDF</string>
+    <string name="delete_pdf_description">Conferma eliminazione</string>
     <string name="favorite_icon_description">Metti sui preferiti</string>
     <string name="recent_icon_description">PDF recenti</string>"
 
     <string name="select_all">Seleziona tutto</string>
     <string name="favourite">Preferito</string>
     <string name="unfavourite">Rimuovi preferito</string>
+    <string name="new_folder">Nuova Cartella</string>
     <string name="delete">Elimina</string>
     <string name="go_back">Torna indietro</string>
     <string name="move">Muovi altrove</string>
     <string name="cancel">Cancella</string>
     <string name="move_here">muovi_qua</string>
+    <string name="create">Crea</string>
+    <string name="selected"> selezionati</string>
+
+    <string name="message_empty_name">Il nome della cartella non può essere vuoto</string>
 
     <plurals name="move_items_message">
         <item quantity="one">1 elemento pronto per lo spostamento. Naviga nella cartella di destinazione.</item>
         <item quantity="many">%d elementi pronti per lo spostamento. Naviga nella cartella di destinazione.</item>
     </plurals>
+
+    <string name="one_deletion_message"> Sei sicuro di voler eliminare l\'elemento selezionato?</string>
+    <string name="multiple_deletion_message">Sei sicuro di voler eliminare %d elementi selezionati?</string>
 </resources>

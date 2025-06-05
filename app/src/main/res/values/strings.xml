@@ -38,21 +38,29 @@
     <string name="file_icon_description">1%s</string>
     <string name="folders_icon_description">1%s</string>
 
-    <string name="delete_pdf_description">Delete PDF</string>
+    <string name="delete_pdf_description">Confirm deletion</string>
     <string name="favorite_icon_description">Favourite Pdf</string>
     <string name="recent_icon_description">Recent Pdf</string>"
 
     <string name="select_all">Select all</string>
     <string name="favourite">Favourite</string>
     <string name="unfavourite">Remove from favourite</string>
+    <string name="new_folder">New Folder</string>
     <string name="delete">Delete</string>
     <string name="go_back">Go back</string>
     <string name="move">Change position</string>
     <string name="cancel">Cancel</string>
+    <string name="create">Create</string>
     <string name="move_here">move_here</string>
+    <string name="selected"> selected</string>
+
+    <string name="message_empty_name">The name of the folder can\'t be empty</string>
 
     <plurals name="move_items_message" >
         <item quantity="one">One element is ready to be moved. Go to the destination folder.</item>
         <item quantity="other">%d elements ready to be moved.Go to the destination folder.</item>
     </plurals>
+
+    <string name="one_deletion_message">Are you sure you want to delete the one element selected?</string>
+    <string name="multiple_deletion_message">Are you sure you want to delete the %d elements selected?</string>
 </resources>
