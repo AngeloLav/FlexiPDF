@@ -126,18 +126,18 @@ class FoldersFragment : Fragment() {
                 R.id.action_move -> {
                     fileSystemViewModel.initiateMove() // Inizia l'operazione di spostamento
                     mode?.invalidate() // Invalida la CAB per mostrare le nuove opzioni
-                    Snackbar.make(binding.root, "Elementi pronti per lo spostamento. Naviga nella cartella di destinazione.", Snackbar.LENGTH_LONG).show()
+                    Snackbar.make(binding.root, getString(R.string.moving_items), Snackbar.LENGTH_LONG).show()
                     true
                 }
                 R.id.action_move_here -> { // GESTIONE "SPOSTA QUI"
                     fileSystemViewModel.moveItemsToCurrentFolder()
-                    Snackbar.make(binding.root, "Elementi spostati con successo!", Snackbar.LENGTH_SHORT).show()
+                    Snackbar.make(binding.root, getString(R.string.successful_moving_operation), Snackbar.LENGTH_SHORT).show()
                     mode?.finish()
                     true
                 }
                 R.id.action_cancel_move -> { // GESTIONE "ANNULLA SPOSTAMENTO"
                     fileSystemViewModel.cancelMoveOperation()
-                    Snackbar.make(binding.root, "Operazione di spostamento annullata.", Snackbar.LENGTH_SHORT).show()
+                    Snackbar.make(binding.root, getString(R.string.failed_moving_operation), Snackbar.LENGTH_SHORT).show()
                     mode?.finish() // Chiude la CAB
                     true
                 }

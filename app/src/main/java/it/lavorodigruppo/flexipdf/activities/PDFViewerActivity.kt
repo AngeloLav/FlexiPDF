@@ -61,13 +61,13 @@ class PDFViewerActivity : AppCompatActivity(), OnErrorListener { // <--- INTERFA
                     .load()
             } catch (e: Exception) {
                 Log.e("PDFViewerActivity", "Errore durante la concessione del permesso o caricamento del PDF: ${e.message}", e)
-                Toast.makeText(this, "Errore nel caricamento del PDF: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.pdf_load)+"${e.message}", Toast.LENGTH_LONG).show()
                 finish()
             }
 
         } else {
             Log.e("PDFViewerActivity", "Errore: URI PDF nullo nell'Intent.")
-            Toast.makeText(this, "Errore: nessun PDF da visualizzare.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.empty_pdf), Toast.LENGTH_LONG).show()
             finish()
         }
     }
@@ -75,7 +75,7 @@ class PDFViewerActivity : AppCompatActivity(), OnErrorListener { // <--- INTERFA
     // <--- METODO onError CORRETTO ---
     override fun onError(e: Throwable?) {
         Log.e("PDFViewerActivity", "Errore dalla libreria PDF: ${e?.message}", e)
-        Toast.makeText(this, "Errore durante il caricamento del PDF: ${e?.message}", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, getString(R.string.pdf_load)+"${e?.message}", Toast.LENGTH_LONG).show()
         // Puoi decidere di chiudere l'Activity qui o mostrare un messaggio più dettagliato
         // finish()
     }

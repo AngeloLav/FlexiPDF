@@ -55,7 +55,15 @@
     <string name="create">Erstellen</string>
     <string name="selected"> ausgewählt</string>
 
+    <string name="pdf_load">Fehler beim Laden der PDF: </string>
+    <string name="empty_pdf">Fehler: Keine PDF-Datei zum Anzeigen.</string>
+
+    <string name="successful_moving_operation">Die Elemente wurden erfolgreich verschoben</string>
+    <string name="failed_moving_operation">Der Umzugsvorgang wurde abgebrochen</string>
+
     <string name="message_empty_name">Der Ordnername darf nicht leer sein</string>
+
+    <string name="moving_items">Objekte können verschoben werden. Navigieren Sie zum Zielordner.</string>
 
     <plurals name="move_items_message" >
         <item quantity="one">Ein Objekt kann verschoben werden. Navigieren Sie zum Zielordner.</item>

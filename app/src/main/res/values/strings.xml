@@ -54,7 +54,15 @@
     <string name="move_here">move_here</string>
     <string name="selected"> selected</string>
 
+    <string name="pdf_load">Error encountered during PDF loading: </string>
+    <string name="empty_pdf">Error: There is no PDF to watch.</string>
+
+    <string name="successful_moving_operation">Elements moved successfully</string>
+    <string name="failed_moving_operation">Moving operation has been canceled</string>
+
     <string name="message_empty_name">The name of the folder can\'t be empty</string>
+
+    <string name="moving_items">Elements ready to be moved.Go to the destination folder.</string>
 
     <plurals name="move_items_message" >
         <item quantity="one">One element is ready to be moved. Go to the destination folder.</item>
