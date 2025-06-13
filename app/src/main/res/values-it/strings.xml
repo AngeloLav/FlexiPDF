@@ -73,4 +73,10 @@
 
     <string name="one_deletion_message"> Sei sicuro di voler eliminare l\'elemento selezionato?</string>
     <string name="multiple_deletion_message">Sei sicuro di voler eliminare %d elementi selezionati?</string>
+
+    <!--ZFlip widget-->
+    <string name="widget_icon_description">1%s</string>
+    <string name="widget_title">FlexiPDF APP sta ancora eseguendo</string>
+    <string name="widget_message">Il file 1%s è ancora aperto.</string>
+    <string name="empty_widget">Nessun file aperto</string>
 </resources>
