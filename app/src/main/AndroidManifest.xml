@@ -33,9 +33,9 @@
                 <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
                 <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
                 <action android:name="android.appwidget.action.APPWIDGET_DELETED" />
-                <meta-data android:name="android.appwidget.provider"
-                    android:resource="@xml/app_flexipdf_widget_zflip"/>
             </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/app_flexipdf_widget_zflip"/>
         </receiver>
     </application>
 
