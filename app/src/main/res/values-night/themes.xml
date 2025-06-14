@@ -17,5 +17,18 @@
         <item name="android:windowBackground">@color/dark_themed_2</item>
         <item name="colorSurface">@color/dark_themed</item>
         <!--<item name="colorOnError">@color/my_dark_on_error</item>-->
+
+        <!-- ***** ATTRIBUTI CRUCIALI PER LA CONTEXTUAL ACTION BAR (CAB) ***** -->
+        <!-- Questo fa sì che la CAB si disegni come un overlay a tutta larghezza sopra l'Activity -->
+        <item name="android:windowActionModeOverlay">true</item>
+        <!-- Assicura che non ci sia un'ombra indesiderata sotto la CAB se è un overlay -->
+        <item name="android:windowContentOverlay">@null</item>
+        <!-- Imposta il colore di sfondo della CAB. Usa un colore forte per il debug della larghezza. -->
+        <item name="actionModeBackground">@android:color/holo_red_dark</item>
+        <!-- ******************************************************************** -->
+
+    </style>
+    <style name="Widget.App.ActionMode" parent="@style/Widget.AppCompat.ActionMode">
+        <item name="background">@android:color/holo_red_dark</item>
     </style>
 </resources>

@@ -17,7 +17,9 @@ package it.lavorodigruppo.flexipdf.fragments
 
 import android.animation.ObjectAnimator
 import android.content.ContentResolver
+import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import androidx.core.net.toUri
 import android.os.Bundle
@@ -31,6 +33,8 @@ import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.fragment.app.Fragment
@@ -49,6 +53,7 @@ import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import android.widget.EditText
+import androidx.constraintlayout.widget.ConstraintLayout
 import com.google.android.material.snackbar.Snackbar
 import it.lavorodigruppo.flexipdf.data.FileSystemDatasource
 
@@ -183,7 +188,68 @@ class FoldersFragment : Fragment() {
         setupRecyclerView()
         setupListeners()
         observeViewModel()
+
+        // --- INIZIO: GESTIONE WINDOW INSETS per il banner superiore, RecyclerView e FAB ---
+        // Questo listener è fondamentale per adattare il layout alle barre di sistema (status bar, navigation bar)
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            // Ottieni gli insets per le barre di sistema (status bar, navigation bar)
+            val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            // Ottieni gli insets specifici per la barra di navigazione
+            val navigationBarsInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+
+            // 1. Applica l'inset superiore al padding del topBannerCardView (per la status bar)
+            binding.topBannerCardView.setPadding(
+                binding.topBannerCardView.paddingLeft,
+                systemBarsInsets.top, // Applica l'inset superiore
+                binding.topBannerCardView.paddingRight,
+                binding.topBannerCardView.paddingBottom
+            )
+
+            // 2. Determina il padding inferiore per la pdfRecyclerView in base all'orientamento
+            val orientation = resources.configuration.orientation
+            val bottomPaddingForRecyclerView = if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                0 // Nessun padding inferiore in modalità orizzontale, la lista può andare sotto la barra
+            } else {
+                systemBarsInsets.bottom // Applica il padding inferiore in modalità verticale (per non coprire il contenuto)
+            }
+
+            // Applica il padding inferiore alla pdfRecyclerView
+            // (gli insets left/right di systemBarsInsets tengono conto di notch, display cutouts ecc.)
+            binding.pdfRecyclerView.setPadding(
+                systemBarsInsets.left, // Padding sinistro per eventuali insets del sistema (es. notch/gesture bar)
+                binding.pdfRecyclerView.paddingTop,
+                systemBarsInsets.right, // Padding destro per eventuali insets del sistema
+                bottomPaddingForRecyclerView // Padding inferiore condizionale
+            )
+
+            // 3. Gestione del Floating Action Button (FAB) in base agli insets della barra di navigazione
+            val fabLayoutParams = binding.floatingActionButton.layoutParams as? ConstraintLayout.LayoutParams
+            if (fabLayoutParams != null) {
+                // Margini di default per il FAB, se non modificati in XML
+                val defaultMarginEnd = 16.dpToPx(requireContext())
+                val defaultMarginBottom = 16.dpToPx(requireContext())
+
+                if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                    // In landscape, la barra di navigazione è solitamente a destra o sinistra.
+                    // Aggiungiamo l'inset destro (se la barra è a destra) al marginEnd del FAB.
+                    fabLayoutParams.marginEnd = defaultMarginEnd + navigationBarsInsets.right
+                    // Il bottom margin può rimanere quello di default o essere adattato se la barra è anche in basso.
+                    fabLayoutParams.bottomMargin = defaultMarginBottom
+                } else { // Portrait
+                    // In portrait, la barra di navigazione è in basso.
+                    // Aggiungiamo l'inset inferiore al marginBottom del FAB.
+                    fabLayoutParams.marginEnd = defaultMarginEnd
+                    fabLayoutParams.bottomMargin = defaultMarginBottom + navigationBarsInsets.bottom
+                }
+                binding.floatingActionButton.layoutParams = fabLayoutParams // Applica i LayoutParams modificati
+            }
+
+            insets // Restituisci gli insets per permettere ad altre viste di gestirli
+        }
     }
+
+    private fun Int.dpToPx(context: Context): Int =
+        (this * context.resources.displayMetrics.density).toInt()
 
     private fun setupRecyclerView() {
         fileSystemAdapter = FileSystemAdapter(
@@ -250,7 +316,7 @@ class FoldersFragment : Fragment() {
     }
 
     private fun setupListeners() {
-        // --- RIPRISTINATO IL COMPORTAMENTO DEL FAB ---
+
         binding.floatingActionButton.setOnClickListener {
             rotateFabForward()
             showPopupMenu()
