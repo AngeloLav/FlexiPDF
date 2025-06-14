@@ -51,15 +51,23 @@
 
 package it.lavorodigruppo.flexipdf.activities
 
+
 import android.content.Context
 import android.content.Intent
+
 import android.net.Uri
+import android.nfc.Tag
+import android.os.Build
 import android.os.Bundle
 import android.util.Log // Aggiungi questo import per i log
+import android.view.MenuItem
+
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.google.android.material.navigation.NavigationBarView
 
 import it.lavorodigruppo.flexipdf.R
 import it.lavorodigruppo.flexipdf.databinding.ActivityMainBinding
@@ -71,13 +79,16 @@ import it.lavorodigruppo.flexipdf.fragments.SharedFragment
 import it.lavorodigruppo.flexipdf.fragments.OnPdfPickerListener
 import it.lavorodigruppo.flexipdf.utils.PdfManager
 import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel
+
 import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel.FileSystemViewModelFactory
+
 
 class MainActivity : AppCompatActivity(), OnPdfPickerListener {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var pdfManager: PdfManager
     private lateinit var fileSystemViewModel: FileSystemViewModel
+    private var currentSelectedItemId: Int = R.id.home
 
     private val pickPdfLauncher = registerForActivityResult(
         object : androidx.activity.result.contract.ActivityResultContracts.OpenMultipleDocuments() {
@@ -96,6 +107,7 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
 
     override fun launchPdfPicker() {
         pickPdfLauncher.launch(arrayOf("application/pdf"))
+
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -110,6 +122,7 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
         pdfManager = PdfManager(this) { uris: List<Uri> ->
             fileSystemViewModel.importPdfs(uris)
         }
+
 
         if (binding.navigationRail != null) {
             setupNavigationRail()
@@ -131,7 +144,6 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
     }
 
 
-
     private fun setupNavigationRail() {
         binding.navigationRail?.setOnItemSelectedListener { item ->
             handleNavigationItemSelected(item.itemId)
@@ -144,6 +156,12 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
             handleNavigationItemSelected(item.itemId)
             true
         }
+        replaceFragment(fragment)
+        return true
+    }
+
+    private fun handleNavigationItemSelected(item: MenuItem): Boolean {
+        return loadFragmentForItemId(item.itemId)
     }
 
     // Metodo unificato per gestire la selezione degli elementi di navigazione
@@ -195,5 +213,6 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
         val itemId = getMenuItemIdForFragment(fragment)
         updateNavigationSelection(itemId)
     }
+
 }
 

@@ -1,18 +1,21 @@
 <resources>
     <string name="app_name">FlexiPDF</string>
-    <string name="floating_action_button_description">Add new folder and add PDF file"</string>
+    <string name="floating_action_button_description">Add new folder or a new PDF file</string>
 
     <!-- Fragments temporary strings -->
-    <string name="fragmentOne">Finally i can use GitHub too!</string>
+    <string name="fragmentOne">Home</string>
     <string name="fragmentTwo">Folders</string>
-    <string name="fragmentThree">3</string>
+    <string name="fragmentThree">Share</string>
     <string name="fragmentFour">Settings</string>
 
     <!-- Fragment Home -->
     <string name="recent_pdfs_title">Recently Imported</string>
-    <string name="favorite_pdfs_title">Favorites</string>
+    <string name="favorite_pdfs_title">Favourites</string>
 
-    <string name="searchbar_message">Search…</string>
+    <string name="searchbar_message">Search..</string>
+
+    <string name="import_pdf">Import PDF</string>
+    <string name="create_folder">Create Folder</string>
 
     <!-- Settings Options -->
     <string-array name="settings_options">
@@ -26,38 +29,38 @@
     <string name="settings_icon_description">Settings Icon</string>
     <string name="settings_item_message">%1$s</string>
 
-    <string name="pdf_icon_description">PDF Icon</string>
+    <string name="changed_language">Language is set to English</string>
 
-    <!-- Example folders for the second menu -->
-    <string-array name="Folders">
-        <item>Folder</item>
-        <item>Folder2</item>
-        <item>Folder3</item>
-        <item>Folder4</item>
-        <item>Folder5</item>
-        <item>Folder6</item>
-    </string-array>
+    <string name="pdf_icon_description">PDF Icon</string>
 
     <string name="file_name">File</string>
     <string name="folder_name">Folder</string>
     <string name="file_icon_description">1%s</string>
     <string name="folders_icon_description">1%s</string>
 
-    <string name="delete_pdf_description">Delete PDF</string>
+    <string name="delete_pdf_description">Confirm deletion</string>
     <string name="favorite_icon_description">Favourite Pdf</string>
     <string name="recent_icon_description">Recent Pdf</string>"
 
-    <string name="select_all">Seleziona tutto</string>
-    <string name="favorite">Preferito</string>
-    <string name="unfavorite">Rimuovi preferito</string>
-    <string name="delete">Elimina</string>
+    <string name="select_all">Select all</string>
+    <string name="favourite">Favourite</string>
+    <string name="unfavourite">Remove from favourite</string>
+    <string name="new_folder">New Folder</string>
+    <string name="delete">Delete</string>
     <string name="go_back">Go back</string>
-    <string name="move">move</string>
+    <string name="move">Change position</string>
     <string name="cancel">Cancel</string>
+    <string name="create">Create</string>
     <string name="move_here">move_here</string>
+    <string name="selected"> selected</string>
 
-    <plurals name="move_items_message">
-        <item quantity="one">1 elemento pronto per lo spostamento. Naviga nella cartella di destinazione.</item>
-        <item quantity="other">%d elementi pronti per lo spostamento. Naviga nella cartella di destinazione.</item>
+    <string name="message_empty_name">The name of the folder can\'t be empty</string>
+
+    <plurals name="move_items_message" >
+        <item quantity="one">One element is ready to be moved. Go to the destination folder.</item>
+        <item quantity="other">%d elements ready to be moved.Go to the destination folder.</item>
     </plurals>
+
+    <string name="one_deletion_message">Are you sure you want to delete the one element selected?</string>
+    <string name="multiple_deletion_message">Are you sure you want to delete the %d elements selected?</string>
 </resources>

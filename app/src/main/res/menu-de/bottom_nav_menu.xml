@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <item android:title="Home"
+        android:icon="@drawable/home_24dp_000000_fill0_wght400_grad0_opsz24"
+        android:id="@+id/home"
+        tools:ignore="HardcodedText"/>
+    <item android:title="Ordner"
+        android:icon="@drawable/folder_open_24dp_000000_fill0_wght400_grad0_opsz24"
+        android:id="@+id/folders"
+        tools:ignore="HardcodedText"/>
+    <item android:title="Geteilt"
+        android:icon="@drawable/group_24dp_000000_fill0_wght400_grad0_opsz24"
+        android:id="@+id/shared"
+        tools:ignore="HardcodedText"/>
+    <item android:title="Einstellungen"
+        android:icon="@drawable/settings_24dp_000000_fill0_wght400_grad0_opsz24"
+        android:id="@+id/settings"
+        tools:ignore="HardcodedText" />
+</menu>
