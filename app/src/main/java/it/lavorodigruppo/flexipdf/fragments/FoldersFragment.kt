@@ -114,9 +114,8 @@ class FoldersFragment : Fragment() {
 
                 mode?.title = "$selectedCount selezionati"
 
-                // Aggiorna il titolo di "Seleziona tutto"
+
                 val currentFolderId = fileSystemViewModel.currentFolder.value?.id ?: FileSystemDatasource.ROOT_FOLDER_ID
-                val allItemsInCurrentFolder = fileSystemViewModel.filteredAndDisplayedItems.value.filter { it.parentFolderId == currentFolderId }
 
             }
             return true

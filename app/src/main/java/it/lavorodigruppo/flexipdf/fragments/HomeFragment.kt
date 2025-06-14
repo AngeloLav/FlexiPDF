@@ -64,21 +64,17 @@ class HomeFragment : Fragment() {
 
         val bannerContentLayout = binding.bannerContentLayout
 
-        if (bannerContentLayout != null) {
-            originalBannerPaddingTop = bannerContentLayout.paddingTop
-        }
+        originalBannerPaddingTop = bannerContentLayout.paddingTop
 
         ViewCompat.setOnApplyWindowInsetsListener(view) { _, insets ->
             val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
 
-            if (bannerContentLayout != null) {
-                bannerContentLayout.setPadding(
+            bannerContentLayout.setPadding(
                     bannerContentLayout.paddingLeft,
                     originalBannerPaddingTop + systemBarsInsets.top,
                     bannerContentLayout.paddingRight,
                     bannerContentLayout.paddingBottom
                 )
-            }
             insets
         }
 
