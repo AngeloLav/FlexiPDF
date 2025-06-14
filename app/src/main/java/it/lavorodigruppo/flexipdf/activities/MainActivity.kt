@@ -51,11 +51,17 @@
 
 package it.lavorodigruppo.flexipdf.activities
 
+
+import android.content.Context
+import android.content.Intent
+
 import android.net.Uri
 import android.nfc.Tag
 import android.os.Build
 import android.os.Bundle
+import android.util.Log // Aggiungi questo import per i log
 import android.view.MenuItem
+
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -74,6 +80,8 @@ import it.lavorodigruppo.flexipdf.fragments.OnPdfPickerListener
 import it.lavorodigruppo.flexipdf.utils.PdfManager
 import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel
 
+import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel.FileSystemViewModelFactory
+
 
 class MainActivity : AppCompatActivity(), OnPdfPickerListener {
 
@@ -82,57 +90,71 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
     private lateinit var fileSystemViewModel: FileSystemViewModel
     private var currentSelectedItemId: Int = R.id.home
 
-    companion object {
-        private const val SELECTED_ITEM_ID_KEY = "selectedItemId"
+    private val pickPdfLauncher = registerForActivityResult(
+        object : androidx.activity.result.contract.ActivityResultContracts.OpenMultipleDocuments() {
+            override fun createIntent(context: Context, input: Array<String>): Intent {
+                return super.createIntent(context, input).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "application/pdf"
+                }
+            }
+        }
+    ) { uris: List<Uri>? ->
+        uris?.let {
+            fileSystemViewModel.importPdfs(it)
+        }
     }
 
     override fun launchPdfPicker() {
-        pdfManager.launchPdfPicker()
+        pickPdfLauncher.launch(arrayOf("application/pdf"))
+
     }
 
-    // --- MainActivity Lifecycle ---
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        enableEdgeToEdge()
+        //enableEdgeToEdge()
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        currentSelectedItemId = savedInstanceState?.getInt(SELECTED_ITEM_ID_KEY, R.id.home) ?: R.id.home
-
-        val navigationView: NavigationBarView? = binding.bottomNavView ?: binding.navigationRail
-
         fileSystemViewModel = ViewModelProvider(this, FileSystemViewModel.FileSystemViewModelFactory(application))[FileSystemViewModel::class.java]
 
-        // Inizializza PdfManager. La callback ora passa solo la lista di URI.
-        // La logica per i displayNames è stata spostata nel ViewModel.
         pdfManager = PdfManager(this) { uris: List<Uri> ->
             fileSystemViewModel.importPdfs(uris)
         }
 
-        navigationView?.setOnItemSelectedListener { item ->
-            currentSelectedItemId = item.itemId
-            handleNavigationItemSelected(item)
+
+        if (binding.navigationRail != null) {
+            setupNavigationRail()
+        }
+        else  {
+            setupBottomNavigationView()
         }
 
-        navigationView?.selectedItemId = currentSelectedItemId
+        if (savedInstanceState == null) {
+            replaceFragment(HomeFragment())
+        } else {
 
-        loadFragmentForItemId(currentSelectedItemId)
+
+            val currentFragment = supportFragmentManager.findFragmentById(R.id.frame_layout)
+            currentFragment?.let {
+                updateNavigationSelectionForFragment(it)
+            }
+        }
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putInt(SELECTED_ITEM_ID_KEY, currentSelectedItemId)
+
+    private fun setupNavigationRail() {
+        binding.navigationRail?.setOnItemSelectedListener { item ->
+            handleNavigationItemSelected(item.itemId)
+            true
+        }
     }
 
-    private fun loadFragmentForItemId(itemId: Int): Boolean {
-        val fragment: Fragment = when (itemId) {
-            R.id.home -> HomeFragment()
-            R.id.folders -> FoldersFragment()
-            R.id.shared -> SharedFragment()
-            R.id.settings -> SettingsFragment()
-            else -> return false
+    private fun setupBottomNavigationView() {
+        binding.bottomNavigationView?.setOnItemSelectedListener { item ->
+            handleNavigationItemSelected(item.itemId)
+            true
         }
         replaceFragment(fragment)
         return true
@@ -142,11 +164,55 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
         return loadFragmentForItemId(item.itemId)
     }
 
+    // Metodo unificato per gestire la selezione degli elementi di navigazione
+    private fun handleNavigationItemSelected(itemId: Int) {
+        when (itemId) {
+            R.id.home -> replaceFragment(HomeFragment())
+            R.id.folders -> replaceFragment(FoldersFragment())
+            R.id.shared -> replaceFragment(SharedFragment())
+            R.id.settings -> replaceFragment(SettingsFragment())
+            else -> {
+                Log.w("MainActivity", "ID elemento di navigazione non riconosciuto: $itemId")
+            }
+        }
+    }
+
     private fun replaceFragment(fragment: Fragment) {
         val fragmentManager = supportFragmentManager
+        val currentFragment = fragmentManager.findFragmentById(R.id.frame_layout)
+        if (currentFragment != null && currentFragment::class == fragment::class) {
+            return
+        }
+
         fragmentManager.beginTransaction()
             .replace(R.id.frame_layout, fragment)
             .commit()
     }
+
+    private fun updateNavigationSelection(itemId: Int) {
+        binding.navigationRail?.selectedItemId = itemId
+        binding.bottomNavigationView?.selectedItemId = itemId
+        Log.d("MainActivity", "Selezione navigazione UI aggiornata a ID: $itemId")
+    }
+
+    private fun getMenuItemIdForFragment(fragment: Fragment): Int {
+        return when (fragment) {
+            is HomeFragment -> R.id.home
+            is FoldersFragment -> R.id.folders
+            is SharedFragment -> R.id.shared
+            is SettingsFragment -> R.id.settings
+
+            else -> {
+                Log.w("MainActivity", "Fragment non riconosciuto per la sincronizzazione della selezione: ${fragment.javaClass.simpleName}. Defaulting to Home.")
+                R.id.home
+            }
+        }
+    }
+
+    private fun updateNavigationSelectionForFragment(fragment: Fragment) {
+        val itemId = getMenuItemIdForFragment(fragment)
+        updateNavigationSelection(itemId)
+    }
+
 }
 
