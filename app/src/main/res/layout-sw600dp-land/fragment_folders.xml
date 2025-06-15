@@ -52,13 +52,12 @@
                 android:textSize="26sp"
                 android:fontFamily="monospace"
                 android:textStyle="bold"
-                android:paddingTop="50dp"
+                android:paddingTop="30dp"
                 android:paddingBottom="10dp"
                 app:layout_constraintBottom_toTopOf="@id/searchView"
                 app:layout_constraintStart_toEndOf="@id/backButton"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="@id/backButton"/>
+                app:layout_constraintTop_toTopOf="parent" />
 
             <androidx.appcompat.widget.SearchView
                 android:id="@+id/searchView"
