@@ -247,14 +247,13 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
             // Definisci i colori per lo stato selezionato e non selezionato
             val selectedTextColor = ContextCompat.getColor(this, R.color.white) // Colore per il testo selezionato
             val selectedIconTint = ContextCompat.getColor(this, R.color.white) // Colore per l'icona selezionata
-             // Colore per lo sfondo selezionato (es. light blue)
+            // Colore per lo sfondo selezionato (es. light blue)
 
             val defaultTextColor = ContextCompat.getColor(this, R.color.white) // Colore per il testo non selezionato
             val defaultIconTint = ContextCompat.getColor(this, R.color.white) // Colore per l'icona non selezionata
-            // Sfondo trasparente per non selezionato
+            val defaultBackgroundColor = ContextCompat.getColor(this, android.R.color.transparent) // Sfondo trasparente per non selezionato
 
             // Applica il colore di sfondo alla CardView
-
 
 
             val linearLayout = itemCardView.findViewById<LinearLayout>(R.id.custom_menu_item_linear_layout)
@@ -318,7 +317,7 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
             // Semplificazione: usa sempre replace, che gestisce la rimozione del precedente
             supportFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, fragment)
-                .commitNowAllowingStateLoss()// commitAllowStateLoss è preferibile a commitNowAllowStateLoss per evitare blocchi dell'UI se non strettamente necessario, e gestisce meglio gli stati di Activity
+                .commitAllowingStateLoss() // commitAllowStateLoss è preferibile a commitNowAllowStateLoss per evitare blocchi dell'UI se non strettamente necessario, e gestisce meglio gli stati di Activity
             Log.d("MainActivity", "Fragment sostituito con: ${fragment.javaClass.simpleName}")
         } catch (e: IllegalStateException) {
             Log.e("MainActivity", "Errore durante la sostituzione del fragment: ${e.message}", e)
@@ -410,4 +409,6 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
         updateNavigationSelection(itemId)
     }
 }
+
+
 
