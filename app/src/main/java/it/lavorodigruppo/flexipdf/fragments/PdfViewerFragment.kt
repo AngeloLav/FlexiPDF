@@ -1,6 +1,7 @@
 // app/src/main/java/it.lavorodigruppo.flexipdf.fragments/PdfViewerFragment.kt
 package it.lavorodigruppo.flexipdf.fragments
 
+import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -11,40 +12,55 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.github.barteksc.pdfviewer.PDFView
 import com.github.barteksc.pdfviewer.listener.OnErrorListener
+import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener
 import com.github.barteksc.pdfviewer.scroll.DefaultScrollHandle
-import it.lavorodigruppo.flexipdf.R // Assicurati che l'import sia corretto
+import it.lavorodigruppo.flexipdf.R
+import it.lavorodigruppo.flexipdf.interfaces.PdfLoadCallback
 
-class PdfViewerFragment : Fragment(), OnErrorListener { // Implementa OnErrorListener
+class PdfViewerFragment : Fragment(), OnErrorListener, OnLoadCompleteListener {
 
-    private var pdfUri: Uri? = null // Variabile per contenere l'URI del PDF
-    private lateinit var pdfView: PDFView // Riferimento alla vista PDF
+    private var pdfUri: Uri? = null
+    var initialPage: Int = 0
+    private var enableInternalSwipe: Boolean = true // <--- NUOVO: Variabile per controllare lo swipe interno
+
+    private var pdfView: PDFView? = null
+    private var pdfLoadCallback: PdfLoadCallback? = null
 
     companion object {
-        // Chiave per passare l'URI del PDF tra il Fragment e l'Activity
         private const val ARG_PDF_URI = "pdf_uri"
+        private const val ARG_INITIAL_PAGE = "initial_page"
+        private const val ARG_ENABLE_INTERNAL_SWIPE = "enable_internal_swipe" // <--- NUOVO: Chiave per lo swipe
 
-        /**
-         * Crea una nuova istanza di PdfViewerFragment con l'URI del PDF specificato.
-         * Questo è il modo preferito per passare argomenti ai Fragment.
-         *
-         * @param pdfUri L'URI del PDF da visualizzare.
-         * @return Una nuova istanza di PdfViewerFragment.
-         */
         @JvmStatic
-        fun newInstance(pdfUri: Uri): PdfViewerFragment {
+        fun newInstance(pdfUri: Uri, initialPage: Int = 0, enableInternalSwipe: Boolean = true): PdfViewerFragment { // <--- MODIFICATO: Aggiunto enableInternalSwipe
             return PdfViewerFragment().apply {
                 arguments = Bundle().apply {
                     putParcelable(ARG_PDF_URI, pdfUri)
+                    putInt(ARG_INITIAL_PAGE, initialPage)
+                    putBoolean(ARG_ENABLE_INTERNAL_SWIPE, enableInternalSwipe) // <--- NUOVO: Passa il valore
                 }
             }
         }
     }
 
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is PdfLoadCallback) {
+            pdfLoadCallback = context
+        } else {
+            Log.e("PdfViewerFragment", "$context deve implementare PdfLoadCallback")
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Recupera l'URI del PDF dagli argomenti
         arguments?.let {
             pdfUri = it.getParcelable(ARG_PDF_URI)
+            initialPage = it.getInt(ARG_INITIAL_PAGE, 0)
+            enableInternalSwipe = it.getBoolean(ARG_ENABLE_INTERNAL_SWIPE, true) // <--- NUOVO: Recupera il valore
+        } ?: run {
+            Log.e("PdfViewerFragment", "Argomenti mancanti per PdfViewerFragment.")
+            Toast.makeText(context, "Errore: dati PDF mancanti.", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -52,43 +68,56 @@ class PdfViewerFragment : Fragment(), OnErrorListener { // Implementa OnErrorLis
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflata il layout per questo fragment
         return inflater.inflate(R.layout.fragment_pdf_viewer, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        pdfView = view.findViewById(R.id.pdfViewFragment) // Inizializza PDFView con l'ID del layout del fragment
+        pdfView = view.findViewById(R.id.pdfViewFragment)
 
-        if (pdfUri != null) {
-            Log.d("PdfViewerFragment", "Tentativo di caricare PDF da URI: $pdfUri")
-
+        pdfUri?.let { uri ->
+            Log.d("PdfViewerFragment", "Tentativo di caricare PDF da URI: $uri, pagina: $initialPage, swipe interno: $enableInternalSwipe")
             try {
-                // Carica il PDF dall'URI
-                pdfView.fromUri(pdfUri)
-                    .scrollHandle(DefaultScrollHandle(requireContext())) // Usa requireContext() per il contesto
-                    .enableSwipe(true)
-                    .enableDoubletap(true)
-                    .onError(this) // Imposta il listener di errore del fragment
-                    .load()
+                pdfView?.fromUri(uri)
+                    ?.defaultPage(initialPage)
+                    // Il DefaultScrollHandle è sempre utile, ma il suo comportamento è influenzato da enableSwipe
+                    ?.scrollHandle(DefaultScrollHandle(requireContext()))
+                    ?.enableSwipe(enableInternalSwipe) // <--- MODIFICATO: Usa la nuova variabile per abilitare/disabilitare lo swipe
+                    ?.enableDoubletap(true) // Il doubletap lo manteniamo abilitato
+                    ?.onError(this)
+                    ?.onLoad(this)
+                    ?.load()
             } catch (e: Exception) {
                 Log.e("PdfViewerFragment", "Errore durante il caricamento del PDF: ${e.message}", e)
                 Toast.makeText(context, "Errore nel caricamento del PDF: ${e.message}", Toast.LENGTH_LONG).show()
-                // Non chiamiamo finish() qui perché siamo in un fragment.
-                // Potresti voler mostrare un messaggio di errore e nascondere la vista PDF.
             }
+        } ?: Log.e("PdfViewerFragment", "Errore: URI PDF nullo nel Fragment durante onViewCreated.")
+    }
+
+    fun setPage(pageNumber: Int) {
+        if (pdfView != null && pageNumber != pdfView!!.currentPage) {
+            pdfView?.jumpTo(pageNumber)
+            this.initialPage = pageNumber
+            Log.d("PdfViewerFragment", "Jumped to page: $pageNumber")
         } else {
-            Log.e("PdfViewerFragment", "Errore: URI PDF nullo nel Fragment.")
-            Toast.makeText(context, "Errore: nessun PDF da visualizzare nel fragment.", Toast.LENGTH_LONG).show()
+            Log.w("PdfViewerFragment", "Impossibile impostare la pagina: pdfView non inizializzata o stessa pagina ($pageNumber).")
         }
     }
 
-    /**
-     * Callback per gli errori della libreria PDF.
-     */
     override fun onError(e: Throwable?) {
         Log.e("PdfViewerFragment", "Errore dalla libreria PDF: ${e?.message}", e)
-        Toast.makeText(context, "Errore durante il caricamento del PDF: ${e?.message}", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, "Errore durante il caricamento del PDF: ${e?.localizedMessage}", Toast.LENGTH_LONG).show()
+    }
+
+    override fun loadComplete(nbPages: Int) {
+        Log.d("PdfViewerFragment", "PDF caricato nel fragment. Pagine totali: $nbPages")
+        pdfLoadCallback?.onPdfFragmentLoaded(nbPages)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        pdfView = null
+        pdfLoadCallback = null
     }
 }
