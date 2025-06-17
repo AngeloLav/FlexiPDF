@@ -17,6 +17,8 @@ import it.lavorodigruppo.flexipdf.databinding.PdfFileItemBinding // Assicurati d
 import it.lavorodigruppo.flexipdf.items.FileSystemItem
 import it.lavorodigruppo.flexipdf.items.FolderItem
 import it.lavorodigruppo.flexipdf.items.PdfFileItem
+import android.os.Handler
+import android.os.Looper
 
 // Definizione delle callback per gli eventi di click e selezione
 typealias OnItemClick = (FileSystemItem) -> Unit
@@ -28,7 +30,8 @@ class FileSystemAdapter(
     private val onItemClick: OnItemClick,
     private val onItemLongClick: OnItemLongClick,
     private val onSelectionToggle: OnSelectionToggle,
-    private val onFavoriteToggle: OnFavoriteToggle // NUOVO PARAMETRO NEL COSTRUTTORE
+    private val onFavoriteToggle: OnFavoriteToggle,
+    private val onItemDoubleClick: ((PdfFileItem) -> Unit)? = null
 ) : ListAdapter<FileSystemItem, RecyclerView.ViewHolder>(FileSystemDiffCallback()) {
 
     // Costanti per i tipi di vista
@@ -37,6 +40,9 @@ class FileSystemAdapter(
 
     // Stato della modalità di selezione (per l'animazione e la visibilità del cestino)
     private var isSelectionMode: Boolean = false
+    private val handler = Handler(Looper.getMainLooper()) // Handler per il doppio clic
+    private var lastClickTime: Long = 0 // Timestamp dell'ultimo clic
+    private val DOUBLE_CLICK_TIME_DELTA: Long = 300 // Millisecondi per il doppio clic
 
     @SuppressLint("NotifyDataSetChanged")
     fun setSelectionMode(active: Boolean) {
@@ -73,9 +79,44 @@ class FileSystemAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = getItem(position)
         when (holder.itemViewType) {
-            VIEW_TYPE_PDF -> (holder as PdfFileViewHolder).bind(item as PdfFileItem, onItemClick, onItemLongClick, onSelectionToggle, onFavoriteToggle, isSelectionMode) // PASSA LA NUOVA CALLBACK
-            VIEW_TYPE_FOLDER -> (holder as FolderViewHolder).bind(item as FolderItem, onItemClick, onItemLongClick, onSelectionToggle, isSelectionMode)
+            VIEW_TYPE_PDF -> {
+                (holder as PdfFileViewHolder).bind(item as PdfFileItem, onItemClick, onItemLongClick, onSelectionToggle, onFavoriteToggle, isSelectionMode)
+                // Applica il listener di click qui, non dentro il ViewHolder per gestire il doppio click
+                holder.itemView.setOnClickListener {
+                    if (isSelectionMode) {
+                        // In modalità selezione, un clic singolo seleziona/deseleziona
+                        onSelectionToggle(item)
+                    } else {
+                        // Logica per il rilevamento del doppio clic solo per PdfFileItem
+                        val clickTime = System.currentTimeMillis()
+                        if (clickTime - lastClickTime < DOUBLE_CLICK_TIME_DELTA && onItemDoubleClick != null) {
+                            // Doppio clic rilevato
+                            onItemDoubleClick.invoke(item) // Chiamata al listener del doppio clic
+                            lastClickTime = 0 // Resetta per evitare tripli clic accidentali
+                        } else {
+                            // Primo clic o clic singolo dopo un ritardo
+                            onItemClick.invoke(item) // Chiamata al listener del clic singolo
+                        }
+                        lastClickTime = clickTime
+                    }
+                }
+                holder.itemView.setOnLongClickListener { onItemLongClick.invoke(item) } // Long click sempre attivo
+            }
+            VIEW_TYPE_FOLDER -> {
+                (holder as FolderViewHolder).bind(item as FolderItem, onItemClick, onItemLongClick, onSelectionToggle, isSelectionMode)
+                // Per le cartelle, la logica di clic rimane semplice
+                holder.itemView.setOnClickListener {
+                    if (isSelectionMode) {
+                        onSelectionToggle(item)
+                    } else {
+                        onItemClick.invoke(item)
+                    }
+                }
+                holder.itemView.setOnLongClickListener { onItemLongClick.invoke(item) } // Long click sempre attivo
+            }
         }
+        // Il resto del binding per checkbox e favorite icon dovrebbe essere gestito all'interno dei ViewHolder specifici
+        // o nella logica di bind, come hai già.
     }
 
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
