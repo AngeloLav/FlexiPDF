@@ -23,6 +23,7 @@
             android:orientation="horizontal"
             android:gravity="center"
             android:paddingTop="50dp"
+            android:paddingBottom="8dp"
             tools:ignore="UseCompoundDrawables">
 
             <ImageView

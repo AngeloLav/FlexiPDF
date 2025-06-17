@@ -56,6 +56,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.ImageView
@@ -75,15 +76,17 @@ import it.lavorodigruppo.flexipdf.databinding.LayoutCustomSideMenuBinding
 
 import it.lavorodigruppo.flexipdf.fragments.FoldersFragment
 import it.lavorodigruppo.flexipdf.fragments.HomeFragment
+import it.lavorodigruppo.flexipdf.fragments.OnPdfFileClickListener
 import it.lavorodigruppo.flexipdf.fragments.SettingsFragment
 import it.lavorodigruppo.flexipdf.fragments.SharedFragment
 
 import it.lavorodigruppo.flexipdf.fragments.OnPdfPickerListener
+import it.lavorodigruppo.flexipdf.fragments.PdfViewerFragment
 import it.lavorodigruppo.flexipdf.utils.PdfManager
 import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel
 import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel.FileSystemViewModelFactory
 
-class MainActivity : AppCompatActivity(), OnPdfPickerListener {
+class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickListener {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var pdfManager: PdfManager
@@ -160,19 +163,46 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
         Log.d("MainActivity", "onPostCreate chiamato.")
 
         // Esegui la sostituzione iniziale del fragment e l'aggiornamento della UI qui
+        // Questa parte è cruciale per la gestione delle rotazioni e per evitare la ricreazione/sovrapposizione.
         if (savedInstanceState == null) {
+            // SOLO se l'Activity viene creata per la prima volta (non ricreata da rotazione/process kill)
             // Seleziona il fragment Home all'avvio iniziale
             handleNavigationItemSelected(R.id.home) // Chiama handleNavigationItemSelected per il primo avvio
+            Log.d("MainActivity", "onPostCreate: savedInstanceState è null. Caricato HomeFragment iniziale.")
         } else {
-            // Se l'Activity è stata ricreata (es. cambio configurazione),
-            // recupera il fragment attualmente visibile e aggiorna la UI di navigazione in base ad esso.
-            val currentFragment = supportFragmentManager.findFragmentById(R.id.frame_layout)
-            currentFragment?.let {
+            // Se l'Activity è stata ricreata (es. cambio configurazione/rotazione),
+            // i fragment vengono ripristinati AUTOMATICAMENTE dal FragmentManager.
+            // Non dobbiamo chiamare replaceFragment o handleNavigationItemSelected qui,
+            // altrimenti creeremmo duplicati o conflitti.
+            Log.d("MainActivity", "onPostCreate: savedInstanceState NON è null. I Fragment sono stati ripristinati automaticamente.")
+
+            // Aggiorna la selezione visiva della UI di navigazione in base al fragment attualmente visibile.
+            val currentFragmentInFrameLayout = supportFragmentManager.findFragmentById(R.id.frame_layout)
+            currentFragmentInFrameLayout?.let {
                 updateNavigationSelectionForFragment(it)
+                Log.d("MainActivity", "onPostCreate: UI di navigazione aggiornata per ${it.javaClass.simpleName}.")
+            }
+
+            // --- GESTIONE DELLA VISIBILITÀ DEL PANNELLO PDF DOPO LA ROTAZIONE ---
+            // Dobbiamo ripristinare la visibilità del contenitore PDF
+            // se c'era un PdfViewerFragment prima della rotazione.
+            val pdfViewerContainer = findViewById<View>(R.id.fragment_pdf_viewer_container)
+            val pdfViewerFragmentOnRecreation = supportFragmentManager.findFragmentById(R.id.fragment_pdf_viewer_container)
+
+            if (pdfViewerContainer != null) { // Solo se siamo in un layout con il contenitore PDF
+                if (pdfViewerFragmentOnRecreation != null) {
+                    // Se il PDF Fragment è stato ripristinato, rendi visibile il suo contenitore.
+                    pdfViewerContainer.visibility = View.VISIBLE
+                    Log.d("MainActivity", "onPostCreate: PdfViewerFragment ripristinato. Reso visibile contenitore PDF.")
+                } else {
+                    // Se il contenitore esiste ma non c'è un PDF Fragment al suo interno (es. era chiuso),
+                    // assicurati che sia GONE.
+                    pdfViewerContainer.visibility = View.GONE
+                    Log.d("MainActivity", "onPostCreate: Contenitore PDF presente ma nessun fragment. Assicurato che sia GONE.")
+                }
             }
         }
 
-        // Se il custom side menu è presente, esegui il setup del contenuto qui
         binding.customSideMenu?.let {
             setupCustomSideMenuContent(it)
         }
@@ -279,32 +309,88 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
             return
         }
 
-        // Crea una NUOVA istanza del fragment. Rimosso la cache.
+        // --- INIZIO LOGICA: PULISCI IL PANNELLO PDF AL CAMBIO DI SEZIONE ---
+        val pdfViewerContainer = findViewById<View>(R.id.fragment_pdf_viewer_container)
+        val isLandscapeTabletLayout = pdfViewerContainer != null
+
+        val isGoingToFoldersFragment = (itemId == R.id.folders)
+
+        if (isLandscapeTabletLayout && !isGoingToFoldersFragment) {
+            val pdfViewerFragment = supportFragmentManager.findFragmentById(R.id.fragment_pdf_viewer_container)
+            if (pdfViewerFragment != null) {
+                Log.d("MainActivity", "Navigazione verso una sezione diversa da 'Folders'. Rimuovo il PdfViewerFragment.")
+                supportFragmentManager.beginTransaction()
+                    .remove(pdfViewerFragment)
+                    .commitAllowingStateLoss()
+                pdfViewerContainer?.visibility = View.GONE
+            }
+        }
+        // --- FINE NUOVA LOGICA ---
+
         val targetFragment = when (itemId) {
             R.id.home -> HomeFragment()
+            // MODIFICA QUI: Istanzia FoldersFragment senza argomenti
             R.id.folders -> FoldersFragment()
             R.id.shared -> SharedFragment()
-            R.id.settings -> SettingsFragment()
+            R.id.settings -> SettingsFragment().apply {
+                // Assicurati di impostare il listener per il cambio tema qui, se necessario
+            }
             else -> {
                 Log.w("MainActivity", "ID elemento di navigazione non riconosciuto: $itemId. Nessun fragment da sostituire.")
-                return // Nessun fragment valido, esci
+                return
             }
         }
 
-        // Sostituisci il fragment SOLO SE la *classe* del nuovo fragment è diversa da quella attuale
         val currentFragment = supportFragmentManager.findFragmentById(R.id.frame_layout)
         if (currentFragment != null && currentFragment::class == targetFragment::class) {
             Log.d("MainActivity", "Tentativo di sostituire con lo stesso tipo di Fragment: ${targetFragment.javaClass.simpleName}. Ignorata sostituzione del fragment.")
-            // Se è lo stesso tipo di fragment, assicurati che la selezione UI sia comunque corretta
             updateNavigationSelection(itemId)
             return
         }
 
-        // Esegui la transazione del fragment
         replaceFragment(targetFragment)
-
-        // Aggiorna la selezione visiva della UI di navigazione DOPO la transazione del fragment
         updateNavigationSelection(itemId)
+    }
+
+    override fun onPdfFileClicked(pdfUri: Uri) {
+        Log.d("MainActivity", "Ricevuto click PDF da FoldersFragment per URI: $pdfUri")
+
+        val pdfViewerContainer = findViewById<View>(R.id.fragment_pdf_viewer_container)
+        val isLandscapeTabletLayout = pdfViewerContainer != null
+
+        if (isLandscapeTabletLayout) {
+            Log.d("MainActivity", "Layout tablet landscape con contenitore PDF. Carico PdfViewerFragment.")
+            val pdfViewerFragment = PdfViewerFragment.newInstance(pdfUri)
+
+            // --- GESTIONE PERMESSI URI (come da ultima versione) ---
+            try {
+                contentResolver.takePersistableUriPermission(pdfUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                Log.d("MainActivity", "Permesso URI persistente preso per: $pdfUri")
+            } catch (e: SecurityException) {
+                Log.e("MainActivity", "Fallito tentativo di prendere permesso URI persistente per $pdfUri: ${e.message}. Tentativo di grant temporaneo.", e)
+                grantUriPermission(packageName, pdfUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                Log.d("MainActivity", "Permesso URI temporaneo concesso per: $pdfUri")
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Errore inatteso nel prendere permesso URI: ${e.message}", e)
+                return
+            }
+            // --- FINE GESTIONE PERMESSI URI ---
+
+            // Rende il contenitore VISIBILE e poi esegue la transazione
+            pdfViewerContainer.visibility = View.VISIBLE
+
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_pdf_viewer_container, pdfViewerFragment)
+                .commitAllowingStateLoss()
+        } else {
+            // Altrimenti (smartphone o tablet portrait), apri l'Activity dedicata al viewer PDF
+            Log.d("MainActivity", "Layout smartphone o tablet portrait. Avvio PDFViewerActivity.")
+            val intent = Intent(this, PDFViewerActivity::class.java).apply {
+                putExtra("pdf_uri", pdfUri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(intent)
+        }
     }
 
     private fun replaceFragment(fragment: Fragment) {
@@ -352,7 +438,7 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener {
 
             // 2. Gestione di NavigationRailView
             binding.navigationRail?.apply {
-                if (isAttachedToWindow && menu != null) {
+                if (isAttachedToWindow) {
                     val item = menu.findItem(itemId)
                     if (item != null && item.itemId != selectedItemId) { // Controlla anche se non è già selezionato
                         selectedItemId = itemId

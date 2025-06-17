@@ -55,7 +55,22 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.google.android.material.snackbar.Snackbar
 import it.lavorodigruppo.flexipdf.data.FileSystemDatasource
 
-class FoldersFragment : Fragment() {
+class FoldersFragment(
+) : Fragment() {
+
+    private var pdfFileClickListener: OnPdfFileClickListener? = null
+
+    // Override del metodo onAttach per ottenere il riferimento all'Activity (che implementa il listener)
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is OnPdfFileClickListener) {
+            pdfFileClickListener = context
+        } else {
+            // È buona pratica lanciare un'eccezione se l'Activity non implementa il listener richiesto.
+            // Puoi anche solo loggare un avviso se preferisci.
+            Log.e("FoldersFragment", "$context must implement OnPdfFileClickListener")
+        }
+    }
 
     private var _binding: FragmentFoldersBinding? = null
     private val binding get() = _binding!!
@@ -275,20 +290,12 @@ class FoldersFragment : Fragment() {
                 when (item) {
                     is PdfFileItem -> {
                         val pdfUri = item.uriString.toUri()
-                        Log.d("FoldersFragment", "Tentativo di aprire PDF con URI: $pdfUri")
+                        Log.d("FoldersFragment", "PDF cliccato: ${item.displayName}. Notifico l'Activity tramite callback.")
+                        // Utilizza il callback per notificare l'Activity
+                        pdfFileClickListener?.onPdfFileClicked(pdfUri)
 
-                        val intent = Intent(requireContext(), PDFViewerActivity::class.java).apply {
-                            putExtra("pdf_uri", pdfUri)
-                            putExtra("pdf_display_name", item.displayName)
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        startActivity(intent)
-                        Toast.makeText(requireContext(), "Apertura PDF: ${item.displayName}", Toast.LENGTH_SHORT).show()
                     }
                     is FolderItem -> {
-                        // Questa parte verrà eseguita solo se non eravamo in modalità spostamento
-                        // o se la navigazione in modalità spostamento è stata gestita sopra.
                         fileSystemViewModel.enterFolder(item)
                     }
                 }
@@ -458,7 +465,8 @@ class FoldersFragment : Fragment() {
         actionMode?.finish()
         actionMode = null
         _binding = null
-
+        // IMPORTANTE: Resetta il listener per evitare memory leaks quando il fragment è scollegato
+        pdfFileClickListener = null
     }
 
     // --- Metodi per il FAB Popup ---
