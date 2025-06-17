@@ -170,35 +170,31 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
             handleNavigationItemSelected(R.id.home) // Chiama handleNavigationItemSelected per il primo avvio
             Log.d("MainActivity", "onPostCreate: savedInstanceState è null. Caricato HomeFragment iniziale.")
         } else {
-            // Se l'Activity è stata ricreata (es. cambio configurazione/rotazione),
-            // i fragment vengono ripristinati AUTOMATICAMENTE dal FragmentManager.
-            // Non dobbiamo chiamare replaceFragment o handleNavigationItemSelected qui,
-            // altrimenti creeremmo duplicati o conflitti.
-            Log.d("MainActivity", "onPostCreate: savedInstanceState NON è null. I Fragment sono stati ripristinati automaticamente.")
-
-            // Aggiorna la selezione visiva della UI di navigazione in base al fragment attualmente visibile.
+            // Se l'Activity è stata ricreata (es. cambio configurazione/rotazione)
             val currentFragmentInFrameLayout = supportFragmentManager.findFragmentById(R.id.frame_layout)
             currentFragmentInFrameLayout?.let {
                 updateNavigationSelectionForFragment(it)
-                Log.d("MainActivity", "onPostCreate: UI di navigazione aggiornata per ${it.javaClass.simpleName}.")
-            }
+                Log.d("MainActivity", "onPostCreate: savedInstanceState NON è null. Aggiornata UI di navigazione per ${it.javaClass.simpleName}.")
 
-            // --- GESTIONE DELLA VISIBILITÀ DEL PANNELLO PDF DOPO LA ROTAZIONE ---
-            // Dobbiamo ripristinare la visibilità del contenitore PDF
-            // se c'era un PdfViewerFragment prima della rotazione.
-            val pdfViewerContainer = findViewById<View>(R.id.fragment_pdf_viewer_container)
-            val pdfViewerFragmentOnRecreation = supportFragmentManager.findFragmentById(R.id.fragment_pdf_viewer_container)
+                val pdfViewerContainer = findViewById<View>(R.id.fragment_pdf_viewer_container)
 
-            if (pdfViewerContainer != null) { // Solo se siamo in un layout con il contenitore PDF
-                if (pdfViewerFragmentOnRecreation != null) {
-                    // Se il PDF Fragment è stato ripristinato, rendi visibile il suo contenitore.
-                    pdfViewerContainer.visibility = View.VISIBLE
-                    Log.d("MainActivity", "onPostCreate: PdfViewerFragment ripristinato. Reso visibile contenitore PDF.")
-                } else {
-                    // Se il contenitore esiste ma non c'è un PDF Fragment al suo interno (es. era chiuso),
-                    // assicurati che sia GONE.
-                    pdfViewerContainer.visibility = View.GONE
-                    Log.d("MainActivity", "onPostCreate: Contenitore PDF presente ma nessun fragment. Assicurato che sia GONE.")
+                // Determina se il FoldersFragment è il fragment attivo nel pannello principale
+                val isFoldersFragmentActive = it is FoldersFragment
+                // Determina se c'era un PdfViewerFragment nel contenitore secondario prima della ricreazione
+                val pdfViewerFragmentRestored = supportFragmentManager.findFragmentById(R.id.fragment_pdf_viewer_container) != null
+
+                if (pdfViewerContainer != null) { // Solo se siamo in un layout con il contenitore PDF (e quindi tablet landscape)
+                    if (isFoldersFragmentActive && pdfViewerFragmentRestored) {
+                        // Se il FoldersFragment è attivo E un PDFViewerFragment è stato ripristinato,
+                        // allora rende il contenitore del PDF visibile.
+                        pdfViewerContainer.visibility = View.VISIBLE
+                        Log.d("MainActivity", "onPostCreate: FoldersFragment attivo e PdfViewerFragment ripristinato. Reso visibile contenitore PDF.")
+                    } else {
+                        // In tutti gli altri casi (es. HomeFragment attivo, o nessun PDF era aperto),
+                        // assicurati che il contenitore del PDF sia GONE.
+                        pdfViewerContainer.visibility = View.GONE
+                        Log.d("MainActivity", "onPostCreate: Contenitore PDF presente ma non dovrebbe essere visibile. Assicurato che sia GONE.")
+                    }
                 }
             }
         }
