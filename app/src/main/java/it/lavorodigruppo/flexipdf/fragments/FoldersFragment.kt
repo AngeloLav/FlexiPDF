@@ -98,7 +98,6 @@ class FoldersFragment(
 
             // Voci di menu per la modalità di spostamento
             val moveHereItem = menu?.findItem(R.id.action_move_here)
-            val cancelMoveItem = menu?.findItem(R.id.action_cancel_move)
             val moveBackItem = menu?.findItem(R.id.action_move_back)
 
             if (isMoving) {
@@ -108,11 +107,9 @@ class FoldersFragment(
                 moveItem?.isVisible = false
 
                 moveHereItem?.isVisible = true
-                cancelMoveItem?.isVisible = true
 
-
-                // Rendi visibile "Indietro" solo se non siamo nella root
                 moveBackItem?.isVisible = fileSystemViewModel.currentFolder.value != null
+
 
                 mode?.title = resources.getQuantityString(R.plurals.move_items_message, itemsToMoveCount, itemsToMoveCount)
             } else {
@@ -122,13 +119,12 @@ class FoldersFragment(
                 moveItem?.isVisible = true
 
                 moveHereItem?.isVisible = false
-                cancelMoveItem?.isVisible = false
                 moveBackItem?.isVisible = false
 
                 mode?.title = "$selectedCount" + getString(R.string.selected)
 
 
-                val currentFolderId = fileSystemViewModel.currentFolder.value?.id ?: FileSystemDatasource.ROOT_FOLDER_ID
+                fileSystemViewModel.currentFolder.value?.id ?: FileSystemDatasource.ROOT_FOLDER_ID
 
             }
             return true
@@ -155,12 +151,6 @@ class FoldersFragment(
                     fileSystemViewModel.moveItemsToCurrentFolder()
                     Snackbar.make(binding.root, "Elementi spostati con successo!", Snackbar.LENGTH_SHORT).show()
                     mode?.finish()
-                    true
-                }
-                R.id.action_cancel_move -> { // GESTIONE "ANNULLA SPOSTAMENTO"
-                    fileSystemViewModel.cancelMoveOperation()
-                    Snackbar.make(binding.root, "Operazione di spostamento annullata.", Snackbar.LENGTH_SHORT).show()
-                    mode?.finish() // Chiude la CAB
                     true
                 }
                 R.id.action_move_back -> { // GESTIONE "INDIETRO" IN MODALITÀ SPOSTAMENTO
