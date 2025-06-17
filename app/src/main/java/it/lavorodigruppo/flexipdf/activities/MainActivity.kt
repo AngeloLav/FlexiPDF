@@ -492,7 +492,7 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
         }
     }
 
-    // Questo metodo è chiamato solo in onPostCreate per inizializzare/ripristinare lo stato della UI
+    // Questoo metodo è chiamato solo in onPostCreate per inizializzare/ripristinare lo stato della UI
     private fun updateNavigationSelectionForFragment(fragment: Fragment) {
         val itemId = getMenuItemIdForFragment(fragment)
         updateNavigationSelection(itemId)
