@@ -39,6 +39,7 @@
                 app:layout_constraintBottom_toTopOf="@id/searchView"
                 android:paddingStart="0dp"
                 android:paddingEnd="12dp"
+                android:paddingTop="45dp"
                 android:paddingBottom="12dp"
                 app:tint="@android:color/white" />
 
@@ -52,6 +53,7 @@
                 android:textSize="26sp"
                 android:fontFamily="monospace"
                 android:textStyle="bold"
+                android:paddingTop="50dp"
                 android:paddingBottom="10dp"
                 app:layout_constraintBottom_toTopOf="@id/searchView"
                 app:layout_constraintStart_toEndOf="@id/backButton"
