@@ -49,7 +49,6 @@ import android.widget.EditText
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.google.android.material.snackbar.Snackbar
 import it.lavorodigruppo.flexipdf.data.FileSystemDatasource
-import it.lavorodigruppo.flexipdf.fragments.OnPdfFileClickListener
 
 class FoldersFragment(
 ) : Fragment() {

@@ -221,10 +221,10 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
     // Metodo per configurare il contenuto visivo del Custom Side Menu
     private fun setupCustomSideMenuContent(customSideMenuBinding: LayoutCustomSideMenuBinding) {
         try {
-            val itemHome = customSideMenuBinding.customMenuItemHome.root as CardView
-            val itemFolders = customSideMenuBinding.customMenuItemFolders.root as CardView
-            val itemShared = customSideMenuBinding.customMenuItemShared.root as CardView
-            val itemSettings = customSideMenuBinding.customMenuItemSettings.root as CardView
+            val itemHome = customSideMenuBinding.customMenuItemHome.root
+            val itemFolders = customSideMenuBinding.customMenuItemFolders.root
+            val itemShared = customSideMenuBinding.customMenuItemShared.root
+            val itemSettings = customSideMenuBinding.customMenuItemSettings.root
 
             setupCustomMenuItemContentVisuals(itemHome, R.drawable.home_24dp_000000_fill0_wght400_grad0_opsz24, R.string.home)
             setupCustomMenuItemContentVisuals(itemFolders, R.drawable.folder_open_24dp_000000_fill0_wght400_grad0_opsz24, R.string.folders)
@@ -317,7 +317,7 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
                 supportFragmentManager.beginTransaction()
                     .remove(pdfViewerFragment)
                     .commitAllowingStateLoss()
-                pdfViewerContainer?.visibility = View.GONE
+                pdfViewerContainer.visibility = View.GONE
             }
         }
 
@@ -424,17 +424,17 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
             binding.customSideMenu?.let { customSideMenuBinding ->
                 Log.d("MainActivity", "Resetting Custom Side Menu selection.")
                 // Deseleziona tutti gli elementi del custom menu
-                setCustomMenuItemSelected(customSideMenuBinding.customMenuItemHome.root as CardView, false)
-                setCustomMenuItemSelected(customSideMenuBinding.customMenuItemFolders.root as CardView, false)
-                setCustomMenuItemSelected(customSideMenuBinding.customMenuItemShared.root as CardView, false)
-                setCustomMenuItemSelected(customSideMenuBinding.customMenuItemSettings.root as CardView, false)
+                setCustomMenuItemSelected(customSideMenuBinding.customMenuItemHome.root, false)
+                setCustomMenuItemSelected(customSideMenuBinding.customMenuItemFolders.root, false)
+                setCustomMenuItemSelected(customSideMenuBinding.customMenuItemShared.root, false)
+                setCustomMenuItemSelected(customSideMenuBinding.customMenuItemSettings.root, false)
 
                 // Seleziona l'item corretto nel custom menu
                 when (itemId) {
-                    R.id.home -> setCustomMenuItemSelected(customSideMenuBinding.customMenuItemHome.root as CardView, true)
-                    R.id.folders -> setCustomMenuItemSelected(customSideMenuBinding.customMenuItemFolders.root as CardView, true)
-                    R.id.shared -> setCustomMenuItemSelected(customSideMenuBinding.customMenuItemShared.root as CardView, true)
-                    R.id.settings -> setCustomMenuItemSelected(customSideMenuBinding.customMenuItemSettings.root as CardView, true)
+                    R.id.home -> setCustomMenuItemSelected(customSideMenuBinding.customMenuItemHome.root, true)
+                    R.id.folders -> setCustomMenuItemSelected(customSideMenuBinding.customMenuItemFolders.root, true)
+                    R.id.shared -> setCustomMenuItemSelected(customSideMenuBinding.customMenuItemShared.root, true)
+                    R.id.settings -> setCustomMenuItemSelected(customSideMenuBinding.customMenuItemSettings.root, true)
                     else -> Log.w("MainActivity", "ID ($itemId) non gestito per selezione Custom Side Menu.")
                 }
             }
@@ -459,7 +459,7 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
 
             // 3. Gestione di BottomNavigationView
             binding.bottomNavigationView?.apply {
-                if (isAttachedToWindow && menu != null) {
+                if (isAttachedToWindow) {
                     val item = menu.findItem(itemId)
                     if (item != null && item.itemId != selectedItemId) { // Controlla anche se non è già selezionato
                         selectedItemId = itemId
