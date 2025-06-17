@@ -305,7 +305,6 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
             return
         }
 
-        // --- INIZIO LOGICA: PULISCI IL PANNELLO PDF AL CAMBIO DI SEZIONE ---
         val pdfViewerContainer = findViewById<View>(R.id.fragment_pdf_viewer_container)
         val isLandscapeTabletLayout = pdfViewerContainer != null
 
@@ -321,7 +320,6 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
                 pdfViewerContainer?.visibility = View.GONE
             }
         }
-        // --- FINE NUOVA LOGICA ---
 
         val targetFragment = when (itemId) {
             R.id.home -> HomeFragment()
