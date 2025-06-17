@@ -49,7 +49,6 @@ import android.widget.EditText
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.google.android.material.snackbar.Snackbar
 import it.lavorodigruppo.flexipdf.data.FileSystemDatasource
-import it.lavorodigruppo.flexipdf.fragments.OnPdfFileClickListener
 
 class FoldersFragment(
 ) : Fragment() {
@@ -196,11 +195,11 @@ class FoldersFragment(
             val navigationBarsInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
 
             // 1. Applica l'inset superiore al padding del topBannerCardView (per la status bar)
-            binding.topBannerCardView.setPadding(
-                binding.topBannerCardView.paddingLeft,
-                systemBarsInsets.top, // Applica l'inset superiore
-                binding.topBannerCardView.paddingRight,
-                binding.topBannerCardView.paddingBottom
+            binding.bannerContentLayout.setPadding(
+                binding.bannerContentLayout.paddingLeft,
+                systemBarsInsets.top,
+                binding.bannerContentLayout.paddingRight,
+                binding.bannerContentLayout.paddingBottom
             )
 
             // 2. Determina il padding inferiore per la pdfRecyclerView in base all'orientamento
