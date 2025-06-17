@@ -22,5 +22,12 @@ interface OnPdfFileClickListener {
      * @param pdfUri L'URI del file PDF cliccato.
      */
     fun onPdfFileClicked(pdfUri: Uri)
+
+    /**
+     * Chiamato quando un file PDF viene doppiamente cliccato,
+     * richiedendo l'apertura forzata in una nuova Activity (PDFViewerActivity).
+     * @param pdfUri L'URI del file PDF doppiamente cliccato.
+     */
+    fun onPdfFileClickedForceActivity(pdfUri: Uri)
 }
 

@@ -393,6 +393,15 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
         }
     }
 
+    override fun onPdfFileClickedForceActivity(pdfUri: Uri) {
+        Log.d("MainActivity", "Ricevuto DOPPIO CLIC PDF da FoldersFragment per URI: $pdfUri. Avvio forzato PDFViewerActivity.")
+        val intent = Intent(this, PDFViewerActivity::class.java).apply {
+            putExtra("pdf_uri", pdfUri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(intent)
+    }
+
     private fun replaceFragment(fragment: Fragment) {
         if (isFinishing || isDestroyed) {
             Log.w("MainActivity", "Ignorata sostituzione Fragment, Activity in fase di chiusura. Fragment: ${fragment.javaClass.simpleName}")
