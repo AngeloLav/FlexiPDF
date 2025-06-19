@@ -107,6 +107,17 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
             Log.d("PDFViewerActivity", "Nessuno stato salvato. Avvio pagina: 0.")
         }
 
+        // --- INIZIO MODIFICA: Aggiungi i click listener per i bottoni ---
+        binding?.btnPrev?.setOnClickListener {
+            Log.d("PDFViewerActivity", "Pulsante 'Indietro' cliccato. Chiamo navigatePages(-2).")
+            navigatePages(-2)
+        }
+        binding?.btnNext?.setOnClickListener {
+            Log.d("PDFViewerActivity", "Pulsante 'Avanti' cliccato. Chiamo navigatePages(2).")
+            navigatePages(2)
+        }
+        // --- FINE MODIFICA ---
+
         // Inizia a osservare i cambiamenti di layout del dispositivo foldable in un Coroutine Scope
         lifecycleScope.launch {
             WindowInfoTracker.getOrCreate(this@PDFViewerActivity)
@@ -153,9 +164,14 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
 
     // Implementazione del callback da PdfViewerFragment.kt: viene chiamato quando un PDF è caricato
     override fun onPdfFragmentLoaded(totalPages: Int) {
-        totalPdfPages = totalPages // Aggiorna il totale delle pagine memorizzato nell'Activity
-        Log.d("PDFViewerActivity", "PDF caricato in fragment. Pagine totali: $totalPages")
-        // NUOVO: Aggiorna lo stato dei bottoni dopo che il PDF è stato caricato e le pagine totali sono note
+        // --- INIZIO MODIFICA CRUCIALE: Aggiorna totalPdfPages solo se il nuovo valore è maggiore ---
+        if (totalPages > this.totalPdfPages) {
+            this.totalPdfPages = totalPages
+            Log.d("PDFViewerActivity", "PDF caricato in fragment. Pagine totali aggiornate a: $totalPages")
+        } else {
+            Log.d("PDFViewerActivity", "PDF caricato in fragment. Rifiuto aggiornamento pagine totali a $totalPages (attuale: ${this.totalPdfPages}).")
+        }
+        // --- FINE MODIFICA CRUCIALE ---
         updateNavigationButtonStates()
     }
 
