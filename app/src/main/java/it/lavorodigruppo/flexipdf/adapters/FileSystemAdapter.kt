@@ -17,8 +17,6 @@ import it.lavorodigruppo.flexipdf.databinding.PdfFileItemBinding
 import it.lavorodigruppo.flexipdf.items.FileSystemItem
 import it.lavorodigruppo.flexipdf.items.FolderItem
 import it.lavorodigruppo.flexipdf.items.PdfFileItem
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 // Definizione delle callback per gli eventi di click e selezione
 typealias OnItemClick = (FileSystemItem) -> Unit

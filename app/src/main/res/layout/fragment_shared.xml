@@ -97,16 +97,29 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/pdfRecyclerView"
         android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/topBannerCardView"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
         android:clipToPadding="false"
         tools:listitem="@layout/folder_item"
         />
 
-
+    <TextView
+        android:id="@+id/warning"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="monospace"
+        android:text="@string/warning"
+        android:textColor="@color/mild_gray"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/pdfRecyclerView" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/floatingActionButton"

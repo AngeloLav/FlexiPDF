@@ -9,7 +9,7 @@
         android:id="@+id/folderNameEditText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Nome Cartella Cloud"
+        android:hint="@string/nome_cartella_cloud"
         android:inputType="textCapWords"
         android:autofillHints="name" />
 
@@ -17,7 +17,7 @@
         android:id="@+id/cloudParamEditText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Parametro Cloud (es. ID, Token)"
+        android:hint="@string/parametro_cloud_es_id_token"
         android:inputType="text"
         android:layout_marginTop="10dp"
         android:autofillHints="none" />
