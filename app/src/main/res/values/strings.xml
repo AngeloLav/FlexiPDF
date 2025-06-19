@@ -69,4 +69,6 @@
     <string name="one_deletion_message">Are you sure you want to delete the one element selected?</string>
     <string name="multiple_deletion_message">Are you sure you want to delete the %d elements selected?</string>
     <string name="favorite">favorite</string>
+    <string name="back">Back</string>
+    <string name="next">Next</string>
 </resources>
