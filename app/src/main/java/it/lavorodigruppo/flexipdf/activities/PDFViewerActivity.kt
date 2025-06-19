@@ -28,8 +28,9 @@ import it.lavorodigruppo.flexipdf.R
 import it.lavorodigruppo.flexipdf.databinding.ActivityPdfViewerFoldableBinding
 import it.lavorodigruppo.flexipdf.fragments.PdfViewerFragment
 import it.lavorodigruppo.flexipdf.interfaces.PdfLoadCallback
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import android.graphics.pdf.PdfRenderer
+import android.os.ParcelFileDescriptor
 
 
 class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
@@ -46,7 +47,6 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Non usiamo enableEdgeToEdge qui, viene gestito nel tema o Activity specifica
 
         // Imposto il layout foldable come layout principale UNA SOLA VOLTA in onCreate
         binding = ActivityPdfViewerFoldableBinding.inflate(layoutInflater)
@@ -93,6 +93,39 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
             }
         }
         // <--- FINE GESTIONE PERMESSI URI --->
+
+
+        // NUOVO: Funzione per ottenere il conteggio totale delle pagine usando PdfRenderer
+        fun getAbsolutePdfPageCount(uri: Uri): Int {
+            var pageCount = 0
+            var pfd: ParcelFileDescriptor? = null
+            var renderer: PdfRenderer? = null
+            try {
+                pfd = contentResolver.openFileDescriptor(uri, "r")
+                if (pfd != null) {
+                    renderer = PdfRenderer(pfd)
+                    pageCount = renderer.pageCount
+                    Log.d("PDFViewerActivity", "PdfRenderer per URI: $uri ha ${pageCount} pagine.")
+                }
+            } catch (e: Exception) {
+                Log.e("PDFViewerActivity", "Errore nell'ottenere il conteggio pagine PDF da URI: ${e.message}", e)
+            } finally {
+                renderer?.close()
+                pfd?.close()
+            }
+            return pageCount
+        }
+
+        // --- INIZIO MODIFICA CRUCIALE: Ottieni il conteggio totale delle pagine all'avvio ---
+        // Questa è la fonte autorevole del numero di pagine totali del documento.
+        pdfUri?.let { uri ->
+            totalPdfPages = getAbsolutePdfPageCount(uri)
+            Log.d("PDFViewerActivity", "Conteggio pagine PDF totale (da PdfRenderer): $totalPdfPages")
+        } ?: run {
+            Log.e("PDFViewerActivity", "Impossibile ottenere il conteggio totale delle pagine: URI PDF nullo.")
+            totalPdfPages = 0 // Assicura che sia 0 se l'URI è nullo
+        }
+        // --- FINE MODIFICA CRUCIALE ---
 
 
         // Ripristina lo stato dell'Activity se è stata ricreata (es. dopo rotazione o configurazione)
@@ -162,16 +195,11 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
         Log.d("PDFViewerActivity", "Stato salvato: Pagina=${currentPage}, Totale=${totalPdfPages}, LayoutFoldable=${currentLayoutIsFoldable}")
     }
 
-    // Implementazione del callback da PdfViewerFragment.kt: viene chiamato quando un PDF è caricato
-    override fun onPdfFragmentLoaded(totalPages: Int) {
-        // --- INIZIO MODIFICA CRUCIALE: Aggiorna totalPdfPages solo se il nuovo valore è maggiore ---
-        if (totalPages > this.totalPdfPages) {
-            this.totalPdfPages = totalPages
-            Log.d("PDFViewerActivity", "PDF caricato in fragment. Pagine totali aggiornate a: $totalPages")
-        } else {
-            Log.d("PDFViewerActivity", "PDF caricato in fragment. Rifiuto aggiornamento pagine totali a $totalPages (attuale: ${this.totalPdfPages}).")
-        }
-        // --- FINE MODIFICA CRUCIALE ---
+    // MODIFICATO: Questa callback ora serve solo per segnalare il caricamento del fragment
+    // e triggerare l'aggiornamento dello stato dei bottoni, non per impostare totalPdfPages.
+    override fun onPdfFragmentLoaded(nbPagesFromFragment: Int) {
+        // Log.d("PDFViewerActivity", "PDF caricato in fragment: $nbPagesFromFragment pagine (Conteggio totale attività: ${this.totalPdfPages})")
+        // Non aggiorniamo totalPdfPages qui, è già gestito da getAbsolutePdfPageCount in onCreate.
         updateNavigationButtonStates()
     }
 

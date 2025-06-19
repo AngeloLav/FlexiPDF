@@ -42,10 +42,6 @@
         android:id="@+id/navigation_card"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="16dp"
-        app:cardCornerRadius="16dp"
         app:cardElevation="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -63,25 +59,21 @@
 
             <Button
                 android:id="@+id/btn_prev"
-                style="?android:attr/buttonBarButtonStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/back"
-                android:layout_marginEnd="16dp"
-                android:paddingStart="24dp"
-                android:paddingEnd="24dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="16dp"
                 android:backgroundTint="?attr/colorSecondary"
                 android:textColor="@android:color/white"
                 app:cornerRadius="12dp" />
 
             <Button
                 android:id="@+id/btn_next"
-                style="?android:attr/buttonBarButtonStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
                 android:text="@string/next"
-                android:paddingStart="24dp"
-                android:paddingEnd="24dp"
                 android:backgroundTint="?attr/colorSecondary"
                 android:textColor="@android:color/white"
                 app:cornerRadius="12dp"/>
