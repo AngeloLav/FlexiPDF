@@ -17,10 +17,7 @@ import it.lavorodigruppo.flexipdf.databinding.PdfFileItemBinding
 import it.lavorodigruppo.flexipdf.items.FileSystemItem
 import it.lavorodigruppo.flexipdf.items.FolderItem
 import it.lavorodigruppo.flexipdf.items.PdfFileItem
-import android.os.Handler
-import android.os.Looper
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 // Definizione delle callback per gli eventi di click e selezione
@@ -128,11 +125,6 @@ class FileSystemAdapter(
             Log.d("PdfFileViewHolder", "Bind per ${pdfFile.displayName}, isSelectionMode: $isSelectionMode, isSelected: ${pdfFile.isSelected}")
             binding.titleTextView.text = pdfFile.displayName
             binding.iconImageView.setImageResource(R.drawable.pdf_svgrepo_com) // Icona PDF generica
-
-            // Formatta e imposta la data di ultima modifica (se presente nella tua data class PdfFileItem)
-            val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-            // Assicurati che PdfFileItem abbia una proprietà lastModified (long)
-            // binding.lastModifiedTextView.text = dateFormat.format(Date(pdfFile.lastModified))
 
             // Imposta l'icona del preferito in base allo stato
             binding.favoriteIcon.setImageResource(

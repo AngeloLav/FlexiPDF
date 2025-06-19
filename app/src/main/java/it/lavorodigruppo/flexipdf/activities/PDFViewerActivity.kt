@@ -407,7 +407,7 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
                     return // Impedisce la navigazione
                 }
                 // Assicurati che la pagina sinistra sia pari quando si va indietro, a meno che non sia la pagina 0
-                if (proposedNewLeftPage % 2 != 0 && proposedNewLeftPage > 0) {
+                if (proposedNewLeftPage % 2 != 0) {
                     proposedNewLeftPage -= 1 // Arrotonda per difetto alla pagina pari precedente
                 }
             }

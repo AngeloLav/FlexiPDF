@@ -11,9 +11,7 @@ package it.lavorodigruppo.flexipdf.fragments
 
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
@@ -54,6 +52,7 @@ import java.util.Locale
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import android.provider.OpenableColumns // Necessario per ottenere il nome del file da una Uri
+import kotlinx.coroutines.FlowPreview
 
 class SharedFragment : Fragment() {
 
@@ -382,6 +381,7 @@ class SharedFragment : Fragment() {
         })
     }
 
+    @OptIn(FlowPreview::class)
     private fun observeUIState() {
         viewLifecycleOwner.lifecycleScope.launch {
             combine(currentCloudFolder, searchQuery.debounce(300)) { folder, query ->
@@ -714,6 +714,7 @@ class SharedFragment : Fragment() {
         }
     }
 
+    @SuppressLint("InflateParams")
     private fun showPopupMenu() {
         val popupView = LayoutInflater.from(requireContext()).inflate(R.layout.custom_popup_menu, null)
 
