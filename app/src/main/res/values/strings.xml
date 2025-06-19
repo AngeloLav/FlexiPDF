@@ -5,7 +5,7 @@
     <!-- Fragments temporary strings -->
     <string name="fragmentOne">Home</string>
     <string name="fragmentTwo">Folders</string>
-    <string name="fragmentThree">Share</string>
+    <string name="fragmentThree">Shared</string>
     <string name="fragmentFour">Settings</string>
 
     <!-- Fragment Home -->
@@ -71,4 +71,5 @@
     <string name="favorite">favorite</string>
     <string name="back">Back</string>
     <string name="next">Next</string>
+    <string name="add_cloud">add cloud\n</string>
 </resources>
