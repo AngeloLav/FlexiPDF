@@ -92,8 +92,8 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
     private lateinit var pdfManager: PdfManager
     private lateinit var fileSystemViewModel: FileSystemViewModel
 
-    // Rimosso la mappa per le istanze dei fragment.
-    // Creeremo nuove istanze ogni volta, per semplicità e per eliminare potenziali problemi di stato.
+    private var lastNavigationClickTime: Long = 0
+    private val NAVIGATION_DEBOUNCE_TIME = 100L // Tempo in millisecondi per il debounce
 
     private val pickPdfLauncher = registerForActivityResult(
         object : androidx.activity.result.contract.ActivityResultContracts.OpenMultipleDocuments() {
@@ -297,9 +297,17 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
         }
     }
 
-
     // Metodo unificato per gestire la selezione degli elementi di navigazione
     private fun handleNavigationItemSelected(itemId: Int) {
+
+        //DEBOUNCING
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastNavigationClickTime < NAVIGATION_DEBOUNCE_TIME) {
+            Log.d("MainActivity", "Click di navigazione ignorato (debounce): troppo veloce. Item ID: $itemId")
+            return // Ignora il click
+        }
+        lastNavigationClickTime = currentTime // Aggiorna il tempo dell'ultimo click valido
+
         if (isFinishing || isDestroyed) {
             Log.w("MainActivity", "Ignorata selezione di navigazione, Activity in fase di chiusura. Item ID: $itemId")
             return
