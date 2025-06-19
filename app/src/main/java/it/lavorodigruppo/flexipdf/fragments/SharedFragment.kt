@@ -141,6 +141,7 @@ class SharedFragment : Fragment() {
     }
 
     // --- Dati di esempio (placeholder) ---
+    // Queste liste sono ora gestite per riflettere le modifiche utente (temporanee).
     private val cloudFoldersRoot = mutableListOf<FileSystemItem>(
         FolderItem(
             displayName = "Google Drive",
@@ -168,89 +169,116 @@ class SharedFragment : Fragment() {
         )
     )
 
-    private val googleDriveContent = mutableListOf<FileSystemItem>(
-        PdfFileItem(
-            displayName = "Documento Condiviso 1.pdf",
-            id = UUID.randomUUID().toString(),
-            uriString = Uri.EMPTY.toString(),
-            isSelected = false,
-            lastModified = System.currentTimeMillis() - 86400000,
-            isFavorite = false,
-            parentFolderId = "google_drive_mock_id_1"
-        ),
-        PdfFileItem(
-            displayName = "Report Q3.pdf",
-            id = UUID.randomUUID().toString(),
-            uriString = Uri.EMPTY.toString(),
-            isSelected = false,
-            lastModified = System.currentTimeMillis() - 172800000,
-            isFavorite = true,
-            parentFolderId = "google_drive_mock_id_1"
-        ),
-        FolderItem(
-            displayName = "Sottocartella Drive",
-            id = UUID.randomUUID().toString(),
-            isSelected = false,
-            parentFolderId = "google_drive_mock_id_1"
+    // Mappa per memorizzare i contenuti delle cartelle create dinamicamente dall'utente
+    // e delle sottocartelle (anche delle cartelle di esempio).
+    private val customCloudFoldersContent = mutableMapOf<String, MutableList<FileSystemItem>>()
+
+    // Inizializza i contenuti delle cartelle di esempio predefinite
+    init {
+        // Popola i contenuti delle cartelle predefinite usando gli ID corretti
+        val googleDriveFolder = cloudFoldersRoot.first { (it as FolderItem).displayName == "Google Drive" } as FolderItem
+        val dropboxFolder = cloudFoldersRoot.first { (it as FolderItem).displayName == "Dropbox Sync" } as FolderItem
+        val oneDriveFolder = cloudFoldersRoot.first { (it as FolderItem).displayName == "OneDrive Shared" } as FolderItem
+
+        val googleDriveInitialContent = mutableListOf<FileSystemItem>(
+            PdfFileItem(
+                displayName = "Documento Condiviso 1.pdf",
+                id = UUID.randomUUID().toString(),
+                uriString = Uri.EMPTY.toString(),
+                isSelected = false,
+                lastModified = System.currentTimeMillis() - 86400000,
+                isFavorite = false,
+                parentFolderId = googleDriveFolder.id
+            ),
+            PdfFileItem(
+                displayName = "Report Q3.pdf",
+                id = UUID.randomUUID().toString(),
+                uriString = Uri.EMPTY.toString(),
+                isSelected = false,
+                lastModified = System.currentTimeMillis() - 172800000,
+                isFavorite = true,
+                parentFolderId = googleDriveFolder.id
+            )
         )
-    )
-    private val dropboxContent = mutableListOf<FileSystemItem>(
-        PdfFileItem(
-            displayName = "Presentazione Client.pdf",
-            id = UUID.randomUUID().toString(),
-            uriString = Uri.EMPTY.toString(),
-            isSelected = false,
-            lastModified = System.currentTimeMillis() - 259200000,
-            isFavorite = false,
-            parentFolderId = "dropbox_mock_id_2"
-        ),
-        PdfFileItem(
-            displayName = "Contratti 2024.pdf",
-            id = UUID.randomUUID().toString(),
-            uriString = Uri.EMPTY.toString(),
-            isSelected = false,
-            lastModified = System.currentTimeMillis() - 345600000,
-            isFavorite = true,
-            parentFolderId = "dropbox_mock_id_2"
+        val sottocartellaDriveId = UUID.randomUUID().toString()
+        googleDriveInitialContent.add(
+            FolderItem(
+                displayName = "Sottocartella Drive",
+                id = sottocartellaDriveId,
+                isSelected = false,
+                parentFolderId = googleDriveFolder.id
+            )
         )
-    )
-    private val oneDriveContent = mutableListOf<FileSystemItem>(
-        PdfFileItem(
-            displayName = "Manuale Prodotto.pdf",
-            id = UUID.randomUUID().toString(),
-            uriString = Uri.EMPTY.toString(),
-            isSelected = false,
-            lastModified = System.currentTimeMillis() - 432000000,
-            isFavorite = false,
-            parentFolderId = "onedrive_mock_id_3"
-        ),
-        FolderItem(
-            displayName = "Progetti Team",
-            id = UUID.randomUUID().toString(),
-            isSelected = false,
-            parentFolderId = "onedrive_mock_id_3"
+        customCloudFoldersContent[googleDriveFolder.id] = googleDriveInitialContent
+
+        val dropboxInitialContent = mutableListOf<FileSystemItem>(
+            PdfFileItem(
+                displayName = "Presentazione Client.pdf",
+                id = UUID.randomUUID().toString(),
+                uriString = Uri.EMPTY.toString(),
+                isSelected = false,
+                lastModified = System.currentTimeMillis() - 259200000,
+                isFavorite = false,
+                parentFolderId = dropboxFolder.id
+            ),
+            PdfFileItem(
+                displayName = "Contratti 2024.pdf",
+                id = UUID.randomUUID().toString(),
+                uriString = Uri.EMPTY.toString(),
+                isSelected = false,
+                lastModified = System.currentTimeMillis() - 345600000,
+                isFavorite = true,
+                parentFolderId = dropboxFolder.id
+            )
         )
-    )
-    private val nestedFolderContent = mutableListOf<FileSystemItem>(
-        PdfFileItem(
-            displayName = "File annidato 1.pdf",
-            id = UUID.randomUUID().toString(),
-            uriString = Uri.EMPTY.toString(),
-            isSelected = false,
-            lastModified = System.currentTimeMillis() - 604800000,
-            isFavorite = false,
-            parentFolderId = null
-        ),
-        PdfFileItem(
-            displayName = "File annidato 2.pdf",
-            id = UUID.randomUUID().toString(),
-            uriString = Uri.EMPTY.toString(),
-            isSelected = false,
-            lastModified = System.currentTimeMillis() - 691200000,
-            isFavorite = false,
-            parentFolderId = null
+        customCloudFoldersContent[dropboxFolder.id] = dropboxInitialContent
+
+        val oneDriveInitialContent = mutableListOf<FileSystemItem>(
+            PdfFileItem(
+                displayName = "Manuale Prodotto.pdf",
+                id = UUID.randomUUID().toString(),
+                uriString = Uri.EMPTY.toString(),
+                isSelected = false,
+                lastModified = System.currentTimeMillis() - 432000000,
+                isFavorite = false,
+                parentFolderId = oneDriveFolder.id
+            )
         )
-    )
+        val progettiTeamId = UUID.randomUUID().toString()
+        oneDriveInitialContent.add(
+            FolderItem(
+                displayName = "Progetti Team",
+                id = progettiTeamId,
+                isSelected = false,
+                parentFolderId = oneDriveFolder.id
+            )
+        )
+        customCloudFoldersContent[oneDriveFolder.id] = oneDriveInitialContent
+
+        // Contenuto per le sottocartelle predefinite
+        customCloudFoldersContent[sottocartellaDriveId] = mutableListOf(
+            PdfFileItem(
+                displayName = "File annidato 1.pdf",
+                id = UUID.randomUUID().toString(),
+                uriString = Uri.EMPTY.toString(),
+                isSelected = false,
+                lastModified = System.currentTimeMillis() - 604800000,
+                isFavorite = false,
+                parentFolderId = sottocartellaDriveId
+            )
+        )
+        customCloudFoldersContent[progettiTeamId] = mutableListOf(
+            PdfFileItem(
+                displayName = "File annidato 2.pdf",
+                id = UUID.randomUUID().toString(),
+                uriString = Uri.EMPTY.toString(),
+                isSelected = false,
+                lastModified = System.currentTimeMillis() - 691200000,
+                isFavorite = false,
+                parentFolderId = progettiTeamId
+            )
+        )
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -341,7 +369,8 @@ class SharedFragment : Fragment() {
     @SuppressLint("UseCompatLoadingForDrawables")
     private fun setupListeners() {
         binding.addButton.setOnClickListener {
-            showAddCloudFolderDialog(isCreatingRootCloudFolder = true) // Chiamata per la creazione di cartella cloud root
+            // Crea una nuova cartella cloud root (isCreatingRootCloudFolder = true)
+            showAddCloudFolderDialog(isCreatingRootCloudFolder = true)
         }
 
         binding.backButton.setOnClickListener {
@@ -374,6 +403,7 @@ class SharedFragment : Fragment() {
                 return true
             }
 
+            // MODIFICA QUI: Correggi il nome del metodo
             override fun onQueryTextChange(newText: String?): Boolean {
                 _searchQuery.value = newText ?: ""
                 return true
@@ -507,22 +537,29 @@ class SharedFragment : Fragment() {
         Toast.makeText(context, "Stato preferito aggiornato (placeholder).", Toast.LENGTH_SHORT).show()
     }
 
+    // --- MODIFICATO: getCurrentDataSource per gestire cartelle utente ---
     private fun getCurrentDataSource(): MutableList<FileSystemItem>? {
-        return if (_currentCloudFolder.value == null) {
+        val currentFolder = _currentCloudFolder.value
+        return if (currentFolder == null) {
+            // Siamo alla radice, mostra le cartelle cloud di primo livello
             cloudFoldersRoot
         } else {
-            when (_currentCloudFolder.value?.displayName) {
-                "Google Drive" -> googleDriveContent
-                "Dropbox Sync" -> dropboxContent
-                "OneDrive Shared" -> oneDriveContent
-                "Sottocartella Drive" -> nestedFolderContent
-                "Progetti Team" -> nestedFolderContent
-                else -> null
+            // Siamo all'interno di una cartella specifica.
+            // Prima, cerca tra i contenuti predefiniti delle cartelle principali
+            val predefinedContent = when (currentFolder.displayName) {
+                // Si assume che i displayName delle cartelle root predefinite siano unici
+                // e che le sottocartelle predefinite mappino a liste specifiche se esistenti.
+                // In questo mock, "Sottocartella Drive" e "Progetti Team" sono trattate
+                // come nomi specifici che puntano a un contenuto.
+                // Data la nuova struttura di inizializzazione, usiamo gli ID per la mappatura
+                // delle sottocartelle definite in `init` e `customCloudFoldersContent`.
+                // Il caso migliore sarebbe sempre usare gli ID.
+                else -> customCloudFoldersContent[currentFolder.id] // Recupera il contenuto dalla mappa usando l'ID
             }
+            predefinedContent // Restituisce la lista trovata (potrebbe essere null se l'ID non è mappato)
         }
     }
 
-    // --- NUOVO: Funzione per ottenere il nome del file da una Uri ---
     private fun getFileNameFromUri(uri: Uri): String {
         var name: String? = null
         if (uri.scheme == "content") {
@@ -545,11 +582,10 @@ class SharedFragment : Fragment() {
         }
         return name ?: "Documento senza nome.pdf"
     }
-    // --- FINE NUOVO ---
 
     private fun addPdfToCurrentCloudFolder(uri: Uri) {
         val newPdf = PdfFileItem(
-            displayName = getFileNameFromUri(uri), // Usa la nuova funzione
+            displayName = getFileNameFromUri(uri),
             id = UUID.randomUUID().toString(),
             uriString = uri.toString(),
             isSelected = false,
@@ -558,6 +594,7 @@ class SharedFragment : Fragment() {
             parentFolderId = _currentCloudFolder.value?.id // ID della cartella cloud corrente, o null
         )
 
+        // Questo ora chiamerà getCurrentDataSource() che cercherà nella mappa per le cartelle custom
         val targetList = getCurrentDataSource()
 
         targetList?.add(newPdf)
@@ -613,10 +650,8 @@ class SharedFragment : Fragment() {
     }
 
     @SuppressLint("MissingInflatedId")
-    // Rinominato il parametro per maggiore chiarezza sul contesto di creazione
     private fun showAddCloudFolderDialog(isCreatingRootCloudFolder: Boolean = false) {
         val builder = AlertDialog.Builder(requireContext())
-        // Modifica il titolo in base al contesto
         builder.setTitle(if (isCreatingRootCloudFolder) getString(R.string.add_cloud) else "Crea Nuova Cartella")
 
         val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_cloud_folder, null)
@@ -624,7 +659,6 @@ class SharedFragment : Fragment() {
         val cloudParamEditText = view.findViewById<EditText>(R.id.cloudParamEditText)
         builder.setView(view)
 
-        // Nascondi o mostra il campo "Cloud Parameter" in base al contesto
         if (isCreatingRootCloudFolder) {
             cloudParamEditText.visibility = View.VISIBLE
         } else {
@@ -636,18 +670,28 @@ class SharedFragment : Fragment() {
             val cloudParam = if (isCreatingRootCloudFolder) cloudParamEditText.text.toString().trim() else null
 
             if (folderName.isNotEmpty()) {
+                val newFolderId = UUID.randomUUID().toString()
                 val newCloudFolder = FolderItem(
                     displayName = folderName,
-                    // isCloudFolder dipende dal contesto di creazione
                     isCloudFolder = isCreatingRootCloudFolder,
                     cloudLinkParam = cloudParam,
                     parentFolderId = if (isCreatingRootCloudFolder) null else _currentCloudFolder.value?.id,
-                    id = UUID.randomUUID().toString(),
+                    id = newFolderId, // Assegna un ID univoco
                     isSelected = false
                 )
 
-                val targetList = getCurrentDataSource()
-                targetList?.add(newCloudFolder)
+                if (isCreatingRootCloudFolder) {
+                    // Se è una cartella root cloud, aggiungila alla lista principale
+                    cloudFoldersRoot.add(newCloudFolder)
+                    // E inizializza il suo contenuto nella mappa customCloudFoldersContent
+                    customCloudFoldersContent[newFolderId] = mutableListOf()
+                } else {
+                    // Se è una sottocartella, aggiungila alla lista del parent (ottenuta da getCurrentDataSource)
+                    val parentFolderContentList = getCurrentDataSource()
+                    parentFolderContentList?.add(newCloudFolder)
+                    // E inizializza il suo contenuto nella mappa, perché potrebbe contenere elementi
+                    customCloudFoldersContent[newFolderId] = mutableListOf()
+                }
 
                 updateRecyclerViewContent()
                 Toast.makeText(context, "Cartella '$folderName' aggiunta (placeholder).", Toast.LENGTH_SHORT).show()
@@ -677,7 +721,14 @@ class SharedFragment : Fragment() {
                 val itemsToDelete = _selectedItems.value.toList()
                 val currentDataSource = getCurrentDataSource()
 
-                currentDataSource?.removeAll(itemsToDelete)
+                itemsToDelete.forEach { item ->
+                    currentDataSource?.removeIf { it.id == item.id }
+                    // Se è una cartella, rimuovi anche il suo contenuto dalla mappa
+                    if (item is FolderItem) {
+                        customCloudFoldersContent.remove(item.id)
+                        // TODO: Potresti voler rimuovere ricorsivamente i contenuti delle sottocartelle
+                    }
+                }
 
                 clearAllSelections()
                 updateRecyclerViewContent()
@@ -696,6 +747,8 @@ class SharedFragment : Fragment() {
         actionMode = null
         _binding = null
         pdfFileClickListener = null
+        // IMPORTANTE: Poiché i dati cloud sono mock e vivono qui, verranno resettati
+        // quando il Fragment viene ricreato. Questo è il comportamento "effimero" desiderato.
     }
 
     private fun rotateFabForward() {
