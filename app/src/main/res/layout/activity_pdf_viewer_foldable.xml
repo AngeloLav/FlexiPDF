@@ -18,8 +18,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/navigation_card"
-        android:layout_marginBottom="8dp"> <!-- Spazio tra i PDF e la card -->
+        app:layout_constraintBottom_toTopOf="@+id/navigation_card"> <!-- Spazio tra i PDF e la card -->
 
         <!-- Contenitore per il frammento PDF di sinistra (sempre presente) -->
         <FrameLayout

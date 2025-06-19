@@ -338,6 +338,24 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
 
             Log.d("PDFViewerActivity", "Fragment PDF avviati per modalità foldable. Attendendo callback di caricamento.")
 
+            // Gestisci il fragment destro: caricalo solo se pageRight è all'interno dei limiti del documento
+            if (pageRight < totalPdfPages) {
+                // Se c'è una pagina destra valida, caricala
+                val rightFragment = PdfViewerFragment.newInstance(uri, 0, false, intArrayOf(pageRight))
+                binding?.pdfFragmentRightContainer?.visibility = View.VISIBLE // Assicurati che sia visibile
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.pdf_fragment_right_container, rightFragment, "PDF_RIGHT_TAG")
+                    .commitNowAllowingStateLoss()
+                Log.d("PDFViewerActivity", "Caricato fragment destro per pagina: $pageRight")
+            } else {
+                // Se non c'è una pagina destra valida, nascondi il contenitore e rimuovi eventuali fragment.
+                binding?.pdfFragmentRightContainer?.visibility = View.INVISIBLE // Rende il pannello vuoto mantenendo lo spazio
+                supportFragmentManager.findFragmentByTag("PDF_RIGHT_TAG")?.let {
+                    supportFragmentManager.beginTransaction().remove(it).commitNowAllowingStateLoss()
+                }
+                Log.d("PDFViewerActivity", "Nessuna pagina destra da visualizzare. Contenitore destro impostato a INVISIBLE.")
+            }
+
             // Aggiungi click listener ai contenitori dei fragment per la navigazione in modalità foldable
             binding?.pdfFragmentLeftContainer?.setOnClickListener {
                 Log.d("PDFViewerActivity", "Cliccato pannello sinistro. Navigo indietro (-2).")
@@ -355,80 +373,90 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
      * @param offset L'offset di pagine da applicare (es. 1 per avanti in single-pane, 2 per avanti in foldable).
      */
     private fun navigatePages(offset: Int) {
+        Log.d("PDFViewerActivity", "Chiamata navigatePages con offset: $offset (Current: $currentPage, Total: $totalPdfPages, Foldable: $currentLayoutIsFoldable)")
         if (totalPdfPages == 0) {
             Log.w("PDFViewerActivity", "Pagine totali non determinate per la navigazione. TotalPagine: $totalPdfPages")
             Toast.makeText(this, "PDF non ancora caricato o non disponibile per la navigazione.", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // Determina la modalità corrente basandosi sullo stato di currentLayoutIsFoldable
         val isCurrentlyFoldable = currentLayoutIsFoldable
+        var proposedNewLeftPage = currentPage + offset // Questa è la pagina che andrebbe a sinistra
 
         if (isCurrentlyFoldable) {
-            var newLeftPage = currentPage + offset
-            var newRightPage = newLeftPage + 1 // La pagina destra è sempre quella successiva alla sinistra
+            // Calcola la pagina iniziale minima (sempre 0)
+            val minPossibleLeftPage = 0
 
-            // Logica per rimanere all'interno dei limiti delle pagine in modalità foldable
-            if (newLeftPage < 0) {
-                newLeftPage = 0
-                newRightPage = 1 // Anche se la prima coppia è 0,1
-                Toast.makeText(this, "Sei già alla prima pagina.", Toast.LENGTH_SHORT).show()
-            } else if (newLeftPage >= totalPdfPages) { // Se la pagina sinistra va oltre il totale
-                // Torna all'ultima coppia valida (se totalPdfPages è 5, l'ultima coppia è 2,3; se 4, ultima coppia è 2,3)
-                newLeftPage = (totalPdfPages - 1).coerceAtLeast(0) // Prendi l'ultima pagina possibile
-                if (newLeftPage % 2 != 0) newLeftPage-- // Se dispari, torna alla pari precedente
-                if (newLeftPage < 0) newLeftPage = 0 // Assicurati che non sia negativo
-                newRightPage = newLeftPage + 1
-                Toast.makeText(this, "Sei già all'ultima pagina.", Toast.LENGTH_SHORT).show()
-            } else if (newRightPage >= totalPdfPages) { // La pagina destra supera il limite, la sinistra è OK
-                // Significa che la pagina sinistra è l'ultima pari o la penultima dispari.
-                // Mostra solo la pagina sinistra, la destra non c'è.
-                // Non avanzare oltre.
-                newLeftPage = currentPage // Rimani sulla pagina corrente se è l'ultima disponibile
-                newRightPage = currentPage + 1 // Per coerenza logica, ma non verrà caricata
-                Toast.makeText(this, "Sei già all'ultima pagina.", Toast.LENGTH_SHORT).show()
+            // Calcola la pagina iniziale massima per il pannello sinistro.
+            // Se totalPdfPages è dispari (es. 3), l'ultima pagina visualizzabile a sinistra è (totalPdfPages - 1) = 2.
+            // Se totalPdfPages è pari (es. 4), l'ultima coppia valida inizia a (totalPdfPages - 2) = 2.
+            val maxPossibleLeftPage = if (totalPdfPages % 2 != 0) {
+                totalPdfPages - 1
+            } else {
+                totalPdfPages - 2
+            }
+                // Assicurati che maxPossibleLeftPage non sia negativo per documenti molto piccoli (0 o 1 pagina)
+                .coerceAtLeast(0)
+
+
+            // Gestione della navigazione "Indietro"
+            if (offset < 0) {
+                if (proposedNewLeftPage < minPossibleLeftPage) {
+                    Toast.makeText(this, "Sei già alla prima coppia di pagine.", Toast.LENGTH_SHORT).show()
+                    Log.d("PDFViewerActivity", "Tentato di navigare prima della prima pagina. Current: $currentPage, Proposed: $proposedNewLeftPage.")
+                    return // Impedisce la navigazione
+                }
+                // Assicurati che la pagina sinistra sia pari quando si va indietro, a meno che non sia la pagina 0
+                if (proposedNewLeftPage % 2 != 0 && proposedNewLeftPage > 0) {
+                    proposedNewLeftPage -= 1 // Arrotonda per difetto alla pagina pari precedente
+                }
+            }
+            // Gestione della navigazione "Avanti"
+            else if (offset > 0) {
+                if (proposedNewLeftPage > maxPossibleLeftPage) {
+                    Toast.makeText(this, "Sei già all'ultima pagina.", Toast.LENGTH_SHORT).show()
+                    Log.d("PDFViewerActivity", "Tentato di navigare oltre l'ultima pagina. Current: $currentPage, Proposed: $proposedNewLeftPage, Max Possible Left: $maxPossibleLeftPage.")
+                    return // Impedisce la navigazione
+                }
+                // Assicurati che la pagina sinistra sia pari, a meno che non sia l'ultima pagina dispari del documento
+                if (proposedNewLeftPage % 2 != 0 && proposedNewLeftPage != totalPdfPages - 1) {
+                    proposedNewLeftPage += 1 // Arrotonda per eccesso alla pagina pari successiva
+                }
             }
 
 
-            // Se le pagine non cambiano (es. clicchi quando sei già all'inizio/fine), non fare nulla
-            if (newLeftPage == currentPage) {
+            // Se la pagina effettiva visualizzata (pannello sinistro) non cambia, non fare nulla
+            if (proposedNewLeftPage == currentPage) {
+                Log.d("PDFViewerActivity", "Tentato di navigare alla stessa pagina effettiva ($proposedNewLeftPage). Nessuna azione.")
                 return
             }
 
-            currentPage = newLeftPage // Aggiorna la pagina corrente della Activity
-            // In modalità .pages(), non possiamo solo "setPage", dobbiamo ricaricare i frammenti
-            // con le nuove pagine desiderate.
-            setupFoldablePdfFragments() // Questo ricaricherà i frammenti con la nuova `currentPage`
+            currentPage = proposedNewLeftPage
+            setupFoldablePdfFragments() // Ricarica i frammenti con la nuova `currentPage`
             Log.d("PDFViewerActivity", "Navigazione foldable a pagine: Sinistra=${currentPage}, Destra=${currentPage + 1}")
 
-        } else { // Modalità single-pane
+        } else { // Modalità single-pane (nessun cambiamento qui, già funzionante)
+            var newPage = currentPage + offset
+
+            if (newPage < 0) {
+                newPage = 0
+                Toast.makeText(this, "Sei già alla prima pagina.", Toast.LENGTH_SHORT).show()
+            } else if (newPage >= totalPdfPages) {
+                newPage = totalPdfPages - 1
+                Toast.makeText(this, "Sei già all'ultima pagina.", Toast.LENGTH_SHORT).show()
+            }
+
+            if (newPage == currentPage) {
+                return
+            }
+
+            currentPage = newPage
             val singleFragment = supportFragmentManager.findFragmentByTag("PDF_SINGLE_TAG") as? PdfViewerFragment
-            singleFragment?.let { fragment ->
-                var newPage = currentPage + offset // Calcola la nuova pagina
-
-                // Logica per rimanere all'interno dei limiti delle pagine in modalità singola
-                if (newPage < 0) {
-                    newPage = 0
-                    Toast.makeText(this, "Sei già alla prima pagina.", Toast.LENGTH_SHORT).show()
-                } else if (newPage >= totalPdfPages) {
-                    newPage = totalPdfPages - 1
-                    Toast.makeText(this, "Sei già all'ultima pagina.", Toast.LENGTH_SHORT).show()
-                }
-
-                // Se la pagina non cambia, non aggiornare
-                if (newPage == currentPage) {
-                    return
-                }
-
-                currentPage = newPage // Aggiorna la pagina corrente dell'Activity
-                fragment.setPage(newPage) // Aggiorna la pagina nel fragment singolo
-                Log.d("PDFViewerActivity", "Navigazione singola a pagina: $newPage")
-            } ?: Log.w("PDFViewerActivity", "Fragment singolo non trovato per la navigazione.")
+            singleFragment?.setPage(newPage)
+            Log.d("PDFViewerActivity", "Navigazione singola a pagina: $newPage")
         }
-        // NUOVO: Chiama updateNavigationButtonStates dopo ogni navigazione
         updateNavigationButtonStates()
     }
-
     /**
      * Aggiorna lo stato di abilitazione/disabilitazione dei pulsanti di navigazione.
      * I pulsanti sono attivi solo in modalità foldable.
