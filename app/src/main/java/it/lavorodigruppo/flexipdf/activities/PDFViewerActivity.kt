@@ -172,15 +172,15 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
         // Questo è CRUCIALE per prevenire sovrapposizioni, IllegalStateException e memory leaks.
         // commitNowAllowStateLoss() esegue la transazione IMMEDIATAMENTE e permette la perdita di stato.
         supportFragmentManager.findFragmentByTag("PDF_SINGLE_TAG")?.let {
-            supportFragmentManager.beginTransaction().remove(it).commitNowAllowingStateLoss() // <--- QUI
+            supportFragmentManager.beginTransaction().remove(it).commitNowAllowingStateLoss()
             Log.d("PDFViewerActivity", "Rimosso PDF_SINGLE_TAG.")
         }
         supportFragmentManager.findFragmentByTag("PDF_LEFT_TAG")?.let {
-            supportFragmentManager.beginTransaction().remove(it).commitNowAllowingStateLoss() // <--- QUI
+            supportFragmentManager.beginTransaction().remove(it).commitNowAllowingStateLoss()
             Log.d("PDFViewerActivity", "Rimosso PDF_LEFT_TAG.")
         }
         supportFragmentManager.findFragmentByTag("PDF_RIGHT_TAG")?.let {
-            supportFragmentManager.beginTransaction().remove(it).commitNowAllowingStateLoss() // <--- QUI
+            supportFragmentManager.beginTransaction().remove(it).commitNowAllowingStateLoss()
             Log.d("PDFViewerActivity", "Rimosso PDF_RIGHT_TAG.")
         }
         Log.d("PDFViewerActivity", "Puliti i fragment prima di cambiare layout.")
@@ -233,7 +233,8 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
         Log.d("PDFViewerActivity", "Caricamento Single-Pane PdfViewerFragment. Pagina iniziale: $currentPage. URI: $pdfUri")
         pdfUri?.let { uri ->
             // Creiamo una nuova istanza del fragment per pulizia e per impostare le opzioni corrette.
-            val singleFragment = PdfViewerFragment.newInstance(uri, currentPage, true) // <--- enableInternalSwipe = true
+            // MODIFICATO: L'ultimo parametro 'pagesToLoad' è null per indicare che deve caricare l'intero documento scorrevole
+            val singleFragment = PdfViewerFragment.newInstance(uri, currentPage, true, null) // <--- QUI MODIFICA
             supportFragmentManager.beginTransaction()
                 .replace(R.id.pdf_fragment_left_container, singleFragment, "PDF_SINGLE_TAG") // Sostituisce nel contenitore sinistro
                 .commitAllowingStateLoss() // Esegue la transazione in modo asincrono, permettendo la perdita di stato
@@ -265,8 +266,9 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
 
         pdfUri?.let { uri ->
             // Crea nuove istanze dei fragment, disabilitando lo swipe interno per entrambi
-            val leftFragment = PdfViewerFragment.newInstance(uri, pageLeft, false) // <--- enableInternalSwipe = false
-            val rightFragment = PdfViewerFragment.newInstance(uri, pageRight, false) // <--- enableInternalSwipe = false
+            // MODIFICATO: Passiamo intArrayOf(pagina) per il parametro pagesToLoad
+            val leftFragment = PdfViewerFragment.newInstance(uri, 0, false, intArrayOf(pageLeft)) // <--- QUI MODIFICA
+            val rightFragment = PdfViewerFragment.newInstance(uri, 0, false, intArrayOf(pageRight)) // <--- QUI MODIFICA
 
             // Sostituisce i fragment nei rispettivi contenitori
             supportFragmentManager.beginTransaction()
@@ -280,17 +282,13 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
             binding?.pdfFragmentLeftContainer?.setOnClickListener {
                 Log.d("PDFViewerActivity", "Cliccato pannello sinistro. Navigo indietro (-2).")
                 // Aggiorna la pagina corrente dell'Activity basandosi sulla pagina attuale del fragment di sinistra
-                (supportFragmentManager.findFragmentByTag("PDF_LEFT_TAG") as? PdfViewerFragment)?.let { currentLeftFrag ->
-                    currentPage = currentLeftFrag.initialPage // Usa la pagina effettiva del fragment
-                }
+                // Nota: se .pages() funziona come previsto, initialPage del fragment sarà la pagina singola caricata
+                // Se usi setPage su un fragment con .pages(), setPage lo ricarica.
                 navigatePages(-2) // Naviga indietro di 2 pagine (coppia)
             }
             binding?.pdfFragmentRightContainer?.setOnClickListener {
                 Log.d("PDFViewerActivity", "Cliccato pannello destro. Navigo avanti (+2).")
                 // Aggiorna la pagina corrente dell'Activity basandosi sulla pagina attuale del fragment di sinistra
-                (supportFragmentManager.findFragmentByTag("PDF_LEFT_TAG") as? PdfViewerFragment)?.let { currentLeftFrag ->
-                    currentPage = currentLeftFrag.initialPage // Usa la pagina effettiva del fragment
-                }
                 navigatePages(2) // Naviga avanti di 2 pagine (coppia)
             }
         } ?: Log.e("PDFViewerActivity", "URI PDF nullo durante setupFoldablePdfFragments.")
@@ -311,38 +309,43 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
         val isCurrentlyFoldable = currentLayoutIsFoldable
 
         if (isCurrentlyFoldable) {
-            val leftFragment = supportFragmentManager.findFragmentByTag("PDF_LEFT_TAG") as? PdfViewerFragment
-            val rightFragment = supportFragmentManager.findFragmentByTag("PDF_RIGHT_TAG") as? PdfViewerFragment
-
-            if (leftFragment == null || rightFragment == null) {
-                Log.w("PDFViewerActivity", "Fragment PDF non trovati per la navigazione in modalità foldable.")
-                return
-            }
-
+            // Nota: Con .pages(), i fragment vengono ricaricati ogni volta che si cambia pagina.
+            // Non c'è un "jumpTo" interno in questo contesto.
+            // Ricarichiamo i fragment con le nuove pagine.
             var newLeftPage = currentPage + offset
             var newRightPage = newLeftPage + 1 // La pagina destra è sempre quella successiva alla sinistra
 
             // Logica per rimanere all'interno dei limiti delle pagine in modalità foldable
-            // La prima pagina è 0. L'ultima pagina è totalPdfPages - 1.
             if (newLeftPage < 0) {
                 newLeftPage = 0
-                newRightPage = 1
+                newRightPage = 1 // Anche se la prima coppia è 0,1
                 Toast.makeText(this, "Sei già alla prima pagina.", Toast.LENGTH_SHORT).show()
-            } else if (newRightPage >= totalPdfPages) { // Se la pagina destra supera il totale delle pagine
-                newRightPage = totalPdfPages - 1 // Imposta l'ultima pagina visibile come l'ultima pagina del documento
-                newLeftPage = if (newRightPage % 2 != 0) newRightPage - 1 else newRightPage // Assicura che la pagina sinistra sia pari
-                if (newLeftPage < 0) newLeftPage = 0 // Evita valori negativi
+            } else if (newLeftPage >= totalPdfPages) { // Se la pagina sinistra va oltre il totale
+                // Torna all'ultima coppia valida (se totalPdfPages è 5, l'ultima coppia è 2,3; se 4, ultima coppia è 2,3)
+                newLeftPage = (totalPdfPages - 1).coerceAtLeast(0) // Prendi l'ultima pagina possibile
+                if (newLeftPage % 2 != 0) newLeftPage-- // Se dispari, torna alla pari precedente
+                if (newLeftPage < 0) newLeftPage = 0 // Assicurati che non sia negativo
+                newRightPage = newLeftPage + 1
+                Toast.makeText(this, "Sei già all'ultima pagina.", Toast.LENGTH_SHORT).show()
+            } else if (newRightPage >= totalPdfPages) { // La pagina destra supera il limite, la sinistra è OK
+                // Significa che la pagina sinistra è l'ultima pari o la penultima dispari.
+                // Mostra solo la pagina sinistra, la destra non c'è.
+                // Non avanzare oltre.
+                newLeftPage = currentPage // Rimani sulla pagina corrente se è l'ultima disponibile
+                newRightPage = currentPage + 1 // Per coerenza logica, ma non verrà caricata
                 Toast.makeText(this, "Sei già all'ultima pagina.", Toast.LENGTH_SHORT).show()
             }
 
+
             // Se le pagine non cambiano (es. clicchi quando sei già all'inizio/fine), non fare nulla
-            if (newLeftPage == currentPage && (newLeftPage + 1 == newRightPage)) {
+            if (newLeftPage == currentPage) {
                 return
             }
 
             currentPage = newLeftPage // Aggiorna la pagina corrente della Activity
-            leftFragment.setPage(currentPage) // Aggiorna la pagina nel fragment sinistro
-            rightFragment.setPage(currentPage + 1) // Aggiorna la pagina nel fragment destro
+            // In modalità .pages(), non possiamo solo "setPage", dobbiamo ricaricare i frammenti
+            // con le nuove pagine desiderate.
+            setupFoldablePdfFragments() // Questo ricaricherà i frammenti con la nuova `currentPage`
             Log.d("PDFViewerActivity", "Navigazione foldable a pagine: Sinistra=${currentPage}, Destra=${currentPage + 1}")
 
         } else { // Modalità single-pane
