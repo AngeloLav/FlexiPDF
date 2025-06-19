@@ -11,7 +11,9 @@ package it.lavorodigruppo.flexipdf.fragments
 
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
@@ -24,6 +26,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.OvershootInterpolator
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
@@ -47,19 +50,31 @@ import kotlinx.coroutines.launch
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
-import java.util.Locale // Importa Locale per la ricerca case-insensitive
-
+import java.util.Locale
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import android.provider.OpenableColumns // Necessario per ottenere il nome del file da una Uri
 
 class SharedFragment : Fragment() {
 
     private var pdfFileClickListener: OnPdfFileClickListener? = null
+
+    private val pdfPickerLauncher: ActivityResultLauncher<String> =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            uri?.let {
+                addPdfToCurrentCloudFolder(it)
+                Toast.makeText(context, "PDF importato nella cartella cloud corrente.", Toast.LENGTH_SHORT).show()
+            } ?: run {
+                Toast.makeText(context, "Nessun PDF selezionato.", Toast.LENGTH_SHORT).show()
+            }
+        }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
         if (context is OnPdfFileClickListener) {
             pdfFileClickListener = context
         } else {
-            Log.e("SharedFragment", "$context deve implementare OnPdfFileClickListener per la gestione dei PDF.")
+            Log.e("SharedFragment", "$context deve implementare OnPdfFileClickListener.")
         }
     }
 
@@ -68,7 +83,6 @@ class SharedFragment : Fragment() {
 
     private lateinit var fileSystemAdapter: FileSystemAdapter
 
-    // --- Stati interni del Fragment (simulano un ViewModel per semplicità in questo esempio) ---
     private var _currentCloudFolder = MutableStateFlow<FolderItem?>(null)
     private val currentCloudFolder: StateFlow<FolderItem?> = _currentCloudFolder.asStateFlow()
 
@@ -81,8 +95,6 @@ class SharedFragment : Fragment() {
     private val _searchQuery = MutableStateFlow("")
     private val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-
-    // ActionMode per la selezione contestuale (CAB)
     private var actionMode: ActionMode? = null
     private val actionModeCallback = object : ActionMode.Callback {
         override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
@@ -129,9 +141,8 @@ class SharedFragment : Fragment() {
         }
     }
 
-    // --- Dati di esempio (placeholder) per simulare le cartelle e i file cloud ---
-    // NOTA: In una vera applicazione, questi dati verrebbero gestiti da un Repository
-    private val cloudFoldersRoot = mutableListOf<FolderItem>(
+    // --- Dati di esempio (placeholder) ---
+    private val cloudFoldersRoot = mutableListOf<FileSystemItem>(
         FolderItem(
             displayName = "Google Drive",
             isCloudFolder = true,
@@ -166,7 +177,7 @@ class SharedFragment : Fragment() {
             isSelected = false,
             lastModified = System.currentTimeMillis() - 86400000,
             isFavorite = false,
-            parentFolderId = "google_drive_mock_id_1" // Aggiunto parentFolderId consistente
+            parentFolderId = "google_drive_mock_id_1"
         ),
         PdfFileItem(
             displayName = "Report Q3.pdf",
@@ -175,7 +186,7 @@ class SharedFragment : Fragment() {
             isSelected = false,
             lastModified = System.currentTimeMillis() - 172800000,
             isFavorite = true,
-            parentFolderId = "google_drive_mock_id_1" // Aggiunto parentFolderId consistente
+            parentFolderId = "google_drive_mock_id_1"
         ),
         FolderItem(
             displayName = "Sottocartella Drive",
@@ -192,7 +203,7 @@ class SharedFragment : Fragment() {
             isSelected = false,
             lastModified = System.currentTimeMillis() - 259200000,
             isFavorite = false,
-            parentFolderId = "dropbox_mock_id_2" // Aggiunto parentFolderId consistente
+            parentFolderId = "dropbox_mock_id_2"
         ),
         PdfFileItem(
             displayName = "Contratti 2024.pdf",
@@ -201,7 +212,7 @@ class SharedFragment : Fragment() {
             isSelected = false,
             lastModified = System.currentTimeMillis() - 345600000,
             isFavorite = true,
-            parentFolderId = "dropbox_mock_id_2" // Aggiunto parentFolderId consistente
+            parentFolderId = "dropbox_mock_id_2"
         )
     )
     private val oneDriveContent = mutableListOf<FileSystemItem>(
@@ -212,7 +223,7 @@ class SharedFragment : Fragment() {
             isSelected = false,
             lastModified = System.currentTimeMillis() - 432000000,
             isFavorite = false,
-            parentFolderId = "onedrive_mock_id_3" // Aggiunto parentFolderId consistente
+            parentFolderId = "onedrive_mock_id_3"
         ),
         FolderItem(
             displayName = "Progetti Team",
@@ -229,7 +240,7 @@ class SharedFragment : Fragment() {
             isSelected = false,
             lastModified = System.currentTimeMillis() - 604800000,
             isFavorite = false,
-            parentFolderId = null // Se è una sottocartella senza genitore nel mock, lascialo null
+            parentFolderId = null
         ),
         PdfFileItem(
             displayName = "File annidato 2.pdf",
@@ -238,11 +249,9 @@ class SharedFragment : Fragment() {
             isSelected = false,
             lastModified = System.currentTimeMillis() - 691200000,
             isFavorite = false,
-            parentFolderId = null // Se è una sottocartella senza genitore nel mock, lascialo null
+            parentFolderId = null
         )
     )
-    // --- Fine Dati di esempio ---
-
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -257,11 +266,8 @@ class SharedFragment : Fragment() {
 
         setupRecyclerView()
         setupListeners()
-        // NOTA: observeUIState ora include la combinazione di currentCloudFolder e searchQuery
-        // Non è necessario chiamare updateRecyclerViewContent() qui, verrà chiamato dal collect.
         observeUIState()
 
-        // --- GESTIONE WINDOW INSETS per il banner superiore, RecyclerView e FAB ---
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
             val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val navigationBarsInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
@@ -270,14 +276,14 @@ class SharedFragment : Fragment() {
                 binding.bannerContentLayout.paddingLeft,
                 systemBarsInsets.top,
                 binding.bannerContentLayout.paddingRight,
-                systemBarsInsets.bottom // Inset inferiore al banner per uniformità
+                systemBarsInsets.bottom
             )
 
             val orientation = resources.configuration.orientation
             val bottomPaddingForRecyclerView = if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
                 0
             } else {
-                navigationBarsInsets.bottom // Usa solo navigationBarsInsets.bottom per la RecyclerView
+                navigationBarsInsets.bottom
             }
 
             binding.pdfRecyclerView.setPadding(
@@ -322,10 +328,21 @@ class SharedFragment : Fragment() {
         }
     }
 
+    private fun toggleFavorite(pdfFile: PdfFileItem) {
+        val currentDataSource = getCurrentDataSource()
+        val originalPdf = currentDataSource?.find { it.id == pdfFile.id } as? PdfFileItem
+
+        originalPdf?.let {
+            it.isFavorite = !it.isFavorite
+            updateRecyclerViewContent()
+            Toast.makeText(context, "Stato preferito di '${it.displayName}' togglato.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     @SuppressLint("UseCompatLoadingForDrawables")
     private fun setupListeners() {
         binding.addButton.setOnClickListener {
-            showAddCloudFolderDialog()
+            showAddCloudFolderDialog(isCreatingRootCloudFolder = true) // Chiamata per la creazione di cartella cloud root
         }
 
         binding.backButton.setOnClickListener {
@@ -337,10 +354,10 @@ class SharedFragment : Fragment() {
         }
 
         binding.floatingActionButton.setOnClickListener {
-            Toast.makeText(context, "FAB cliccato! (Aggiungi elemento a: ${_currentCloudFolder.value?.displayName ?: "radice"})", Toast.LENGTH_SHORT).show()
+            rotateFabForward()
+            showPopupMenu()
         }
 
-        // Configurazione e listener per la SearchView
         val searchEditText = binding.searchView.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)
         searchEditText?.let {
             it.background = null
@@ -366,18 +383,16 @@ class SharedFragment : Fragment() {
     }
 
     private fun observeUIState() {
-        // Combina lo stato della cartella corrente e la query di ricerca
         viewLifecycleOwner.lifecycleScope.launch {
             combine(currentCloudFolder, searchQuery.debounce(300)) { folder, query ->
                 Pair(folder, query)
             }.collect { (folder, query) ->
                 updateTitleAndButtonVisibility()
-                updateRecyclerViewContent() // Questa funzione ora userà entrambi gli stati
+                updateRecyclerViewContent()
                 Log.d("SharedFragment", "Stato UI aggiornato: Cartella=${folder?.displayName ?: "Root Cloud"}, Query='$query'")
             }
         }
 
-        // Osserva la modalità selezione per attivare/disattivare la CAB
         viewLifecycleOwner.lifecycleScope.launch {
             isSelectionModeActive.collect { isActive ->
                 Log.d("SharedFragment", "isSelectionModeActive cambiato a: $isActive")
@@ -395,7 +410,6 @@ class SharedFragment : Fragment() {
             }
         }
 
-        // Osserva gli elementi selezionati per aggiornare il titolo della CAB
         viewLifecycleOwner.lifecycleScope.launch {
             selectedItems.collect { selected ->
                 actionMode?.title = "${selected.size}" + getString(R.string.selected)
@@ -431,30 +445,24 @@ class SharedFragment : Fragment() {
         pdfFileClickListener?.onPdfFileClickedForceActivity(pdfFile.uriString.toUri())
     }
 
-    // --- NUOVA LOGICA: Aggiornamento stato sugli oggetti originali ---
     private fun toggleSelection(item: FileSystemItem) {
-        // Trova la lista dati corrente
         val currentDataSource = getCurrentDataSource()
         val originalItem = currentDataSource?.find { it.id == item.id }
 
         if (originalItem != null) {
-            // Aggiorna lo stato isSelected sull'oggetto originale nella lista dati
             when (originalItem) {
                 is FolderItem -> originalItem.isSelected = !originalItem.isSelected
                 is PdfFileItem -> originalItem.isSelected = !originalItem.isSelected
             }
 
-            // Aggiorna il set di elementi selezionati
             if (originalItem.isSelected) {
                 _selectedItems.value.add(originalItem)
             } else {
                 _selectedItems.value.remove(originalItem)
             }
 
-            // Forziamo l'aggiornamento dell'UI
             updateRecyclerViewContent()
 
-            // Aggiorna lo stato della modalità selezione
             val hasSelection = _selectedItems.value.isNotEmpty()
             if (hasSelection && !_isSelectionModeActive.value) {
                 _isSelectionModeActive.value = true
@@ -484,7 +492,6 @@ class SharedFragment : Fragment() {
         actionMode?.finish()
     }
 
-    // --- NUOVA LOGICA: Aggiornamento stato preferito sugli oggetti originali ---
     private fun toggleFavoriteSelectedPdfs() {
         val pdfsToToggle = _selectedItems.value.filterIsInstance<PdfFileItem>()
         val currentDataSource = getCurrentDataSource()
@@ -492,17 +499,16 @@ class SharedFragment : Fragment() {
         pdfsToToggle.forEach { pdf ->
             val originalPdf = currentDataSource?.find { it.id == pdf.id } as? PdfFileItem
             originalPdf?.let {
-                it.isFavorite = !it.isFavorite // Aggiorna lo stato sul PDF originale
+                it.isFavorite = !it.isFavorite
             }
         }
         clearAllSelections()
-        updateRecyclerViewContent() // Forziamo l'aggiornamento dell'UI
+        updateRecyclerViewContent()
         Toast.makeText(context, "Stato preferito aggiornato (placeholder).", Toast.LENGTH_SHORT).show()
     }
 
-    // Helper per ottenere la lista di dati corrente
     private fun getCurrentDataSource(): MutableList<FileSystemItem>? {
-        return (if (_currentCloudFolder.value == null) {
+        return if (_currentCloudFolder.value == null) {
             cloudFoldersRoot
         } else {
             when (_currentCloudFolder.value?.displayName) {
@@ -513,7 +519,49 @@ class SharedFragment : Fragment() {
                 "Progetti Team" -> nestedFolderContent
                 else -> null
             }
-        }) as MutableList<FileSystemItem>?
+        }
+    }
+
+    // --- NUOVO: Funzione per ottenere il nome del file da una Uri ---
+    private fun getFileNameFromUri(uri: Uri): String {
+        var name: String? = null
+        if (uri.scheme == "content") {
+            val cursor = context?.contentResolver?.query(uri, null, null, null, null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (nameIndex != -1) {
+                        name = it.getString(nameIndex)
+                    }
+                }
+            }
+        }
+        if (name == null) {
+            name = uri.path
+            val cut = name?.lastIndexOf('/')
+            if (cut != -1) {
+                name = name?.substring(cut!! + 1)
+            }
+        }
+        return name ?: "Documento senza nome.pdf"
+    }
+    // --- FINE NUOVO ---
+
+    private fun addPdfToCurrentCloudFolder(uri: Uri) {
+        val newPdf = PdfFileItem(
+            displayName = getFileNameFromUri(uri), // Usa la nuova funzione
+            id = UUID.randomUUID().toString(),
+            uriString = uri.toString(),
+            isSelected = false,
+            lastModified = System.currentTimeMillis(),
+            isFavorite = false,
+            parentFolderId = _currentCloudFolder.value?.id // ID della cartella cloud corrente, o null
+        )
+
+        val targetList = getCurrentDataSource()
+
+        targetList?.add(newPdf)
+        updateRecyclerViewContent()
     }
 
     private fun updateTitleAndButtonVisibility() {
@@ -530,24 +578,11 @@ class SharedFragment : Fragment() {
             binding.addButton.visibility = View.VISIBLE
             binding.floatingActionButton.visibility = View.GONE
         }
-        // La search view è sempre visibile in questo fragment
         binding.searchView.visibility = View.VISIBLE
     }
 
     private fun updateRecyclerViewContent() {
-        val currentContent = if (_currentCloudFolder.value == null) {
-            cloudFoldersRoot.toList()
-        } else {
-            // Ottieni la lista del contenuto della cartella corrente
-            when (_currentCloudFolder.value?.displayName) {
-                "Google Drive" -> googleDriveContent
-                "Dropbox Sync" -> dropboxContent
-                "OneDrive Shared" -> oneDriveContent
-                "Sottocartella Drive" -> nestedFolderContent
-                "Progetti Team" -> nestedFolderContent
-                else -> emptyList()
-            }.toList()
-        }
+        val currentContent = getCurrentDataSource()?.toList() ?: emptyList()
 
         val filteredList = if (_searchQuery.value.isNotBlank()) {
             val query = _searchQuery.value.lowercase(Locale.getDefault())
@@ -558,53 +593,64 @@ class SharedFragment : Fragment() {
             currentContent
         }
 
-        // Non è più necessario copiare gli elementi qui, perché gli aggiornamenti
-        // di isSelected/isFavorite avvengono sugli oggetti originali nelle liste.
-        // DiffUtil si accorgerà comunque delle modifiche grazie all'implementazione di equals()
-        // nelle data class.
         fileSystemAdapter.submitList(filteredList)
     }
 
     private fun enterFolder(folder: FolderItem) {
         _currentCloudFolder.value = folder
         clearAllSelections()
-        _searchQuery.value = "" // Resetta la query di ricerca quando cambi cartella
+        _searchQuery.value = ""
+        binding.searchView.setQuery("", false)
     }
 
     private fun navigateBack() {
         if (_currentCloudFolder.value != null) {
             _currentCloudFolder.value = null
             clearAllSelections()
-            _searchQuery.value = "" // Resetta la query di ricerca quando torni indietro
+            _searchQuery.value = ""
+            binding.searchView.setQuery("", false)
         }
     }
 
     @SuppressLint("MissingInflatedId")
-    private fun showAddCloudFolderDialog() {
+    // Rinominato il parametro per maggiore chiarezza sul contesto di creazione
+    private fun showAddCloudFolderDialog(isCreatingRootCloudFolder: Boolean = false) {
         val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle(getString(R.string.add_cloud))
+        // Modifica il titolo in base al contesto
+        builder.setTitle(if (isCreatingRootCloudFolder) getString(R.string.add_cloud) else "Crea Nuova Cartella")
 
         val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_cloud_folder, null)
         val folderNameEditText = view.findViewById<EditText>(R.id.folderNameEditText)
         val cloudParamEditText = view.findViewById<EditText>(R.id.cloudParamEditText)
         builder.setView(view)
 
+        // Nascondi o mostra il campo "Cloud Parameter" in base al contesto
+        if (isCreatingRootCloudFolder) {
+            cloudParamEditText.visibility = View.VISIBLE
+        } else {
+            cloudParamEditText.visibility = View.GONE
+        }
+
         builder.setPositiveButton(getString(R.string.create)) { dialog, _ ->
             val folderName = folderNameEditText.text.toString().trim()
-            val cloudParam = cloudParamEditText.text.toString().trim()
+            val cloudParam = if (isCreatingRootCloudFolder) cloudParamEditText.text.toString().trim() else null
 
             if (folderName.isNotEmpty()) {
                 val newCloudFolder = FolderItem(
                     displayName = folderName,
-                    isCloudFolder = true,
+                    // isCloudFolder dipende dal contesto di creazione
+                    isCloudFolder = isCreatingRootCloudFolder,
                     cloudLinkParam = cloudParam,
-                    parentFolderId = null,
+                    parentFolderId = if (isCreatingRootCloudFolder) null else _currentCloudFolder.value?.id,
                     id = UUID.randomUUID().toString(),
                     isSelected = false
                 )
-                cloudFoldersRoot.add(newCloudFolder)
+
+                val targetList = getCurrentDataSource()
+                targetList?.add(newCloudFolder)
+
                 updateRecyclerViewContent()
-                Toast.makeText(context, "Cartella cloud '$folderName' aggiunta (placeholder).", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Cartella '$folderName' aggiunta (placeholder).", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(context, "Il nome della cartella non può essere vuoto.", Toast.LENGTH_SHORT).show()
             }
@@ -631,10 +677,10 @@ class SharedFragment : Fragment() {
                 val itemsToDelete = _selectedItems.value.toList()
                 val currentDataSource = getCurrentDataSource()
 
-                currentDataSource?.removeAll(itemsToDelete) // Rimuove gli elementi dalle liste originali
+                currentDataSource?.removeAll(itemsToDelete)
 
-                clearAllSelections() // Cancella le selezioni
-                updateRecyclerViewContent() // Aggiorna la UI
+                clearAllSelections()
+                updateRecyclerViewContent()
                 Toast.makeText(context, "Elementi selezionati eliminati (placeholder).", Toast.LENGTH_SHORT).show()
                 dialog.dismiss()
             }
@@ -643,20 +689,6 @@ class SharedFragment : Fragment() {
             }
             .show()
     }
-
-    // --- NUOVA LOGICA: Gestione preferiti per singolo PDF (chiamato dall'adapter) ---
-    private fun toggleFavorite(pdfFile: PdfFileItem) {
-        val currentDataSource = getCurrentDataSource()
-        val originalPdf = currentDataSource?.find { it.id == pdfFile.id } as? PdfFileItem
-
-        originalPdf?.let {
-            it.isFavorite = !it.isFavorite // Togglie lo stato sull'oggetto originale
-            updateRecyclerViewContent() // Aggiorna la UI per riflettere il cambiamento
-            Toast.makeText(context, "Stato preferito di '${it.displayName}' togglato.", Toast.LENGTH_SHORT).show()
-        }
-        // Nota: non clearAllSelections() qui, solo se l'azione è stata fatta tramite CAB per PDF multipli
-    }
-
 
     override fun onDestroyView() {
         super.onDestroyView()
@@ -679,6 +711,58 @@ class SharedFragment : Fragment() {
             duration = 500
             interpolator = OvershootInterpolator()
             start()
+        }
+    }
+
+    private fun showPopupMenu() {
+        val popupView = LayoutInflater.from(requireContext()).inflate(R.layout.custom_popup_menu, null)
+
+        val optionImportPdf = popupView.findViewById<TextView>(R.id.option_import_pdf)
+        val optionCreateFolder = popupView.findViewById<TextView>(R.id.option_create_folder)
+
+        val popupWindow = android.widget.PopupWindow(
+            popupView,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            true
+        )
+
+        val location = IntArray(2)
+        binding.floatingActionButton.getLocationOnScreen(location)
+
+        val fabX = location[0]
+        val fabY = location[1]
+
+        popupView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+        val popupWidth = popupView.measuredWidth
+        val popupHeight = popupView.measuredHeight
+        val fabWidth = binding.floatingActionButton.width
+        val fabHeight = binding.floatingActionButton.height
+
+
+        val xOffset = fabX - popupWidth + fabWidth / 2
+        val yOffset = fabY - popupHeight - (fabHeight / 2)
+
+        popupWindow.showAtLocation(
+            binding.root,
+            android.view.Gravity.NO_GRAVITY,
+            xOffset,
+            yOffset
+        )
+
+        optionImportPdf.setOnClickListener {
+            pdfPickerLauncher.launch("application/pdf")
+            popupWindow.dismiss()
+        }
+
+        optionCreateFolder.setOnClickListener {
+            // Chiamata per la creazione di una sottocartella (non una cloud folder root)
+            showAddCloudFolderDialog(isCreatingRootCloudFolder = false)
+            popupWindow.dismiss()
+        }
+
+        popupWindow.setOnDismissListener {
+            rotateFabBackward()
         }
     }
 }
