@@ -3,7 +3,7 @@ package it.lavorodigruppo.flexipdf.adapters
 
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
-import android.util.Log // Importa Log per i messaggi di debug
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,19 +12,17 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import it.lavorodigruppo.flexipdf.R
-import it.lavorodigruppo.flexipdf.databinding.FolderItemBinding // Assicurati di avere questo binding
-import it.lavorodigruppo.flexipdf.databinding.PdfFileItemBinding // Assicurati di avere questo binding
+import it.lavorodigruppo.flexipdf.databinding.FolderItemBinding
+import it.lavorodigruppo.flexipdf.databinding.PdfFileItemBinding
 import it.lavorodigruppo.flexipdf.items.FileSystemItem
 import it.lavorodigruppo.flexipdf.items.FolderItem
 import it.lavorodigruppo.flexipdf.items.PdfFileItem
-import android.os.Handler
-import android.os.Looper
 
 // Definizione delle callback per gli eventi di click e selezione
 typealias OnItemClick = (FileSystemItem) -> Unit
-typealias OnItemLongClick = (FileSystemItem) -> Boolean // Restituisce Boolean per consumare l'evento
+typealias OnItemLongClick = (FileSystemItem) -> Boolean
 typealias OnSelectionToggle = (FileSystemItem) -> Unit
-typealias OnFavoriteToggle = (PdfFileItem) -> Unit // NUOVA TYPEALIAS: Per togglare i preferiti
+typealias OnFavoriteToggle = (PdfFileItem) -> Unit
 
 class FileSystemAdapter(
     private val onItemClick: OnItemClick,
@@ -34,15 +32,10 @@ class FileSystemAdapter(
     private val onItemDoubleClick: ((PdfFileItem) -> Unit)? = null
 ) : ListAdapter<FileSystemItem, RecyclerView.ViewHolder>(FileSystemDiffCallback()) {
 
-    // Costanti per i tipi di vista
     private val VIEW_TYPE_PDF = 1
     private val VIEW_TYPE_FOLDER = 2
 
-    // Stato della modalità di selezione (per l'animazione e la visibilità del cestino)
     private var isSelectionMode: Boolean = false
-    private val handler = Handler(Looper.getMainLooper()) // Handler per il doppio clic
-    private var lastClickTime: Long = 0 // Timestamp dell'ultimo clic
-    private val DOUBLE_CLICK_TIME_DELTA: Long = 300 // Millisecondi per il doppio clic
 
     @SuppressLint("NotifyDataSetChanged")
     fun setSelectionMode(active: Boolean) {
@@ -80,48 +73,32 @@ class FileSystemAdapter(
         val item = getItem(position)
         when (holder.itemViewType) {
             VIEW_TYPE_PDF -> {
-                (holder as PdfFileViewHolder).bind(item as PdfFileItem, onItemClick, onItemLongClick, onSelectionToggle, onFavoriteToggle, isSelectionMode)
-                // Applica il listener di click qui, non dentro il ViewHolder per gestire il doppio click
-                holder.itemView.setOnClickListener {
-                    if (isSelectionMode) {
-                        // In modalità selezione, un clic singolo seleziona/deseleziona
-                        onSelectionToggle(item)
-                    } else {
-                        // Logica per il rilevamento del doppio clic solo per PdfFileItem
-                        val clickTime = System.currentTimeMillis()
-                        if (clickTime - lastClickTime < DOUBLE_CLICK_TIME_DELTA && onItemDoubleClick != null) {
-                            // Doppio clic rilevato
-                            onItemDoubleClick.invoke(item) // Chiamata al listener del doppio clic
-                            lastClickTime = 0 // Resetta per evitare tripli clic accidentali
-                        } else {
-                            // Primo clic o clic singolo dopo un ritardo
-                            onItemClick.invoke(item) // Chiamata al listener del clic singolo
-                        }
-                        lastClickTime = clickTime
-                    }
-                }
-                holder.itemView.setOnLongClickListener { onItemLongClick.invoke(item) } // Long click sempre attivo
+                // Passa tutti i listener necessari e lo stato della modalità selezione al ViewHolder
+                (holder as PdfFileViewHolder).bind(
+                    item as PdfFileItem,
+                    onItemClick,
+                    onItemLongClick,
+                    onSelectionToggle,
+                    onFavoriteToggle,
+                    onItemDoubleClick, // Passa il listener di doppio click
+                    isSelectionMode
+                )
             }
             VIEW_TYPE_FOLDER -> {
-                (holder as FolderViewHolder).bind(item as FolderItem, onItemClick, onItemLongClick, onSelectionToggle, isSelectionMode)
-                // Per le cartelle, la logica di clic rimane semplice
-                holder.itemView.setOnClickListener {
-                    if (isSelectionMode) {
-                        onSelectionToggle(item)
-                    } else {
-                        onItemClick.invoke(item)
-                    }
-                }
-                holder.itemView.setOnLongClickListener { onItemLongClick.invoke(item) } // Long click sempre attivo
+                // Passa tutti i listener necessari e lo stato della modalità selezione al ViewHolder
+                (holder as FolderViewHolder).bind(
+                    item as FolderItem,
+                    onItemClick,
+                    onItemLongClick,
+                    onSelectionToggle,
+                    isSelectionMode
+                )
             }
         }
-        // Il resto del binding per checkbox e favorite icon dovrebbe essere gestito all'interno dei ViewHolder specifici
-        // o nella logica di bind, come hai già.
     }
 
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
         super.onViewRecycled(holder)
-        // Assicurati di fermare le animazioni quando la vista viene riciclata
         when (holder) {
             is PdfFileViewHolder -> holder.stopShakeAnimation()
             is FolderViewHolder -> holder.stopShakeAnimation()
@@ -129,27 +106,31 @@ class FileSystemAdapter(
     }
 
     // --- ViewHolder per PDF ---
-    class PdfFileViewHolder(private val binding: PdfFileItemBinding) : RecyclerView.ViewHolder(binding.root) {
+    inner class PdfFileViewHolder(private val binding: PdfFileItemBinding) : RecyclerView.ViewHolder(binding.root) {
         private var shakeAnimator: ObjectAnimator? = null
+        private var lastClickTime: Long = 0 // Spostato qui per essere specifico per ogni elemento PDF
+        private val DOUBLE_CLICK_TIME_DELTA: Long = 300 // Millisecondi per il doppio clic
 
         fun bind(
             pdfFile: PdfFileItem,
             onItemClick: OnItemClick,
             onItemLongClick: OnItemLongClick,
             onSelectionToggle: OnSelectionToggle,
-            onFavoriteToggle: OnFavoriteToggle, // <--- NUOVO PARAMETRO QUI
-            isSelectionMode: Boolean // Passa la modalità di selezione
+            onFavoriteToggle: OnFavoriteToggle,
+            onItemDoubleClick: ((PdfFileItem) -> Unit)? = null, // Riceve il listener di doppio click
+            isSelectionMode: Boolean
         ) {
-            Log.d("PdfFileViewHolder", "Bind per ${pdfFile.displayName}, isSelectionMode: $isSelectionMode, isSelected: ${pdfFile.isSelected}") // <--- AGGIUNTO LOG
+            Log.d("PdfFileViewHolder", "Bind per ${pdfFile.displayName}, isSelectionMode: $isSelectionMode, isSelected: ${pdfFile.isSelected}")
             binding.titleTextView.text = pdfFile.displayName
-            binding.iconImageView.setImageResource(R.drawable.pdf_svgrepo_com)
+            binding.iconImageView.setImageResource(R.drawable.pdf_svgrepo_com) // Icona PDF generica
 
+            // Imposta l'icona del preferito in base allo stato
             binding.favoriteIcon.setImageResource(
-                if (pdfFile.isFavorite) R.drawable.star_24dp_f19e39_fill0_wght400_grad0_opsz24__1_ // <--- USA L'ICONA CORRETTA
-                else R.drawable.star_24dp_999999_fill0_wght400_grad0_opsz24// <--- USA L'ICONA CORRETTA
+                if (pdfFile.isFavorite) R.drawable.star_24dp_f19e39_fill0_wght400_grad0_opsz24__1_
+                else R.drawable.star_24dp_999999_fill0_wght400_grad0_opsz24
             )
 
-            // Gestione della visibilità dell'icona di selezione/cestino
+            // Gestione della visibilità dell'overlay di selezione e animazione
             if (isSelectionMode) {
                 if (pdfFile.isSelected) {
                     startShakeAnimation(binding.root)
@@ -160,28 +141,31 @@ class FileSystemAdapter(
                 stopShakeAnimation()
             }
 
+            // Centralizza la gestione dei click per il singolo elemento PDF qui
             binding.root.setOnClickListener {
-                Log.d("PdfFileViewHolder", "Click su root per ${pdfFile.displayName}. isSelectionMode al click: $isSelectionMode") // <--- AGGIUNTO LOG
                 if (isSelectionMode) {
-                    Log.d("PdfFileViewHolder", "Toggling selection per ${pdfFile.displayName}") // <--- AGGIUNTO LOG
-                    onSelectionToggle(pdfFile)
+                    onSelectionToggle(pdfFile) // In modalità selezione, un clic singolo toggla la selezione
                 } else {
-                    Log.d("PdfFileViewHolder", "Apertura PDF per ${pdfFile.displayName}") // <--- AGGIUNTO LOG
-                    onItemClick(pdfFile)
+                    // Logica per il rilevamento del doppio clic
+                    val clickTime = System.currentTimeMillis()
+                    if (clickTime - lastClickTime < DOUBLE_CLICK_TIME_DELTA && onItemDoubleClick != null) {
+                        onItemDoubleClick.invoke(pdfFile) // Chiamata al listener del doppio clic
+                        lastClickTime = 0 // Resetta per evitare tripli clic accidentali
+                    } else {
+                        onItemClick.invoke(pdfFile) // Chiamata al listener del clic singolo
+                    }
+                    lastClickTime = clickTime
                 }
             }
 
             binding.root.setOnLongClickListener {
-                Log.d("PdfFileViewHolder", "Long click su root per ${pdfFile.displayName}") // <--- AGGIUNTO LOG
-                onItemLongClick(pdfFile)
+                onItemLongClick(pdfFile) // Long click sempre attivo
             }
 
-            // <--- RIMOSSO IL LISTENER DUPLICATO E LASCIATO SOLO QUESTO ---
+            // Listener per l'icona "Preferito"
             binding.favoriteIcon.setOnClickListener {
-                Log.d("FileSystemAdapter", "Favorite icon clicked for: ${pdfFile.displayName}, current favorite: ${pdfFile.isFavorite}")
                 onFavoriteToggle(pdfFile) // Chiama la callback specifica per togglare i preferiti
             }
-            // -----------------------------------------------------------
         }
 
         private fun startShakeAnimation(view: View) {
@@ -203,7 +187,7 @@ class FileSystemAdapter(
     }
 
     // --- ViewHolder per Cartelle ---
-    class FolderViewHolder(private val binding: FolderItemBinding) : RecyclerView.ViewHolder(binding.root) {
+    inner class FolderViewHolder(private val binding: FolderItemBinding) : RecyclerView.ViewHolder(binding.root) {
         private var shakeAnimator: ObjectAnimator? = null
 
         fun bind(
@@ -211,13 +195,22 @@ class FileSystemAdapter(
             onItemClick: OnItemClick,
             onItemLongClick: OnItemLongClick,
             onSelectionToggle: OnSelectionToggle,
-            isSelectionMode: Boolean // Passa la modalità di selezione
+            isSelectionMode: Boolean
         ) {
-            Log.d("FolderViewHolder", "Bind per ${folder.displayName}, isSelectionMode: $isSelectionMode, isSelected: ${folder.isSelected}") // <--- AGGIUNTO LOG
+            Log.d("FolderViewHolder", "Bind per ${folder.displayName}, isSelectionMode: $isSelectionMode, isSelected: ${folder.isSelected}")
             binding.folderNameTextView.text = folder.displayName
-            binding.folderIconImageView.setImageResource(R.drawable.folder_svgrepo_com) // Icona cartella
 
-            // Gestione della visibilità dell'icona di selezione/cestino
+            // *** MODIFICA FONDAMENTALE QUI: Imposta l'icona in base a isCloudFolder ***
+            if (folder.isCloudFolder) {
+                binding.folderIconImageView.setImageResource(R.drawable.folder_svgrepo_cloud_com) // Icona cloud (blu)
+                binding.folderIconImageView.contentDescription = itemView.context.getString(R.string.folders_icon_description, "Cloud Folder")
+            } else {
+                binding.folderIconImageView.setImageResource(R.drawable.folder_svgrepo_com) // Icona locale (gialla)
+                binding.folderIconImageView.contentDescription = itemView.context.getString(R.string.folders_icon_description, "Local Folder")
+            }
+            // ************************************************************************
+
+            // Gestione della visibilità dell'overlay di selezione e animazione
             if (isSelectionMode) {
                 if (folder.isSelected) {
                     startShakeAnimation(binding.root)
@@ -228,24 +221,18 @@ class FileSystemAdapter(
                 stopShakeAnimation()
             }
 
-
-
+            // Centralizza la gestione dei click per il singolo elemento Cartella qui
             binding.root.setOnClickListener {
-                Log.d("FolderViewHolder", "Click su root per ${folder.displayName}. isSelectionMode al click: $isSelectionMode") // <--- AGGIUNTO LOG
                 if (isSelectionMode) {
-                    Log.d("FolderViewHolder", "Toggling selection per ${folder.displayName}") // <--- AGGIUNTO LOG
-                    onSelectionToggle(folder)
+                    onSelectionToggle(folder) // In modalità selezione, un clic singolo toggla la selezione
                 } else {
-                    Log.d("FolderViewHolder", "Entering folder per ${folder.displayName}") // <--- AGGIUNTO LOG
-                    onItemClick(folder)
+                    onItemClick(folder) // In modalità normale, un clic singolo apre la cartella
                 }
             }
 
             binding.root.setOnLongClickListener {
-                Log.d("FolderViewHolder", "Long click su root per ${folder.displayName}") // <--- AGGIUNTO LOG
-                onItemLongClick(folder)
+                onItemLongClick(folder) // Long click sempre attivo
             }
-
         }
 
         private fun startShakeAnimation(view: View) {

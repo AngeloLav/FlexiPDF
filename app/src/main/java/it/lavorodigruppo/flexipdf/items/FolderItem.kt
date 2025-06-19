@@ -15,5 +15,7 @@ data class FolderItem(
     override val id: String = UUID.randomUUID().toString(), // Genera un UUID come ID predefinito
     override val displayName: String,
     override var isSelected: Boolean = false,
-    override val parentFolderId: String? // ID della cartella genitore (null per la root)
+    override val parentFolderId: String?, // ID della cartella genitore (null per la root)
+    val isCloudFolder: Boolean = false, // Nuovo: default a false per cartelle locali
+    val cloudLinkParam: String? = null // Nuovo: default a null
 ) : FileSystemItem // Implementa la nuova interfaccia

@@ -5,7 +5,7 @@
     <!-- Fragments temporary strings -->
     <string name="fragmentOne">Home</string>
     <string name="fragmentTwo">Folders</string>
-    <string name="fragmentThree">Share</string>
+    <string name="fragmentThree">Shared</string>
     <string name="fragmentFour">Settings</string>
 
     <!-- Fragment Home -->
@@ -71,4 +71,8 @@
     <string name="favorite">favorite</string>
     <string name="back">Back</string>
     <string name="next">Next</string>
+    <string name="add_cloud">add cloud\n</string>
+    <string name="warning">WARNING: modifications in this fragment wont be saved. This is just an example for a possible future cloud link implementation</string>
+    <string name="nome_cartella_cloud">Cloud  folder\'s name</string>
+    <string name="parametro_cloud_es_id_token">Cloud parameter\'s (ID, Token..)</string>
 </resources>
