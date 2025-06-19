@@ -39,7 +39,6 @@
                 app:layout_constraintBottom_toTopOf="@id/searchView"
                 android:paddingStart="0dp"
                 android:paddingEnd="12dp"
-                android:paddingTop="45dp"
                 android:paddingBottom="12dp"
                 app:tint="@android:color/white" />
 

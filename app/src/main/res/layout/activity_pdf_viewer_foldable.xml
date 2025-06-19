@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activities.PDFViewerActivity">
+
+    <!-- Contenitore per i frammenti PDF (occupa la maggior parte dello spazio verticale) -->
+    <LinearLayout
+        android:id="@+id/pdf_fragments_container_horizontal"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        android:weightSum="2"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/navigation_card"> <!-- Spazio tra i PDF e la card -->
+
+        <!-- Contenitore per il frammento PDF di sinistra (sempre presente) -->
+        <FrameLayout
+            android:id="@+id/pdf_fragment_left_container"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <!-- Contenitore per il frammento PDF di destra (la sua visibilità sarà gestita dinamicamente) -->
+        <FrameLayout
+            android:id="@+id/pdf_fragment_right_container"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+    </LinearLayout>
+
+    <!-- Card per i pulsanti di navigazione -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/navigation_card"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:cardElevation="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:visibility="gone"
+        app:cardBackgroundColor="?attr/android:statusBarColor"
+        tools:visibility="visible"> <!-- tools:visibility per vedere nel designer -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:padding="8dp">
+
+            <Button
+                android:id="@+id/btn_prev"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/back"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="16dp"
+                android:backgroundTint="?attr/colorSecondary"
+                android:textColor="@android:color/white"
+                app:cornerRadius="12dp" />
+
+            <Button
+                android:id="@+id/btn_next"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:text="@string/next"
+                android:backgroundTint="?attr/colorSecondary"
+                android:textColor="@android:color/white"
+                app:cornerRadius="12dp"/>
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

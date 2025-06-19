@@ -40,7 +40,6 @@
                 android:paddingStart="0dp"
                 android:paddingEnd="12dp"
                 android:paddingBottom="12dp"
-                android:paddingTop="28dp"
                 app:tint="@android:color/white" />
 
             <!-- Titolo Dinamico della Cartella -->
@@ -53,7 +52,6 @@
                 android:textSize="26sp"
                 android:fontFamily="monospace"
                 android:textStyle="bold"
-                android:paddingTop="30dp"
                 android:paddingBottom="10dp"
                 app:layout_constraintBottom_toTopOf="@id/searchView"
                 app:layout_constraintStart_toEndOf="@id/backButton"
