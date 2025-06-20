@@ -66,7 +66,7 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
             intent.getParcelableExtra("pdf_uri")
         } ?: run {
             Log.e("PDFViewerActivity", "Nessun PDF URI fornito.")
-            Toast.makeText(this, "Nessun PDF specificato.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "No PDF specified", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
@@ -82,13 +82,13 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
                     Log.d("PDFViewerActivity", "Permesso URI temporaneo concesso per: $it")
                 } catch (e2: Exception) {
                     Log.e("PDFViewerActivity", "Impossibile ottenere permesso URI temporaneo: ${e2.message}", e2)
-                    Toast.makeText(this, "Errore permessi file: ${e2.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "Error with file permissions: ${e2.message}", Toast.LENGTH_LONG).show()
                     finish()
                     return
                 }
             } catch (e: Exception) {
                 Log.e("PDFViewerActivity", "Errore generico nell'ottenere permessi URI: ${e.message}", e)
-                Toast.makeText(this, "Errore permessi file: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Error with file permissions: ${e.message}", Toast.LENGTH_LONG).show()
 
                 finish()
                 return
@@ -364,7 +364,6 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
 
             if (offset < 0) {
                 if (proposedNewLeftPage < minPossibleLeftPage) {
-                    Toast.makeText(this, "Sei già alla prima coppia di pagine.", Toast.LENGTH_SHORT).show()
                     Log.d("PDFViewerActivity", "Tentato di navigare prima della prima pagina. Current: $currentPage, Proposed: $proposedNewLeftPage.")
                     return
                 }
@@ -373,7 +372,6 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
                 }
             } else if (offset > 0) {
                 if (proposedNewLeftPage > maxPossibleLeftPage) {
-                    Toast.makeText(this, "Sei già all'ultima pagina.", Toast.LENGTH_SHORT).show()
                     Log.d("PDFViewerActivity", "Tentato di navigare oltre l'ultima pagina. Current: $currentPage, Proposed: $proposedNewLeftPage, Max Possible Left: $maxPossibleLeftPage.")
                     return
                 }
@@ -396,10 +394,8 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
 
             if (newPage < 0) {
                 newPage = 0
-                Toast.makeText(this, "Sei già alla prima pagina.", Toast.LENGTH_SHORT).show()
             } else if (newPage >= totalPdfPages) {
                 newPage = totalPdfPages - 1
-                Toast.makeText(this, "Sei già all'ultima pagina.", Toast.LENGTH_SHORT).show()
             }
 
             if (newPage == currentPage) {

@@ -101,7 +101,7 @@ class PdfViewerFragment : Fragment(), OnErrorListener, OnLoadCompleteListener {
             pagesToLoad = it.getIntArray(ARG_PAGES_TO_LOAD)
         } ?: run {
             Log.e("PdfViewerFragment", "Argomenti mancanti per PdfViewerFragment.")
-            Toast.makeText(context, "Errore: dati PDF mancanti.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Error: Pdf data missing", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -165,7 +165,7 @@ class PdfViewerFragment : Fragment(), OnErrorListener, OnLoadCompleteListener {
                 configurator?.load()
             } catch (e: Exception) {
                 Log.e("PdfViewerFragment", "Errore durante il caricamento del PDF: ${e.message}", e)
-                Toast.makeText(context, "Errore nel caricamento del PDF: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Error in PDF's loading: ${e.message}", Toast.LENGTH_LONG).show()
             }
         } ?: Log.e("PdfViewerFragment", "Errore: URI PDF nullo nel Fragment durante onViewCreated.")
     }
@@ -213,7 +213,7 @@ class PdfViewerFragment : Fragment(), OnErrorListener, OnLoadCompleteListener {
      */
     override fun onError(e: Throwable?) {
         Log.e("PdfViewerFragment", "Errore dalla libreria PDF: ${e?.message}", e)
-        Toast.makeText(context, "Errore durante il caricamento del PDF: ${e?.localizedMessage}", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, "Error during PDF's loading: ${e?.localizedMessage}", Toast.LENGTH_LONG).show()
     }
 
     /**

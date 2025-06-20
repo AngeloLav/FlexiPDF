@@ -504,7 +504,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
 
             if (currentFolders.any { it.displayName.equals(folderName, ignoreCase = true) && it.parentFolderId == parentId }) {
                 Log.w("FSViewModel", "Cartella con nome '$folderName' esiste già in questa posizione.")
-                showUserMessage("Una cartella con questo nome esiste già qui.")
+                showUserMessage("A folder with that name already exists.")
                 return@launch
             }
 
@@ -543,7 +543,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
 
             if (isFolderBeingMoved || isChildOfFolderBeingMoved) {
                 viewModelScope.launch {
-                    showUserMessage("Impossibile navigare in una cartella che stai spostando.")
+                    showUserMessage("You can't navigate on a folder you are moving.")
                 }
                 Log.w("FSViewModel", "Tentativo di navigare in una cartella in fase di spostamento: ${folder.displayName}")
                 return // Impedisci la navigazione
@@ -624,7 +624,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
             Log.d("FSViewModel", "Iniziato spostamento. Elementi da spostare: ${_itemsToMove.value.size}")
         } else {
             Log.w("FSViewModel", "Tentativo di iniziare spostamento senza elementi selezionati.")
-            showUserMessage("Seleziona gli elementi da spostare.")
+            showUserMessage("Select elements to move.")
         }
     }
 
@@ -669,7 +669,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
                 if (item is FolderItem && (item.id == destinationFolderId || getItemsInFolderRecursive(item.id).any { it.id == destinationFolderId })) {
                     Log.w("FSViewModel", "Impossibile spostare la cartella '${item.displayName}' in se stessa o in una sua sottocartella.")
                     skippedCount++
-                    showUserMessage("Impossibile spostare '${item.displayName}' nella destinazione selezionata.")
+                    showUserMessage("Can't move '${item.displayName}' in the selected folder.")
                     continue
                 }
 
@@ -683,7 +683,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
                 if (alreadyExistsInDestination) {
                     Log.w("FSViewModel", "Elemento '${item.displayName}' già presente nella cartella di destinazione. Spostamento saltato.")
                     skippedCount++
-                    showUserMessage("Elemento '${item.displayName}' già presente nella destinazione. Spostamento saltato.")
+                    showUserMessage("Element '${item.displayName}' already present in the destination.")
                     continue
                 }
 
@@ -717,7 +717,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
             _allFolders.value = updatedFolders
 
             Log.d("FSViewModel", "Operazione di spostamento completata. Spostati: $movedCount, Saltati: $skippedCount.")
-            showUserMessage("Spostati $movedCount elementi. Saltati $skippedCount elementi.")
+            showUserMessage("Moved $movedCount elements. Not moved $skippedCount elements.")
             cancelMoveOperation()
         }
     }

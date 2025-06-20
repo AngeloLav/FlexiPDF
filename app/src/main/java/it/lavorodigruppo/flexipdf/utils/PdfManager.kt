@@ -70,14 +70,14 @@ class PdfManager(private val activity: AppCompatActivity,
                 onPdfSelected.invoke(selectedUris)
 
                 val toastMessage = if (selectedUris.size == 1) {
-                    "1 PDF selezionato."
+                    "1 PDF selected."
                 } else {
-                    "${selectedUris.size} PDF selezionati."
+                    "${selectedUris.size} PDFs selected."
                 }
                 Toast.makeText(activity, toastMessage, Toast.LENGTH_SHORT).show()
             }
         } else {
-            Toast.makeText(activity, "Selezione PDF interrotta.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, "PDF selection interrupted.", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -115,7 +115,7 @@ class PdfManager(private val activity: AppCompatActivity,
 
         } catch (e: Exception) {
             Log.e("PdfManager", "Errore nel salvare i permessi per URI: ${uri.toString()}: ${e.message}", e)
-            Toast.makeText(activity, "Errore permessi per PDF.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, "PDF permission errors", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -138,7 +138,7 @@ class PdfManager(private val activity: AppCompatActivity,
             activity.startActivity(intent)
         } catch (e: Exception) {
             Log.e("PdfManager", "Impossibile aprire il PDF: $fileName", e)
-            Toast.makeText(activity, "Impossibile aprire il PDF: $fileName", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, "Impossible to open: $fileName", Toast.LENGTH_SHORT).show()
         }
     }
 }

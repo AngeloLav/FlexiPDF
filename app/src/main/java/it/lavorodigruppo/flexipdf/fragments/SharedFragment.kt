@@ -80,12 +80,12 @@ class SharedFragment : Fragment() {
                     selectedUris.forEach { uri ->
                         addPdfToCurrentCloudFolder(uri)
                     }
-                    Toast.makeText(context, "${selectedUris.size} PDF importati nella cartella cloud corrente.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "${selectedUris.size} PDF imported in current cloud folder", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(context, "Nessun PDF selezionato.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "No PDF selected", Toast.LENGTH_SHORT).show()
                 }
             } ?: run {
-                Toast.makeText(context, "Nessun PDF selezionato.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "No PDF selected", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -290,7 +290,7 @@ class SharedFragment : Fragment() {
 
         val googleDriveInitialContent = mutableListOf<FileSystemItem>(
             PdfFileItem(
-                displayName = "Documento Condiviso 1.pdf",
+                displayName = "Shared document 1.pdf",
                 id = UUID.randomUUID().toString(),
                 uriString = Uri.EMPTY.toString(),
                 isSelected = false,
@@ -311,7 +311,7 @@ class SharedFragment : Fragment() {
         val sottocartellaDriveId = UUID.randomUUID().toString()
         googleDriveInitialContent.add(
             FolderItem(
-                displayName = "Sottocartella Drive",
+                displayName = "Folder Drive",
                 id = sottocartellaDriveId,
                 isSelected = false,
                 parentFolderId = googleDriveFolder.id
@@ -321,7 +321,7 @@ class SharedFragment : Fragment() {
 
         val dropboxInitialContent = mutableListOf<FileSystemItem>(
             PdfFileItem(
-                displayName = "Presentazione Client.pdf",
+                displayName = "Example_fake_pdf.pdf",
                 id = UUID.randomUUID().toString(),
                 uriString = Uri.EMPTY.toString(),
                 isSelected = false,
@@ -330,7 +330,7 @@ class SharedFragment : Fragment() {
                 parentFolderId = dropboxFolder.id
             ),
             PdfFileItem(
-                displayName = "Contratti 2024.pdf",
+                displayName = "Example_fake_pdf_2.pdf",
                 id = UUID.randomUUID().toString(),
                 uriString = Uri.EMPTY.toString(),
                 isSelected = false,
@@ -343,7 +343,7 @@ class SharedFragment : Fragment() {
 
         val oneDriveInitialContent = mutableListOf<FileSystemItem>(
             PdfFileItem(
-                displayName = "Manuale Prodotto.pdf",
+                displayName = "Product.pdf",
                 id = UUID.randomUUID().toString(),
                 uriString = Uri.EMPTY.toString(),
                 isSelected = false,
@@ -355,7 +355,7 @@ class SharedFragment : Fragment() {
         val progettiTeamId = UUID.randomUUID().toString()
         oneDriveInitialContent.add(
             FolderItem(
-                displayName = "Progetti Team",
+                displayName = "Project Team",
                 id = progettiTeamId,
                 isSelected = false,
                 parentFolderId = oneDriveFolder.id
@@ -365,7 +365,7 @@ class SharedFragment : Fragment() {
 
         customCloudFoldersContent[sottocartellaDriveId] = mutableListOf(
             PdfFileItem(
-                displayName = "File annidato 1.pdf",
+                displayName = "Nested_file_1.pdf",
                 id = UUID.randomUUID().toString(),
                 uriString = Uri.EMPTY.toString(),
                 isSelected = false,
@@ -376,7 +376,7 @@ class SharedFragment : Fragment() {
         )
         customCloudFoldersContent[progettiTeamId] = mutableListOf(
             PdfFileItem(
-                displayName = "File annidato 2.pdf",
+                displayName = "Nested_file_2.pdf",
                 id = UUID.randomUUID().toString(),
                 uriString = Uri.EMPTY.toString(),
                 isSelected = false,
@@ -502,7 +502,7 @@ class SharedFragment : Fragment() {
         originalPdf?.let {
             it.isFavorite = !it.isFavorite
             updateRecyclerViewContent()
-            Toast.makeText(context, "Stato preferito di '${it.displayName}' togglato.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Favourite for '${it.displayName}' toggled.", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -766,7 +766,7 @@ class SharedFragment : Fragment() {
      * Tenta di ottenere il nome visualizzato tramite `ContentResolver` per URI di tipo "content",
      * altrimenti estrae il nome dal percorso dell'URI.
      * @param uri L'URI del file.
-     * @return Il nome del file come stringa, o "Documento senza nome.pdf" se non può essere determinato.
+     * @return Il nome del file come stringa, o "Document_without_name.pdf" se non può essere determinato.
      */
     private fun getFileNameFromUri(uri: Uri): String {
         var name: String? = null
@@ -788,7 +788,7 @@ class SharedFragment : Fragment() {
                 name = name?.substring(cut!! + 1)
             }
         }
-        return name ?: "Documento senza nome.pdf"
+        return name ?: "Document_without_name.pdf"
     }
 
     /**
@@ -892,7 +892,7 @@ class SharedFragment : Fragment() {
     @SuppressLint("MissingInflatedId")
     private fun showAddCloudFolderDialog(isCreatingRootCloudFolder: Boolean = false) {
         val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle(if (isCreatingRootCloudFolder) getString(R.string.add_cloud) else "Crea Nuova Cartella")
+        builder.setTitle(if (isCreatingRootCloudFolder) getString(R.string.add_cloud) else "Create new folder")
 
         val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_cloud_folder, null)
         val folderNameEditText = view.findViewById<EditText>(R.id.folderNameEditText)
@@ -930,9 +930,9 @@ class SharedFragment : Fragment() {
                 }
 
                 updateRecyclerViewContent()
-                Toast.makeText(context, "Cartella '$folderName' aggiunta (placeholder).", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Folder '$folderName' added.", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(context, "Il nome della cartella non può essere vuoto.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Folder's name can't be empty.", Toast.LENGTH_SHORT).show()
             }
             dialog.dismiss()
         }
@@ -971,7 +971,7 @@ class SharedFragment : Fragment() {
 
                 clearAllSelections()
                 updateRecyclerViewContent()
-                Toast.makeText(context, "Elementi selezionati eliminati (placeholder).", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Selected items deleted.", Toast.LENGTH_SHORT).show()
                 dialog.dismiss()
             }
             .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->

@@ -329,7 +329,7 @@ class FoldersFragment(
             onItemClick = onItemClick@{ item ->
                 if (fileSystemViewModel.isMovingItems.value) {
                     if (item is PdfFileItem) {
-                        fileSystemViewModel.showUserMessage("Clicca su una cartella per navigare o 'Sposta qui' per confermare.")
+                        fileSystemViewModel.showUserMessage("Click on a folder to navigate or move here to confirm")
                         Log.d("FoldersFragment", "Tentativo di aprire PDF in modalità spostamento, impedito: ${item.displayName}")
                         return@onItemClick
                     } else if (item is FolderItem) {
