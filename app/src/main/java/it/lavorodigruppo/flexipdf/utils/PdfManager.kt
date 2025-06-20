@@ -4,13 +4,11 @@
  * @brief Gestore per la selezione di file PDF dal dispositivo e la persistenza dei permessi.
  *
  * Questa classe fornisce funzionalità per avviare un selettore di file di sistema,
- * permettendo all'utente di scegliere un documento PDF. Gestisce il risultato della selezione,
- * estrae l'URI e il nome visualizzato del file, e soprattutto si occupa di persistere
- * i permessi di accesso all'URI selezionato per garantire che l'applicazione possa
+ * permettendo all'utente di scegliere uno o più documenti PDF. Gestisce il risultato della selezione,
+ * estrae gli URI e i nomi visualizzati dei file, e soprattutto si occupa di persistere
+ * i permessi di accesso agli URI selezionati per garantire che l'applicazione possa
  * riaccedervi in futuro anche dopo il riavvio del dispositivo.
  *
- * @author Angelo
- * @date 31/05/25
  */
 package it.lavorodigruppo.flexipdf.utils
 
@@ -24,45 +22,53 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 
 /**
- * @param activity L'istanza di AppCompatActivity che ospita questo gestore. È necessaria per
- * registrare l'ActivityResultLauncher.
- * @param onPdfSelected Una funzione lambda (List<Uri>) -> Unit che viene invocata quando
- * uno o più PDF vengono selezionati con successo. Riceve la lista degli URI dei PDF.
+ * Classe responsabile della gestione dell'interazione con il selettore di file del sistema
+ * per permettere all'utente di scegliere documenti PDF, e di persistere i permessi necessari
+ * per l'accesso futuro a tali file.
+ *
+ * @param activity L'istanza di `AppCompatActivity` che ospita questo gestore.
+ * È necessaria per registrare l'`ActivityResultLauncher` e per mostrare `Toast`.
+ * @param onPdfSelected Una funzione lambda che viene invocata quando uno o più PDF
+ * vengono selezionati con successo dall'utente. Riceve una `List<Uri>`
+ * contenente gli URI di tutti i PDF scelti.
  */
 class PdfManager(private val activity: AppCompatActivity,
-                 private val onPdfSelected: (List<Uri>) -> Unit // <--- FIRMA DELLA CALLBACK CORRETTA: SOLO List<Uri>
+                 private val onPdfSelected: (List<Uri>) -> Unit
 ) {
 
     /**
-     * ActivityResultLauncher per avviare l'Activity di selezione del file PDF e gestire il suo risultato.
+     * `ActivityResultLauncher` utilizzato per avviare l'Activity di selezione del file PDF del sistema
+     * e per gestire il risultato dell'interazione dell'utente con essa.
+     * Questa callback viene invocata quando l'utente ha completato la selezione dei documenti (o l'ha annullata).
+     * Se la selezione ha successo (`Activity.RESULT_OK`), estrae tutti gli URI selezionati
+     * (gestendo sia la selezione singola che quella multipla tramite `clipData` e `data`)
+     * e persiste i permessi per ogni URI. Infine, invoca la callback `onPdfSelected` fornita
+     * nel costruttore con la lista degli URI raccolti.
      */
     private val pickPdfFile = activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val selectedUris = mutableListOf<Uri>()
 
-            // Gestisce la selezione multipla (clipData)
+            // Gestisce la selezione multipla tramite clipData
             result.data?.clipData?.let { clipData ->
                 for (i in 0 until clipData.itemCount) {
                     val uri = clipData.getItemAt(i).uri
                     selectedUris.add(uri)
-                    savePdfUri(uri) // Salva i permessi per ogni URI selezionato
+                    savePdfUri(uri)
                 }
             }
 
-            // Gestisce la selezione singola (data) se clipData non è presente
+            // Gestisce la selezione singola tramite data se clipData non è presente
             result.data?.data?.let { uri ->
-                if (selectedUris.isEmpty()) { // Aggiunge solo se non già gestito da clipData
+                if (selectedUris.isEmpty()) {
                     selectedUris.add(uri)
-                    savePdfUri(uri) // Salva i permessi per l'URI singolo
+                    savePdfUri(uri)
                 }
             }
 
             if (selectedUris.isNotEmpty()) {
-                // Invoca il callback fornito con la lista completa degli URI selezionati
-                // La logica per ottenere i nomi e importare è nel ViewModel.
-                onPdfSelected.invoke(selectedUris) // <--- CHIAMATA CORRETTA: PASSA SOLO selectedUris
+                onPdfSelected.invoke(selectedUris)
 
-                // Messaggio Toast semplificato, la conferma di importazione vera è nel ViewModel
                 val toastMessage = if (selectedUris.size == 1) {
                     "1 PDF selezionato."
                 } else {
@@ -76,23 +82,29 @@ class PdfManager(private val activity: AppCompatActivity,
     }
 
     /**
-     * Avvia l'interfaccia di selezione del file PDF del sistema.
-     * Permette la selezione multipla.
+     * Avvia l'interfaccia standard del selettore di file del sistema operativo Android.
+     * Configura un `Intent` con l'azione `ACTION_OPEN_DOCUMENT` e il tipo MIME "application/pdf"
+     * per filtrare i file selezionabili e abilita la selezione multipla (`Intent.EXTRA_ALLOW_MULTIPLE`).
+     * L'interazione con l'utente e il recupero del risultato sono gestiti dal `pickPdfFile` launcher.
      */
     fun launchPdfPicker() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = "application/pdf"
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true) // Abilita la selezione multipla
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         }
         pickPdfFile.launch(intent)
     }
 
     /**
-     * Salva i permessi di accesso persistenti per un dato Uri.
-     * Questo è cruciale per poter riaccedere al file selezionato dall'utente in futuro.
+     * Salva i permessi di accesso persistenti per un dato URI di un file.
+     * Questo è un passo cruciale per la persistenza dell'accesso ai documenti,
+     * in quanto permette all'applicazione di riaccedere al file selezionato dall'utente
+     * anche dopo il riavvio dell'applicazione o del dispositivo, senza dover chiedere
+     * nuovamente all'utente di selezionare il file.
+     * Utilizza `ContentResolver.takePersistableUriPermission` per acquisire il permesso di lettura.
      *
-     * @param uri L'URI del file PDF per il quale si desiderano persistire i permessi.
+     * @param uri L'URI del file PDF per il quale si desiderano persistere i permessi.
      */
     private fun savePdfUri(uri: Uri) {
         try {
@@ -108,8 +120,13 @@ class PdfManager(private val activity: AppCompatActivity,
     }
 
     /**
-     * Metodo per aprire un singolo PDF (utile se lo chiami direttamente da qualche parte).
-     * Nota: il ViewModel ora ha la logica per aprire il PDF e aggiornare lastModified.
+     * Tenta di aprire un singolo documento PDF utilizzando un `Intent` implicito.
+     * Crea un `Uri` dal `uriString` fornito e un `Intent.ACTION_VIEW` con il tipo MIME "application/pdf".
+     * Aggiunge il flag `FLAG_GRANT_READ_URI_PERMISSION` per garantire i permessi di lettura
+     * all'applicazione che aprirà il PDF. Questo metodo è utile per avviare un visualizzatore PDF esterno.
+     *
+     * @param uriString La rappresentazione in stringa dell'URI del file PDF da aprire.
+     * @param fileName Il nome del file PDF, utilizzato principalmente per i messaggi di errore (`Toast`).
      */
     fun openPdf(uriString: String, fileName: String) {
         try {

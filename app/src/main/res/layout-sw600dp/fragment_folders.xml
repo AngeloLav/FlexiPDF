@@ -25,7 +25,6 @@
             android:paddingEnd="16dp"
             android:paddingBottom="0dp">
 
-            <!-- Pulsante Indietro (visibile solo in sottocartelle) -->
             <ImageButton
                 android:id="@+id/backButton"
                 android:layout_width="wrap_content"
@@ -42,7 +41,6 @@
                 android:paddingBottom="12dp"
                 app:tint="@android:color/white" />
 
-            <!-- Titolo Dinamico della Cartella -->
             <TextView
                 android:id="@+id/settingsTitleTextView"
                 android:layout_width="0dp"
