@@ -5,6 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
+
     <androidx.cardview.widget.CardView
         android:id="@+id/topBannerCardView"
         android:layout_width="0dp"
@@ -15,6 +16,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
+
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/bannerContentLayout"
             android:layout_width="match_parent"
@@ -22,8 +24,8 @@
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:paddingBottom="0dp">
-            <!-- Pulsante Indietro (visibile solo in sottocartelle) -->
 
+            <!-- Pulsante Indietro (visibile solo in sottocartelle) -->
             <ImageButton
                 android:id="@+id/backButton"
                 android:layout_width="wrap_content"
@@ -45,7 +47,7 @@
                 android:id="@+id/settingsTitleTextView"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="@string/fragmentThree"
+                android:text="@string/fragmentTwo"
                 android:textColor="@android:color/white"
                 android:textSize="26sp"
                 android:fontFamily="monospace"
@@ -54,21 +56,7 @@
                 app:layout_constraintBottom_toTopOf="@id/searchView"
                 app:layout_constraintStart_toEndOf="@id/backButton"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="@id/backButton"/>
-
-            <ImageButton
-                android:id="@+id/addButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/add_24dp_000000_fill0_wght400_grad0_opsz24"
-                android:contentDescription="@string/add_cloud"
-                android:padding="16dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toTopOf="@id/searchView"
-                app:tint="@android:color/white" />
+                app:layout_constraintTop_toTopOf="parent" />
 
             <androidx.appcompat.widget.SearchView
                 android:id="@+id/searchView"
@@ -89,37 +77,23 @@
                 app:searchIcon="@drawable/search_24dp_efefef_fill0_wght400_grad0_opsz24"
                 app:closeIcon="@drawable/close_24dp_f3f3f3_fill0_wght400_grad0_opsz24"
                 android:queryBackground="@android:color/transparent" />
+
         </androidx.constraintlayout.widget.ConstraintLayout>
+
     </androidx.cardview.widget.CardView>
-
-
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/pdfRecyclerView"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/topBannerCardView"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_height="0dp"
         android:clipToPadding="false"
-        tools:listitem="@layout/folder_item"
-        />
-
-    <TextView
-        android:id="@+id/warning"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:fontFamily="monospace"
-        android:text="@string/warning"
-        android:textColor="@color/mild_gray"
-        android:textSize="12sp"
-        android:textStyle="bold"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/pdfRecyclerView" />
+        app:layout_constraintTop_toBottomOf="@id/topBannerCardView"
+        app:layout_constraintVertical_bias="1.0"
+        tools:listitem="@layout/folder_item" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/floatingActionButton"
@@ -127,7 +101,6 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
-        android:visibility="gone"
         android:backgroundTint="?attr/android:statusBarColor"
         android:clickable="true"
         android:focusable="true"

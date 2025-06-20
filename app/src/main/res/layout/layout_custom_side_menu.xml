@@ -1,0 +1,58 @@
+<!-- app/src/main/res/layout/layout_custom_side_menu.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/custom_side_menu_container"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="?attr/android:statusBarColor">
+
+    <!-- Sezione Header/Logo -->
+    <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="bottom"
+    android:padding="16dp"
+    android:layout_marginTop="50dp"
+    android:background="?attr/android:statusBarColor">
+
+        <ImageView
+            android:id="@+id/custom_side_menu_logo"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_gravity="center"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/pdf_svgrepo_com"
+            app:tint="@color/white"/>
+
+        <TextView
+            android:id="@+id/homeTitleTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/short_baby"
+            android:text="@string/app_name"
+            android:layout_gravity="center"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:textColor="@android:color/white"
+            android:textSize="26sp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/white"
+            android:layout_marginTop="4dp" />
+
+    </LinearLayout>
+
+    <include layout="@layout/layout_custom_menu_item"
+    android:id="@+id/custom_menu_item_home" />
+    <include layout="@layout/layout_custom_menu_item"
+    android:id="@+id/custom_menu_item_folders" />
+    <include layout="@layout/layout_custom_menu_item"
+    android:id="@+id/custom_menu_item_shared" />
+    <include layout="@layout/layout_custom_menu_item"
+    android:id="@+id/custom_menu_item_settings" />
+
+</LinearLayout>

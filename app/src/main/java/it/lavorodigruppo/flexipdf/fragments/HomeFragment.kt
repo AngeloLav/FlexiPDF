@@ -70,11 +70,11 @@ class HomeFragment : Fragment() {
             val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
 
             bannerContentLayout.setPadding(
-                bannerContentLayout.paddingLeft,
-                originalBannerPaddingTop + systemBarsInsets.top,
-                bannerContentLayout.paddingRight,
-                bannerContentLayout.paddingBottom
-            )
+                    bannerContentLayout.paddingLeft,
+                    originalBannerPaddingTop + systemBarsInsets.top,
+                    bannerContentLayout.paddingRight,
+                    bannerContentLayout.paddingBottom
+                )
             insets
         }
 

@@ -17,5 +17,8 @@
         <item name="android:windowBackground">@color/dark_themed_2</item>
         <item name="colorSurface">@color/dark_themed</item>
         <!--<item name="colorOnError">@color/my_dark_on_error</item>-->
+
+
     </style>
+
 </resources>

@@ -16,7 +16,8 @@
 package it.lavorodigruppo.flexipdf.fragments
 
 import android.animation.ObjectAnimator
-import android.content.Intent
+import android.content.Context
+import android.content.res.Configuration
 import androidx.core.net.toUri
 import android.os.Bundle
 import android.util.Log
@@ -28,6 +29,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.fragment.app.Fragment
@@ -35,19 +38,34 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import it.lavorodigruppo.flexipdf.R
-import it.lavorodigruppo.flexipdf.activities.PDFViewerActivity
 import it.lavorodigruppo.flexipdf.adapters.FileSystemAdapter
-import it.lavorodigruppo.flexipdf.databinding.FragmentFoldersBinding // Assicurati che il nome del binding sia corretto
+import it.lavorodigruppo.flexipdf.databinding.FragmentFoldersBinding
 import it.lavorodigruppo.flexipdf.items.FolderItem
 import it.lavorodigruppo.flexipdf.items.PdfFileItem
 import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import android.widget.EditText
+import androidx.constraintlayout.widget.ConstraintLayout
 import com.google.android.material.snackbar.Snackbar
 import it.lavorodigruppo.flexipdf.data.FileSystemDatasource
 
-class FoldersFragment : Fragment() {
+class FoldersFragment(
+) : Fragment() {
+
+    private var pdfFileClickListener: OnPdfFileClickListener? = null
+
+    // Override del metodo onAttach per ottenere il riferimento all'Activity (che implementa il listener)
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is OnPdfFileClickListener) {
+            pdfFileClickListener = context
+        } else {
+            // È buona pratica lanciare un'eccezione se l'Activity non implementa il listener richiesto.
+            // Puoi anche solo loggare un avviso se preferisci.
+            Log.e("FoldersFragment", "$context must implement OnPdfFileClickListener")
+        }
+    }
 
     private var _binding: FragmentFoldersBinding? = null
     private val binding get() = _binding!!
@@ -75,7 +93,6 @@ class FoldersFragment : Fragment() {
 
             // Voci di menu per la modalità di spostamento
             val moveHereItem = menu?.findItem(R.id.action_move_here)
-            val cancelMoveItem = menu?.findItem(R.id.action_cancel_move)
             val moveBackItem = menu?.findItem(R.id.action_move_back)
 
             if (isMoving) {
@@ -85,11 +102,9 @@ class FoldersFragment : Fragment() {
                 moveItem?.isVisible = false
 
                 moveHereItem?.isVisible = true
-                cancelMoveItem?.isVisible = true
 
-
-                // Rendi visibile "Indietro" solo se non siamo nella root
                 moveBackItem?.isVisible = fileSystemViewModel.currentFolder.value != null
+
 
                 mode?.title = resources.getQuantityString(R.plurals.move_items_message, itemsToMoveCount, itemsToMoveCount)
             } else {
@@ -99,14 +114,12 @@ class FoldersFragment : Fragment() {
                 moveItem?.isVisible = true
 
                 moveHereItem?.isVisible = false
-                cancelMoveItem?.isVisible = false
                 moveBackItem?.isVisible = false
 
                 mode?.title = "$selectedCount" + getString(R.string.selected)
 
-                // Aggiorna il titolo di "Seleziona tutto"
-                val currentFolderId = fileSystemViewModel.currentFolder.value?.id ?: FileSystemDatasource.ROOT_FOLDER_ID
-              //  val allItemsInCurrentFolder = fileSystemViewModel.filteredAndDisplayedItems.value.filter { it.parentFolderId == currentFolderId }
+
+                fileSystemViewModel.currentFolder.value?.id ?: FileSystemDatasource.ROOT_FOLDER_ID
 
             }
             return true
@@ -135,12 +148,7 @@ class FoldersFragment : Fragment() {
                     mode?.finish()
                     true
                 }
-                R.id.action_cancel_move -> { // GESTIONE "ANNULLA SPOSTAMENTO"
-                    fileSystemViewModel.cancelMoveOperation()
-                    Snackbar.make(binding.root, getString(R.string.failed_moving_operation), Snackbar.LENGTH_SHORT).show()
-                    mode?.finish() // Chiude la CAB
-                    true
-                }
+
                 R.id.action_move_back -> { // GESTIONE "INDIETRO" IN MODALITÀ SPOSTAMENTO
                     fileSystemViewModel.goBack()
                     mode?.invalidate() // Invalida la CAB per aggiornare la visibilità del pulsante "Indietro" (se si torna alla root)
@@ -178,7 +186,68 @@ class FoldersFragment : Fragment() {
         setupRecyclerView()
         setupListeners()
         observeViewModel()
+
+        // --- INIZIO: GESTIONE WINDOW INSETS per il banner superiore, RecyclerView e FAB ---
+        // Questo listener è fondamentale per adattare il layout alle barre di sistema (status bar, navigation bar)
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            // Ottieni gli insets per le barre di sistema (status bar, navigation bar)
+            val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            // Ottieni gli insets specifici per la barra di navigazione
+            val navigationBarsInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+
+            // 1. Applica l'inset superiore al padding del topBannerCardView (per la status bar)
+            binding.bannerContentLayout.setPadding(
+                binding.bannerContentLayout.paddingLeft,
+                systemBarsInsets.top,
+                binding.bannerContentLayout.paddingRight,
+                binding.bannerContentLayout.paddingBottom
+            )
+
+            // 2. Determina il padding inferiore per la pdfRecyclerView in base all'orientamento
+            val orientation = resources.configuration.orientation
+            val bottomPaddingForRecyclerView = if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                0 // Nessun padding inferiore in modalità orizzontale, la lista può andare sotto la barra
+            } else {
+                systemBarsInsets.bottom // Applica il padding inferiore in modalità verticale (per non coprire il contenuto)
+            }
+
+            // Applica il padding inferiore alla pdfRecyclerView
+            // (gli insets left/right di systemBarsInsets tengono conto di notch, display cutouts ecc.)
+            binding.pdfRecyclerView.setPadding(
+                systemBarsInsets.left, // Padding sinistro per eventuali insets del sistema (es. notch/gesture bar)
+                binding.pdfRecyclerView.paddingTop,
+                systemBarsInsets.right, // Padding destro per eventuali insets del sistema
+                bottomPaddingForRecyclerView // Padding inferiore condizionale
+            )
+
+            // 3. Gestione del Floating Action Button (FAB) in base agli insets della barra di navigazione
+            val fabLayoutParams = binding.floatingActionButton.layoutParams as? ConstraintLayout.LayoutParams
+            if (fabLayoutParams != null) {
+                // Margini di default per il FAB, se non modificati in XML
+                val defaultMarginEnd = 16.dpToPx(requireContext())
+                val defaultMarginBottom = 16.dpToPx(requireContext())
+
+                if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                    // In landscape, la barra di navigazione è solitamente a destra o sinistra.
+                    // Aggiungiamo l'inset destro (se la barra è a destra) al marginEnd del FAB.
+                    fabLayoutParams.marginEnd = defaultMarginEnd + navigationBarsInsets.right
+                    // Il bottom margin può rimanere quello di default o essere adattato se la barra è anche in basso.
+                    fabLayoutParams.bottomMargin = defaultMarginBottom
+                } else { // Portrait
+                    // In portrait, la barra di navigazione è in basso.
+                    // Aggiungiamo l'inset inferiore al marginBottom del FAB.
+                    fabLayoutParams.marginEnd = defaultMarginEnd
+                    fabLayoutParams.bottomMargin = defaultMarginBottom + navigationBarsInsets.bottom
+                }
+                binding.floatingActionButton.layoutParams = fabLayoutParams // Applica i LayoutParams modificati
+            }
+
+            insets // Restituisci gli insets per permettere ad altre viste di gestirli
+        }
     }
+
+    private fun Int.dpToPx(context: Context): Int =
+        (this * context.resources.displayMetrics.density).toInt()
 
     private fun setupRecyclerView() {
         fileSystemAdapter = FileSystemAdapter(
@@ -207,20 +276,12 @@ class FoldersFragment : Fragment() {
                 when (item) {
                     is PdfFileItem -> {
                         val pdfUri = item.uriString.toUri()
-                        Log.d("FoldersFragment", "Tentativo di aprire PDF con URI: $pdfUri")
+                        Log.d("FoldersFragment", "PDF cliccato: ${item.displayName}. Notifico l'Activity tramite callback.")
+                        // Utilizza il callback per notificare l'Activity
+                        pdfFileClickListener?.onPdfFileClicked(pdfUri)
 
-                        val intent = Intent(requireContext(), PDFViewerActivity::class.java).apply {
-                            putExtra("pdf_uri", pdfUri)
-                            putExtra("pdf_display_name", item.displayName)
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        startActivity(intent)
-                        Toast.makeText(requireContext(), "Apertura PDF: ${item.displayName}", Toast.LENGTH_SHORT).show()
                     }
                     is FolderItem -> {
-                        // Questa parte verrà eseguita solo se non eravamo in modalità spostamento
-                        // o se la navigazione in modalità spostamento è stata gestita sopra.
                         fileSystemViewModel.enterFolder(item)
                     }
                 }
@@ -229,11 +290,14 @@ class FoldersFragment : Fragment() {
                 fileSystemViewModel.toggleSelection(item)
                 true
             },
+            onItemDoubleClick = { pdfFile ->
+                val pdfUri = pdfFile.uriString.toUri()
+                pdfFileClickListener?.onPdfFileClickedForceActivity(pdfUri)
+            },
             onSelectionToggle = { item ->
                 fileSystemViewModel.toggleSelection(item)
             },
             onFavoriteToggle = { pdfFile ->
-                Log.d("FoldersFragment", "Received favorite toggle for: ${pdfFile.displayName}")
                 fileSystemViewModel.toggleFavorite(pdfFile)
             }
         )
@@ -245,7 +309,7 @@ class FoldersFragment : Fragment() {
     }
 
     private fun setupListeners() {
-        // --- RIPRISTINATO IL COMPORTAMENTO DEL FAB ---
+
         binding.floatingActionButton.setOnClickListener {
             rotateFabForward()
             showPopupMenu()
@@ -390,7 +454,8 @@ class FoldersFragment : Fragment() {
         actionMode?.finish()
         actionMode = null
         _binding = null
-
+        // IMPORTANTE: Resetta il listener per evitare memory leaks quando il fragment è scollegato
+        pdfFileClickListener = null
     }
 
     // --- Metodi per il FAB Popup ---

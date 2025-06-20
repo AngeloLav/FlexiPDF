@@ -13,5 +13,6 @@
     <color name="dark_themed_2">#1A1A1A</color>
     <color name="light_themed">#E5E5E5</color>
     <color name="light_themed_2">#D5D5D5</color>
-    <color name="search_bar_background">#2A2A2A</color>"
+    <color name="search_bar_background">#2A2A2A</color>
+    <color name="light_blue">#64B5F6</color>
 </resources>
