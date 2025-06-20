@@ -2,51 +2,16 @@
  * @file MainActivity.kt
  *
  * @overview
- *
- * Questa activity è il punto di ingresso dell'applicazione: ho utilizzato il viewBinding per potermi muovere attraverso
- * i diversi fragment dell'applicazione. All'inizio dichiaro delle variabili tramite lateinit (significa che le variabili
- * non saranno inizializzate immediatamente ma solo durante il loro primo utilizzo).
- *
- * binding: dichiarando questo oggetto della classe ActivityMainBinding (che viene generata automaticamente da AS quando nel
- * gradle:app aggiungi "buildFeatures { viewBinding true }") posso facilmente accedere a tutti i componenti dichiarati nel file
- * activity_main.xml. Attraverso binding = ActivityMainBinding.inflate(layoutInflater) e il metodo .inflate(), attacco al mio oggetto binding
- * il layout gonfiato e attraverso setContentView(binding.root) lo imposto come il layout della activity.
- * Attraverso il viewBinding secondo me è più facile impostare il layout rispetto all'uso di findViewById.
- * Utilizzo poi l'oggetto binding nel metodo onCreate per selezionare l'elemento bottomNavigationView: su questo uso il metodo
- * setOnItemSelectedListener per far in modo attraverso un when che quando clicco su un'icona del menù in base all'id dell'icona
- * selezionata si attivi la funzione replaceFragment che mi permette di selezionare il fragment corrispondente. Il true alla fine del metodo
- * è necessario perchè setOnItemSelectedListener ha bisogno di restituire un valore booleano; se fosse false vorrebbe dire che
- * l'evento non sarebbe stato gestito correttamente e non aggiornerebbe visivamente il bottomNav con l'item cliccato.
- *
- * pdfListViewModel: Questa variabile contiene un'istanza di PdfListViewModel: un ViewModel è una
- * classe progettata per memorizzare e gestire i dati relativi all'interfaccia utente in un modo che sopravviva ai cambiamenti
- * di configurazione dell'Activity (ad esempio, quando l'utente ruota lo schermo). pdfListViewModel gestisce la lista dei file PDF,
- * assicurandosi che non vada persa se l'Activity viene ricreata. L'inizializzazione avviene in 'onCreate'
- * tramite 'ViewModelProvider(this)[PdfListViewModel::class.java]', che garantisce il recupero o la creazione corretta del ViewModel. (this) fa in
- * modo che la MainActivity possieda il ciclo vita dei viewModel. [PdfListViewModel::class.java] mi permette di determinare il tipo
- * di viewModel che mi interessa; in questo caso è un PdfListViewModel.
- *      @see
- *      it.lavorodigruppo.flexipdf/viewmodels/PdfListViewModel.kt
- *
- * pdfManager: Questa variabile contiene un'istanza della classe personalizzata PdfManager: è responsabile di  operazioni
- * specifiche legate ai PDF. L'ho creata inizialmente per dividere la logica di alcune funzioni per i pdf dal fragment folders.
- * Durante la sua inizializzazione in onCreate, gli viene passato un callback (una funzione lambda: '{ uri: Uri, displayName: String -> ... }').
- * Un 'callback' è una funzione che verrà eseguita in un secondo momento, quando una specifica operazione è completata.
- * In questo caso, il 'PdfManager' invocherà questa funzione lambda quando l'utente avrà selezionato un PDF,
- * passando l'URI (Uniform Resource Identifier) del file e il suo nome. La lambda poi si occuperà di:
- * 1. Creare un nuovo oggetto PdfFileItem con le informazioni del PDF.
- * 2. Aggiungere questo nuovo PdfFileItem al pdfListViewModel, in modo che i dati della lista PDF vengano aggiornati.
- * 3. Mostrare un messaggio Toast all'utente per confermare l'avvenuta importazione del PDF.
- *      @see
- *      it.lavorodigruppo.flexipdf/utils/PdfManager
- *
- * replaceFragment: metodo che mi permette di cambiare fragment (come parametro riceve un'istanza del fragment da sostituire).
- * Crea prima un oggetto della classe FragmentManager, ereditata da AppCompatActivity. Attraverso questo oggetto con il metodo beginTransaction()
- * inizializzo l'oggetto e rendo possibile iniziare le operazioni sui fragment, con il metodo replace() seleziono e rimuovo qualunque fragment
- * attualmente presente nella mia activity_main.xml (R.id.frame_layout è l'id del FrameLayout in activity_main.xml) e lo sostituisco con il nuovo
- * fragment passato come parametro. commit() è un metodo che mi permette di finalizzare questi cambiamenti.
- *
- *
+ * Questa activity è il punto di ingresso principale dell'applicazione FlexiPDF.
+ * È responsabile di:
+ * - Gestire l'inizializzazione del layout tramite ViewBinding per un accesso efficiente ai componenti UI.
+ * - Coordinare la navigazione tra i diversi fragment (Home, Folders, Shared, Settings) in base al componente di navigazione attivo
+ * (BottomNavigationView, NavigationRailView, o un Custom Side Menu).
+ * - Gestire l'importazione di file PDF tramite un ActivityResultLauncher.
+ * - Coordinare l'apertura dei file PDF, differenziando tra la visualizzazione in un pannello secondario (per layout tablet in orizzontale)
+ * o l'apertura in una nuova Activity dedicata (per smartphone o tablet in verticale).
+ * - Integrare i ViewModel (`FileSystemViewModel`) per una corretta gestione dei dati UI e `PdfManager` per le operazioni sui PDF.
+ * - Implementare una logica di debounce per prevenire click rapidi e multipli sui componenti di navigazione.
  */
 
 package it.lavorodigruppo.flexipdf.activities
@@ -67,7 +32,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.core.content.ContextCompat
 
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.android.material.navigation.NavigationBarView // Import corretto per onItemSelectedListener
+import com.google.android.material.navigation.NavigationBarView
 import com.google.android.material.navigationrail.NavigationRailView
 
 import it.lavorodigruppo.flexipdf.R
@@ -88,13 +53,38 @@ import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel.FileSystemViewM
 
 class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickListener {
 
+    /**
+     * L'oggetto ViewBinding per l'Activity principale. Permette un accesso sicuro e diretto a tutte le viste definite in `activity_main.xml`.
+     */
     private lateinit var binding: ActivityMainBinding
+
+    /**
+     * Un'istanza di `PdfManager`, una classe helper responsabile della gestione delle operazioni legate ai file PDF,
+     * come l'apertura del selettore di file.
+     */
     private lateinit var pdfManager: PdfManager
+
+    /**
+     * Un'istanza di `FileSystemViewModel`, un ViewModel che gestisce la logica e i dati relativi ai file e alle cartelle,
+     * inclusa l'importazione di PDF, persistendo attraverso i cambiamenti di configurazione dell'Activity.
+     */
     private lateinit var fileSystemViewModel: FileSystemViewModel
 
+    /**
+     * Timestamp dell'ultimo click valido su un elemento di navigazione, utilizzato per implementare la logica di debounce.
+     */
     private var lastNavigationClickTime: Long = 0
-    private val NAVIGATION_DEBOUNCE_TIME = 100L // Tempo in millisecondi per il debounce
 
+    /**
+     * Il tempo minimo (in millisecondi) che deve trascorrere tra due click consecutivi sugli elementi di navigazione
+     * per evitare doppi click o click accidentali troppo rapidi.
+     */
+    private val NAVIGATION_DEBOUNCE_TIME = 100L
+
+    /**
+     * Launcher per l'apertura del selettore di file di sistema, configurato per permettere la selezione di più documenti PDF.
+     * Il risultato (lista di URI) viene passato al `fileSystemViewModel` per l'importazione.
+     */
     private val pickPdfLauncher = registerForActivityResult(
         object : androidx.activity.result.contract.ActivityResultContracts.OpenMultipleDocuments() {
             override fun createIntent(context: Context, input: Array<String>): Intent {
@@ -110,10 +100,21 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
         }
     }
 
+    /**
+     * Metodo di callback chiamato per avviare il selettore di file PDF.
+     * Implementa l'interfaccia `OnPdfPickerListener`.
+     */
     override fun launchPdfPicker() {
         pickPdfLauncher.launch(arrayOf("application/pdf"))
     }
 
+    /**
+     * Metodo chiamato alla creazione dell'Activity.
+     * Inizializza il ViewBinding, imposta il layout, inizializza il `FileSystemViewModel` e il `PdfManager`.
+     * Configura dinamicamente i listener per i componenti di navigazione (Custom Side Menu, NavigationRailView, BottomNavigationView)
+     * in base a quale di essi è presente nel layout corrente (gestendo layout qualificati per diverse configurazioni).
+     * @param savedInstanceState L'oggetto Bundle contenente lo stato precedentemente salvato dell'Activity, se presente.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -130,7 +131,6 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
             fileSystemViewModel.importPdfs(uris)
         }
 
-        // Determina quale componente di navigazione è presente nel layout attuale
         when {
             binding.customSideMenu != null -> {
                 Log.d("MainActivity", "Custom Side Menu rilevato in onCreate. Configuro listener.")
@@ -158,19 +158,21 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
         }
     }
 
+    /**
+     * Metodo chiamato dopo che `onCreate` è terminato e tutte le viste sono state ripristinate.
+     * Utilizzato per eseguire la sostituzione iniziale del fragment (se l'Activity viene creata per la prima volta)
+     * o per ripristinare e aggiornare la selezione della UI di navigazione in caso di ricreazione dell'Activity (es. rotazione).
+     * Gestisce anche la visibilità del contenitore del viewer PDF nei layout tablet landscape.
+     * @param savedInstanceState L'oggetto Bundle contenente lo stato precedentemente salvato dell'Activity, se presente.
+     */
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
         Log.d("MainActivity", "onPostCreate chiamato.")
 
-        // Esegui la sostituzione iniziale del fragment e l'aggiornamento della UI qui
-        // Questa parte è cruciale per la gestione delle rotazioni e per evitare la ricreazione/sovrapposizione.
         if (savedInstanceState == null) {
-            // SOLO se l'Activity viene creata per la prima volta (non ricreata da rotazione/process kill)
-            // Seleziona il fragment Home all'avvio iniziale
-            handleNavigationItemSelected(R.id.home) // Chiama handleNavigationItemSelected per il primo avvio
+            handleNavigationItemSelected(R.id.home)
             Log.d("MainActivity", "onPostCreate: savedInstanceState è null. Caricato HomeFragment iniziale.")
         } else {
-            // Se l'Activity è stata ricreata (es. cambio configurazione/rotazione)
             val currentFragmentInFrameLayout = supportFragmentManager.findFragmentById(R.id.frame_layout)
             currentFragmentInFrameLayout?.let {
                 updateNavigationSelectionForFragment(it)
@@ -178,20 +180,14 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
 
                 val pdfViewerContainer = findViewById<View>(R.id.fragment_pdf_viewer_container)
 
-                // Determina se il FoldersFragment è il fragment attivo nel pannello principale
                 val isFoldersFragmentActive = it is FoldersFragment
-                // Determina se c'era un PdfViewerFragment nel contenitore secondario prima della ricreazione
                 val pdfViewerFragmentRestored = supportFragmentManager.findFragmentById(R.id.fragment_pdf_viewer_container) != null
 
-                if (pdfViewerContainer != null) { // Solo se siamo in un layout con il contenitore PDF (e quindi tablet landscape)
+                if (pdfViewerContainer != null) {
                     if (isFoldersFragmentActive && pdfViewerFragmentRestored) {
-                        // Se il FoldersFragment è attivo E un PDFViewerFragment è stato ripristinato,
-                        // allora rende il contenitore del PDF visibile.
                         pdfViewerContainer.visibility = View.VISIBLE
                         Log.d("MainActivity", "onPostCreate: FoldersFragment attivo e PdfViewerFragment ripristinato. Reso visibile contenitore PDF.")
                     } else {
-                        // In tutti gli altri casi (es. HomeFragment attivo, o nessun PDF era aperto),
-                        // assicurati che il contenitore del PDF sia GONE.
                         pdfViewerContainer.visibility = View.GONE
                         Log.d("MainActivity", "onPostCreate: Contenitore PDF presente ma non dovrebbe essere visibile. Assicurato che sia GONE.")
                     }
@@ -204,6 +200,11 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
         }
     }
 
+    /**
+     * Configura il listener per la selezione degli elementi nella `NavigationRailView`.
+     * Quando un elemento viene selezionato, chiama `handleNavigationItemSelected` per gestire la navigazione.
+     * @param navRail L'istanza di `NavigationRailView` da configurare.
+     */
     private fun setupNavigationRail(navRail: NavigationRailView) {
         navRail.setOnItemSelectedListener { item ->
             handleNavigationItemSelected(item.itemId)
@@ -211,6 +212,11 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
         }
     }
 
+    /**
+     * Configura il listener per la selezione degli elementi nella `BottomNavigationView`.
+     * Quando un elemento viene selezionato, chiama `handleNavigationItemSelected` per gestire la navigazione.
+     * @param bottomNav L'istanza di `BottomNavigationView` da configurare.
+     */
     private fun setupBottomNavigationView(bottomNav: BottomNavigationView) {
         bottomNav.setOnItemSelectedListener { item ->
             handleNavigationItemSelected(item.itemId)
@@ -218,7 +224,12 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
         }
     }
 
-    // Metodo per configurare il contenuto visivo del Custom Side Menu
+    /**
+     * Configura il contenuto visivo degli elementi all'interno del Custom Side Menu.
+     * Imposta le icone e i testi per ciascuna voce del menu (Home, Folders, Shared, Settings)
+     * e configura anche il titolo dell'header del menu.
+     * @param customSideMenuBinding L'oggetto ViewBinding per il layout del custom side menu.
+     */
     private fun setupCustomSideMenuContent(customSideMenuBinding: LayoutCustomSideMenuBinding) {
         try {
             val itemHome = customSideMenuBinding.customMenuItemHome.root
@@ -231,16 +242,19 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
             setupCustomMenuItemContentVisuals(itemShared, R.drawable.group_24dp_000000_fill0_wght400_grad0_opsz24, R.string.shared)
             setupCustomMenuItemContentVisuals(itemSettings, R.drawable.settings_24dp_000000_fill0_wght400_grad0_opsz24, R.string.settings)
 
-            // Setup titolo e sottotitolo nell'header del custom menu
             customSideMenuBinding.homeTitleTextView.text = getString(R.string.app_name)
-            // customSideMenuBinding.customSideMenuAppSubtitle.text = getString(R.string.app_subtitle_placeholder) // Rimuovi o decommenta se hai questa stringa
 
         } catch (e: Exception) {
             Log.e("MainActivity", "Errore durante la configurazione visiva del menu laterale custom: ${e.message}", e)
         }
     }
 
-    // Gestisce solo l'aspetto visivo (icone, testo, colori default)
+    /**
+     * Imposta l'aspetto visivo (icona, testo e colori di default) di un singolo elemento del Custom Side Menu.
+     * @param itemCardView La `CardView` che rappresenta l'elemento del menu.
+     * @param iconResId L'ID della risorsa drawable per l'icona dell'elemento.
+     * @param textResId L'ID della risorsa stringa per il testo dell'elemento.
+     */
     private fun setupCustomMenuItemContentVisuals(itemCardView: CardView, iconResId: Int, textResId: Int) {
         try {
             val linearLayout = itemCardView.findViewById<LinearLayout>(R.id.custom_menu_item_linear_layout)
@@ -254,7 +268,6 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
             icon?.setImageResource(iconResId) ?: Log.e("MainActivity", "ERRORE: ImageView custom_menu_item_icon non trovata per ${resources.getResourceEntryName(textResId)}")
             text?.setText(textResId) ?: Log.e("MainActivity", "ERRORE: TextView custom_menu_item_text non trovata per ${resources.getResourceEntryName(textResId)}")
 
-            // Colori iniziali (non selezionati)
             icon?.setColorFilter(ContextCompat.getColor(this, R.color.white))
             text?.setTextColor(ContextCompat.getColor(this, R.color.white))
 
@@ -263,24 +276,23 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
         }
     }
 
-    // Questo metodo ora è un helper per cambiare l'aspetto del custom menu item quando selezionato/deselezionato
+    /**
+     * Aggiorna lo stato visivo (selezionato/deselezionato) di un elemento `CardView` nel Custom Side Menu.
+     * Cambia il colore dell'icona e del testo per riflettere lo stato di selezione.
+     * @param itemCardView L'elemento `CardView` da aggiornare.
+     * @param isSelected `true` se l'elemento deve essere selezionato, `false` altrimenti.
+     */
     private fun setCustomMenuItemSelected(itemCardView: CardView?, isSelected: Boolean) {
         if (itemCardView == null) {
             Log.e("MainActivity", "Tentativo di selezionare/deselezionare un item card view nullo.")
             return
         }
         try {
-            // Definisci i colori per lo stato selezionato e non selezionato
-            val selectedTextColor = ContextCompat.getColor(this, R.color.white) // Colore per il testo selezionato
-            val selectedIconTint = ContextCompat.getColor(this, R.color.white) // Colore per l'icona selezionata
-            // Colore per lo sfondo selezionato (es. light blue)
+            val selectedTextColor = ContextCompat.getColor(this, R.color.white)
+            val selectedIconTint = ContextCompat.getColor(this, R.color.white)
 
-            val defaultTextColor = ContextCompat.getColor(this, R.color.white) // Colore per il testo non selezionato
-            val defaultIconTint = ContextCompat.getColor(this, R.color.white) // Colore per l'icona non selezionata
-            val defaultBackgroundColor = ContextCompat.getColor(this, android.R.color.transparent) // Sfondo trasparente per non selezionato
-
-            // Applica il colore di sfondo alla CardView
-
+            val defaultTextColor = ContextCompat.getColor(this, R.color.white)
+            val defaultIconTint = ContextCompat.getColor(this, R.color.white)
 
             val linearLayout = itemCardView.findViewById<LinearLayout>(R.id.custom_menu_item_linear_layout)
             if (linearLayout != null) {
@@ -297,16 +309,21 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
         }
     }
 
-    // Metodo unificato per gestire la selezione degli elementi di navigazione
-    private fun handleNavigationItemSelected(itemId: Int) {
 
-        //DEBOUNCING
+    /**
+     * Metodo unificato per gestire la selezione di un elemento di navigazione.
+     * Applica una logica di debounce per prevenire doppi click.
+     * Determina quale fragment caricare e se un viewer PDF deve essere rimosso/reso invisibile in layout tablet.
+     * Sostituisce il fragment corrente con il `targetFragment` e aggiorna la selezione visiva della UI di navigazione.
+     * @param itemId L'ID dell'elemento di navigazione selezionato (es. R.id.home, R.id.folders).
+     */
+    private fun handleNavigationItemSelected(itemId: Int) {
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastNavigationClickTime < NAVIGATION_DEBOUNCE_TIME) {
             Log.d("MainActivity", "Click di navigazione ignorato (debounce): troppo veloce. Item ID: $itemId")
-            return // Ignora il click
+            return
         }
-        lastNavigationClickTime = currentTime // Aggiorna il tempo dell'ultimo click valido
+        lastNavigationClickTime = currentTime
 
         if (isFinishing || isDestroyed) {
             Log.w("MainActivity", "Ignorata selezione di navigazione, Activity in fase di chiusura. Item ID: $itemId")
@@ -331,11 +348,9 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
 
         val targetFragment = when (itemId) {
             R.id.home -> HomeFragment()
-            // MODIFICA QUI: Istanzia FoldersFragment senza argomenti
             R.id.folders -> FoldersFragment()
             R.id.shared -> SharedFragment()
             R.id.settings -> SettingsFragment().apply {
-                // Assicurati di impostare il listener per il cambio tema qui, se necessario
             }
             else -> {
                 Log.w("MainActivity", "ID elemento di navigazione non riconosciuto: $itemId. Nessun fragment da sostituire.")
@@ -354,6 +369,13 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
         updateNavigationSelection(itemId)
     }
 
+    /**
+     * Callback chiamato quando un file PDF viene cliccato nel `FoldersFragment`.
+     * Se il layout è tablet in modalità orizzontale, carica il `PdfViewerFragment` nel contenitore secondario.
+     * Altrimenti, avvia una nuova `PDFViewerActivity` per visualizzare il PDF.
+     * Gestisce anche i permessi URI per l'accesso persistente al file.
+     * @param pdfUri L'URI del file PDF cliccato.
+     */
     override fun onPdfFileClicked(pdfUri: Uri) {
         Log.d("MainActivity", "Ricevuto click PDF da FoldersFragment per URI: $pdfUri")
 
@@ -364,7 +386,6 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
             Log.d("MainActivity", "Layout tablet landscape con contenitore PDF. Carico PdfViewerFragment.")
             val pdfViewerFragment = PdfViewerFragment.newInstance(pdfUri)
 
-            // --- GESTIONE PERMESSI URI (come da ultima versione) ---
             try {
                 contentResolver.takePersistableUriPermission(pdfUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 Log.d("MainActivity", "Permesso URI persistente preso per: $pdfUri")
@@ -376,16 +397,13 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
                 Log.e("MainActivity", "Errore inatteso nel prendere permesso URI: ${e.message}", e)
                 return
             }
-            // --- FINE GESTIONE PERMESSI URI ---
 
-            // Rende il contenitore VISIBILE e poi esegue la transazione
             pdfViewerContainer.visibility = View.VISIBLE
 
             supportFragmentManager.beginTransaction()
                 .replace(R.id.fragment_pdf_viewer_container, pdfViewerFragment)
                 .commitAllowingStateLoss()
         } else {
-            // Altrimenti (smartphone o tablet portrait), apri l'Activity dedicata al viewer PDF
             Log.d("MainActivity", "Layout smartphone o tablet portrait. Avvio PDFViewerActivity.")
             val intent = Intent(this, PDFViewerActivity::class.java).apply {
                 putExtra("pdf_uri", pdfUri)
@@ -395,6 +413,11 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
         }
     }
 
+    /**
+     * Callback chiamato quando un file PDF viene cliccato con un'azione che forza l'apertura in una nuova Activity
+     * (es. doppio click). Avvia sempre una `PDFViewerActivity` separata per visualizzare il PDF.
+     * @param pdfUri L'URI del file PDF cliccato.
+     */
     override fun onPdfFileClickedForceActivity(pdfUri: Uri) {
         Log.d("MainActivity", "Ricevuto DOPPIO CLIC PDF da FoldersFragment per URI: $pdfUri. Avvio forzato PDFViewerActivity.")
         val intent = Intent(this, PDFViewerActivity::class.java).apply {
@@ -404,6 +427,11 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
         startActivity(intent)
     }
 
+    /**
+     * Sostituisce il fragment attualmente visualizzato nel `frame_layout` con un nuovo fragment.
+     * Utilizza una transazione del `FragmentManager` per eseguire la sostituzione in modo sicuro e gestire lo stato.
+     * @param fragment Il nuovo fragment da visualizzare.
+     */
     private fun replaceFragment(fragment: Fragment) {
         if (isFinishing || isDestroyed) {
             Log.w("MainActivity", "Ignorata sostituzione Fragment, Activity in fase di chiusura. Fragment: ${fragment.javaClass.simpleName}")
@@ -411,10 +439,9 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
         }
 
         try {
-            // Semplificazione: usa sempre replace, che gestisce la rimozione del precedente
             supportFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, fragment)
-                .commitAllowingStateLoss() // commitAllowStateLoss è preferibile a commitNowAllowStateLoss per evitare blocchi dell'UI se non strettamente necessario, e gestisce meglio gli stati di Activity
+                .commitAllowingStateLoss()
             Log.d("MainActivity", "Fragment sostituito con: ${fragment.javaClass.simpleName}")
         } catch (e: IllegalStateException) {
             Log.e("MainActivity", "Errore durante la sostituzione del fragment: ${e.message}", e)
@@ -422,22 +449,22 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
     }
 
 
-    // Gestisce l'aggiornamento della selezione visiva dei componenti di navigazione
+    /**
+     * Aggiorna lo stato di selezione visiva dei componenti di navigazione (Custom Side Menu, NavigationRailView, BottomNavigationView)
+     * per riflettere l'elemento attualmente selezionato. Questo assicura che la UI di navigazione sia sincronizzata con il fragment visualizzato.
+     * @param itemId L'ID dell'elemento del menu che deve essere impostato come selezionato.
+     */
     private fun updateNavigationSelection(itemId: Int) {
         Log.d("MainActivity", "Inizio updateNavigationSelection per ID: $itemId")
 
-        // Usa View.post qui. È probabile che fosse necessario per il timing dell'UI.
         binding.root.post {
-            // 1. Gestione del Custom Side Menu
             binding.customSideMenu?.let { customSideMenuBinding ->
                 Log.d("MainActivity", "Resetting Custom Side Menu selection.")
-                // Deseleziona tutti gli elementi del custom menu
                 setCustomMenuItemSelected(customSideMenuBinding.customMenuItemHome.root, false)
                 setCustomMenuItemSelected(customSideMenuBinding.customMenuItemFolders.root, false)
                 setCustomMenuItemSelected(customSideMenuBinding.customMenuItemShared.root, false)
                 setCustomMenuItemSelected(customSideMenuBinding.customMenuItemSettings.root, false)
 
-                // Seleziona l'item corretto nel custom menu
                 when (itemId) {
                     R.id.home -> setCustomMenuItemSelected(customSideMenuBinding.customMenuItemHome.root, true)
                     R.id.folders -> setCustomMenuItemSelected(customSideMenuBinding.customMenuItemFolders.root, true)
@@ -447,46 +474,47 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
                 }
             }
 
-            // 2. Gestione di NavigationRailView
             binding.navigationRail?.apply {
                 if (isAttachedToWindow) {
                     val item = menu.findItem(itemId)
-                    if (item != null && item.itemId != selectedItemId) { // Controlla anche se non è già selezionato
+                    if (item != null && item.itemId != selectedItemId) {
                         selectedItemId = itemId
                         Log.d("MainActivity", "NavigationRailView selezionata con ID: $itemId")
                     } else if (item == null) {
                         Log.w("MainActivity", "ID ($itemId) non trovato nel menu NavigationRail. Impossibile selezionare.")
-                        // Se l'ID non è nel menu, deseleziona tutto per evitare stati falsi
                         if (selectedItemId != -1) {
-                            selectedItemId = -1 // Deseleziona
+                            selectedItemId = -1
                             Log.d("MainActivity", "NavigationRailView deselezionata.")
                         }
                     }
                 }
             }
 
-            // 3. Gestione di BottomNavigationView
             binding.bottomNavigationView?.apply {
                 if (isAttachedToWindow) {
                     val item = menu.findItem(itemId)
-                    if (item != null && item.itemId != selectedItemId) { // Controlla anche se non è già selezionato
+                    if (item != null && item.itemId != selectedItemId) {
                         selectedItemId = itemId
                         Log.d("MainActivity", "BottomNavigationView selezionata con ID: $itemId")
                     } else if (item == null) {
                         Log.w("MainActivity", "ID ($itemId) non trovato nel menu BottomNavigationView. Impossibile selezionare.")
-                        // Se l'ID non è nel menu, deseleziona tutto per evitare stati falsi
                         if (selectedItemId != -1) {
-                            selectedItemId = -1 // Deseleziona
+                            selectedItemId = -1
                             Log.d("MainActivity", "BottomNavigationView deselezionata.")
                         }
                     }
                 }
             }
-        } // Fine binding.root.post
+        }
         Log.d("MainActivity", "Fine updateNavigationSelection per ID: $itemId")
     }
 
-    // Helper per ottenere l'ID del menu corrispondente a un fragment
+    /**
+     * Metodo helper che restituisce l'ID della risorsa del menu corrispondente a un dato tipo di Fragment.
+     * Utilizzato per sincronizzare la selezione dei componenti di navigazione con il fragment attualmente visualizzato.
+     * @param fragment L'istanza del Fragment di cui si vuole conoscere l'ID del menu corrispondente.
+     * @return L'ID della risorsa del menu (es. R.id.home) o R.id.home come fallback.
+     */
     private fun getMenuItemIdForFragment(fragment: Fragment): Int {
         return when (fragment) {
             is HomeFragment -> R.id.home
@@ -495,12 +523,17 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
             is SettingsFragment -> R.id.settings
             else -> {
                 Log.w("MainActivity", "Fragment non riconosciuto per la sincronizzazione della selezione: ${fragment.javaClass.simpleName}. Defaulting to Home.")
-                R.id.home // Fallback per sicurezza
+                R.id.home
             }
         }
     }
 
-    // Questoo metodo è chiamato solo in onPostCreate per inizializzare/ripristinare lo stato della UI
+    /**
+     * Aggiorna lo stato di selezione dei componenti di navigazione in base al fragment attualmente visualizzato.
+     * Questo metodo viene chiamato tipicamente durante il ripristino dello stato dell'Activity (es. dopo una rotazione)
+     * per assicurare che la UI di navigazione rifletta correttamente il fragment attivo.
+     * @param fragment Il fragment attualmente visualizzato per cui aggiornare la selezione.
+     */
     private fun updateNavigationSelectionForFragment(fragment: Fragment) {
         val itemId = getMenuItemIdForFragment(fragment)
         updateNavigationSelection(itemId)

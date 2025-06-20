@@ -44,6 +44,4 @@
         android:background="?attr/selectableItemBackground"
         tools:ignore="hardcodedText" />
 
-
-
 </LinearLayout>

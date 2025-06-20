@@ -1,29 +1,22 @@
 /**
- * @file PdfListViewModel.kt
+ * @file FileSystemViewModel.kt
  *
  * @overview
  *
- * PdfListViewModel è un viewModel che gestisce i dati della lista dei file PDF nell'applicazione.
+ * `FileSystemViewModel` è un `AndroidViewModel` responsabile della gestione e dell'esposizione
+ * dello stato del file system dell'applicazione (file PDF e cartelle) all'interfaccia utente.
+ * Estendendo `AndroidViewModel`, ha accesso al contesto dell'applicazione,
+ * garantendo che possa interagire con risorse e persistenza dati per l'intera vita dell'applicazione.
  *
- * Estendendo AndroidViewModel, questo ViewModel ha accesso al contesto dell'applicazione
- * tramite il costruttore. AndroidViewModel è una sottoclasse di ViewModel che ha una differenza fondamentale:
- * il suo costruttore accetta un oggetto Application. L'oggetto Application rappresenta l'intero ciclo di vita
- * dell'applicazione. A differenza dell'Activity o del Fragment Context, l'Application Context dura per tutta
- * la vita dell'applicazione e non viene distrutto e ricreato durante i cambiamenti di configurazione.
- *
- * Il suo scopo è:
- * - Mantenere lo stato della lista dei PDF (pdfFiles)
- * - Esporre la lista dei PDF alla UI tramite LiveData, permettendo un aggiornamento reattivo
- * quando i dati cambiano.
- * - Centralizzare la logica di business relativa alla gestione della lista dei PDF
- * (aggiunta, rimozione, caricamento/salvataggio), separandola dalla logica dell'interfaccia utente.
+ * Scopo principale:
+ * - Mantenere lo stato attuale di tutti i file PDF e le cartelle, inclusi quelli selezionati e in fase di spostamento.
+ * - Esporre i dati pertinenti alla UI tramite `StateFlow` e `Flow`, permettendo aggiornamenti reattivi.
+ * - Centralizzare la logica di business relativa alla gestione del file system (aggiunta, rimozione,
+ * spostamento, navigazione tra cartelle, ricerca, gestione preferiti) separandola dalla logica dell'interfaccia utente.
+ * - Gestire la persistenza dei dati caricando e salvando file e cartelle tramite `FileSystemDatasource`.
  *
  *
  */
-
-// it.lavorodigruppo.flexipdf.viewmodels/FileSystemViewModel.kt
-// it.lavorodigruppo.flexipdf.viewmodels/FileSystemViewModel.kt
-// it.lavorodigruppo.flexipdf.viewmodels/FileSystemViewModel.kt
 package it.lavorodigruppo.flexipdf.viewmodels
 
 import android.app.Application
@@ -49,46 +42,139 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Stack
 
+/**
+ * ViewModel principale per la gestione del file system dell'applicazione, inclusi file PDF e cartelle.
+ * Fornisce dati osservabili alla UI e gestisce le operazioni di business logiche relative ai file.
+ *
+ * @param application L'istanza dell'applicazione, fornita automaticamente dal framework Android
+ * quando si estende `AndroidViewModel`. Permette l'accesso a risorse di sistema e al `ContentResolver`.
+ */
 class FileSystemViewModel(application: Application) : AndroidViewModel(application) {
 
+    /**
+     * Un `MutableSharedFlow` utilizzato per emettere messaggi monouso all'interfaccia utente.
+     * Questi messaggi sono tipicamente notifiche (come `Toast`) che devono essere visualizzate
+     * una sola volta per un evento specifico.
+     */
     private val _userMessage = MutableSharedFlow<String>()
+
+    /**
+     * `Flow` pubblico che espone i messaggi utente per l'osservazione da parte della UI.
+     * La UI può raccogliere gli eventi da questo `Flow` per mostrare messaggi all'utente.
+     */
     val userMessage: Flow<String> = _userMessage.asSharedFlow()
 
     /**
-     * Emette un messaggio da visualizzare all'utente tramite l'UI.
-     * Questo metodo viene chiamato dal Fragment.
+     * Emette un messaggio da visualizzare all'utente tramite l'interfaccia utente (es. un `Toast`).
+     * Questo metodo viene chiamato da altri componenti del ViewModel per comunicare feedback all'utente.
+     * L'emissione avviene su un `MutableSharedFlow` all'interno di una coroutine.
+     *
+     * @param message La stringa del messaggio da visualizzare.
      */
     fun showUserMessage(message: String) {
         viewModelScope.launch {
-            _userMessage.emit(message) // Qui chiamiamo emit sulla variabile privata
+            _userMessage.emit(message)
         }
     }
 
-
+    /**
+     * Istanza del `FileSystemDatasource` responsabile del caricamento e del salvataggio
+     * dei file PDF e delle cartelle persistenti. Questo separa la logica di accesso ai dati
+     * dal ViewModel.
+     */
     private val datasource = FileSystemDatasource(application)
 
+    /**
+     * `MutableStateFlow` interno che mantiene lo stato corrente di tutti i `PdfFileItem`
+     * caricati nell'applicazione. Viene aggiornato ogni volta che la lista dei PDF cambia.
+     */
     private val _allPdfFiles = MutableStateFlow<List<PdfFileItem>>(emptyList())
+
+    /**
+     * `MutableStateFlow` interno che mantiene lo stato corrente di tutti i `FolderItem`
+     * caricati nell'applicazione. Viene aggiornato ogni volta che la lista delle cartelle cambia.
+     */
     private val _allFolders = MutableStateFlow<List<FolderItem>>(emptyList())
 
+    /**
+     * `MutableStateFlow` interno che rappresenta la cartella attualmente visualizzata.
+     * Se `null`, indica che l'utente si trova nella directory radice.
+     */
     private val _currentFolder = MutableStateFlow<FolderItem?>(null)
+
+    /**
+     * `StateFlow` pubblico che espone la cartella corrente all'interfaccia utente.
+     * La UI osserva questo `StateFlow` per aggiornare la visualizzazione in base alla cartella attuale.
+     */
     val currentFolder: StateFlow<FolderItem?> = _currentFolder.asStateFlow()
 
+    /**
+     * Stack utilizzato per tenere traccia della cronologia di navigazione delle cartelle.
+     * Permette all'utente di tornare indietro alle cartelle precedenti.
+     * Contiene gli ID delle cartelle.
+     */
     private val folderNavigationStack = Stack<String>()
 
+    /**
+     * `MutableStateFlow` interno che indica se la modalità di selezione multipla è attiva.
+     * Questa modalità viene attivata quando l'utente inizia a selezionare elementi.
+     */
     private val _isSelectionModeActive = MutableStateFlow(false)
+
+    /**
+     * `StateFlow` pubblico che espone lo stato della modalità di selezione all'interfaccia utente.
+     * La UI può usare questo per mostrare/nascondere barre degli strumenti contestuali.
+     */
     val isSelectionModeActive: StateFlow<Boolean> = _isSelectionModeActive.asStateFlow()
 
-    private val _selectedItems = MutableStateFlow<Set<FileSystemItem>>(emptySet()) // Usiamo Set per unicità
+    /**
+     * `MutableStateFlow` interno che mantiene l'insieme degli `FileSystemItem` (PDF o cartelle)
+     * attualmente selezionati dall'utente. Viene utilizzato un `Set` per garantire l'unicità degli elementi.
+     */
+    private val _selectedItems = MutableStateFlow<Set<FileSystemItem>>(emptySet())
+
+    /**
+     * `StateFlow` pubblico che espone l'insieme degli elementi selezionati all'interfaccia utente.
+     * La UI può osservare questo per aggiornare le visualizzazioni degli elementi selezionati.
+     */
     val selectedItems: StateFlow<Set<FileSystemItem>> = _selectedItems.asStateFlow()
 
+    /**
+     * `MutableStateFlow` interno che memorizza la stringa di ricerca corrente inserita dall'utente.
+     * Usato per filtrare gli elementi visualizzati.
+     */
     private val _searchQuery = MutableStateFlow("")
 
+    /**
+     * `MutableStateFlow` interno che contiene la lista degli `FileSystemItem` che sono stati contrassegnati
+     * per essere spostati. Questi elementi sono quelli che l'utente ha selezionato prima di avviare
+     * l'operazione di spostamento.
+     */
     private val _itemsToMove = MutableStateFlow<List<FileSystemItem>>(emptyList())
+
+    /**
+     * `StateFlow` pubblico che espone la lista degli elementi in attesa di essere spostati all'interfaccia utente.
+     * Questo è utile per visualizzare quali elementi sono stati selezionati per l'operazione di spostamento.
+     */
     val itemsToMove: StateFlow<List<FileSystemItem>> = _itemsToMove.asStateFlow()
 
+    /**
+     * `MutableStateFlow` interno che indica se l'applicazione è attualmente in modalità di spostamento.
+     * Questa modalità viene attivata quando l'utente seleziona elementi e sceglie di spostarli.
+     */
     private val _isMovingItems = MutableStateFlow(false)
+
+    /**
+     * `StateFlow` pubblico che espone lo stato della modalità di spostamento all'interfaccia utente.
+     * La UI può usarlo per modificare il comportamento (es. disabilitare certe azioni, cambiare icone).
+     */
     val isMovingItems: StateFlow<Boolean> = _isMovingItems.asStateFlow()
 
+    /**
+     * `StateFlow` che emette una lista dei file PDF aperti o modificati più di recente.
+     * Mappa da `_allPdfFiles`, ordina per `lastModified` in ordine decrescente e prende i primi 15 elementi.
+     * Viene aggiornato ogni volta che `_allPdfFiles` cambia.
+     */
     val recentPdfs: StateFlow<List<PdfFileItem>> = _allPdfFiles.map { allFiles ->
         allFiles.sortedByDescending { it.lastModified }.take(15)
     }.stateIn(
@@ -97,6 +183,11 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         emptyList()
     )
 
+    /**
+     * `StateFlow` che emette una lista dei file PDF contrassegnati come preferiti.
+     * Mappa da `_allPdfFiles`, filtrando solo gli elementi con `isFavorite` a `true`.
+     * Viene aggiornato ogni volta che `_allPdfFiles` cambia.
+     */
     val favoritePdfs: StateFlow<List<PdfFileItem>> = _allPdfFiles.map { allFiles ->
         allFiles.filter { it.isFavorite }
     }.stateIn(
@@ -105,6 +196,13 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         emptyList()
     )
 
+    /**
+     * `StateFlow` che combina e filtra le liste di tutti i PDF, tutte le cartelle,
+     * la cartella corrente, la query di ricerca e gli elementi selezionati per produrre
+     * la lista finale di `FileSystemItem` da visualizzare nell'interfaccia utente.
+     * Questa logica determina quali elementi (file e cartelle) sono visibili in base
+     * alla navigazione della cartella e ai criteri di ricerca, e aggiorna il loro stato di selezione.
+     */
     val filteredAndDisplayedItems: StateFlow<List<FileSystemItem>> =
         combine(_allPdfFiles, _allFolders, _currentFolder, _searchQuery, _selectedItems) {
                 allPdfs, allFolders, currentFolder, query, selectedItems ->
@@ -117,6 +215,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
 
             val itemsInCurrentFolder = mutableListOf<FileSystemItem>()
 
+            // Filtra e aggiunge le cartelle della cartella corrente, aggiornando lo stato di selezione
             allFolders.filter { it.parentFolderId == targetParentId }
                 .sortedBy { it.displayName.lowercase() }
                 .forEach { folder ->
@@ -124,6 +223,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
                     itemsInCurrentFolder.add(updatedFolder)
                 }
 
+            // Filtra e aggiunge i PDF della cartella corrente, aggiornando lo stato di selezione
             allPdfs.filter { it.parentFolderId == targetParentId }
                 .sortedBy { it.displayName.lowercase() }
                 .forEach { pdf ->
@@ -131,6 +231,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
                     itemsInCurrentFolder.add(updatedPdf)
                 }
 
+            // Applica il filtro di ricerca se la query non è vuota
             val finalFilteredList = if (query.isNotBlank()) {
                 itemsInCurrentFolder.filter {
                     it.displayName.lowercase().contains(query.lowercase())
@@ -145,6 +246,12 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
             emptyList()
         )
 
+    /**
+     * Blocco di inizializzazione del ViewModel.
+     * All'avvio, lancia una coroutine per caricare tutti i file PDF e le cartelle
+     * persistenti utilizzando il `FileSystemDatasource`. Carica anche l'ID della cartella
+     * corrente salvata per ripristinare l'ultima posizione dell'utente.
+     */
     init {
         viewModelScope.launch {
             Log.d("FSViewModel", "INIT: Avvio caricamento dati.")
@@ -168,6 +275,14 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
 
     // --- Operazioni su FileSystemItem (PDF e Cartelle) ---
 
+    /**
+     * Alterna lo stato di selezione di un `FileSystemItem` (file PDF o cartella).
+     * Se l'elemento è già selezionato, lo deseleziona; altrimenti, lo seleziona.
+     * Aggiorna l'insieme `_selectedItems` e lo stato di `_isSelectionModeActive`.
+     * Aggiorna anche l'attributo `isSelected` dell'elemento corrispondente nelle liste principali (`_allPdfFiles` o `_allFolders`).
+     *
+     * @param item L'elemento `FileSystemItem` di cui alternare lo stato di selezione.
+     */
     fun toggleSelection(item: FileSystemItem) {
         val currentSelected = _selectedItems.value.toMutableSet()
         val isCurrentlySelected = currentSelected.any { it.id == item.id }
@@ -179,9 +294,9 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
             val newItem = when (item) {
                 is PdfFileItem -> item.copy(isSelected = true)
                 is FolderItem -> item.copy(isSelected = true)
-                else -> { // <--- AGGIUNTO IL RAMO ELSE
+                else -> {
                     Log.w("FSViewModel", "Tipo di FileSystemItem sconosciuto durante la selezione: ${item::class.simpleName}")
-                    item // Restituisce l'elemento originale senza modifiche
+                    item
                 }
             }
             currentSelected.add(newItem)
@@ -201,13 +316,17 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
                     if (folder.id == item.id) folder.copy(isSelected = !folder.isSelected) else folder
                 }
             }
-            // Non è necessario un else qui, perché stiamo solo aggiornando liste specifiche
         }
 
         _isSelectionModeActive.value = _selectedItems.value.isNotEmpty()
         Log.d("FSViewModel", "toggleSelection: isSelectionModeActive dopo l'azione: ${_isSelectionModeActive.value}")
     }
 
+    /**
+     * Deseleziona tutti gli `FileSystemItem` precedentemente selezionati e disattiva la modalità di selezione.
+     * Resetta l'insieme `_selectedItems` a vuoto e imposta `_isSelectionModeActive` a `false`.
+     * Inoltre, aggiorna l'attributo `isSelected` a `false` per tutti i PDF e le cartelle nelle liste principali.
+     */
     fun clearAllSelections() {
         Log.d("FSViewModel", "clearAllSelections: Deseleziono tutti gli elementi.")
         _selectedItems.value = emptySet()
@@ -218,6 +337,12 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         Log.d("FSViewModel", "clearAllSelections: isSelectionModeActive dopo l'azione: ${_isSelectionModeActive.value}")
     }
 
+    /**
+     * Elimina tutti gli `FileSystemItem` attualmente selezionati.
+     * Questa operazione include la rimozione ricorsiva di cartelle e del loro contenuto.
+     * Dopo l'eliminazione, le liste `_allPdfFiles` e `_allFolders` vengono aggiornate
+     * e lo stato di selezione viene resettato. I cambiamenti vengono salvati nel `Datasource`.
+     */
     fun deleteSelectedItems() {
         viewModelScope.launch {
             val selected = _selectedItems.value.toList()
@@ -229,7 +354,9 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
                 when (item) {
                     is PdfFileItem -> newPdfFiles.removeIf { it.id == item.id }
                     is FolderItem -> {
+                        // Rimuove la cartella selezionata
                         newFolders.removeIf { it.id == item.id }
+                        // Trova e rimuove ricorsivamente tutti gli elementi (PDF e sottocartelle) all'interno di questa cartella
                         val itemsToDelete = getItemsInFolderRecursive(item.id)
                         newPdfFiles.removeIf { pdf -> itemsToDelete.any { it.id == pdf.id } }
                         newFolders.removeIf { folder -> itemsToDelete.any { it.id == folder.id } }
@@ -246,6 +373,15 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    /**
+     * Funzione helper privata che recupera ricorsivamente tutti gli `FileSystemItem`
+     * (file PDF e cartelle) contenuti all'interno di una specificata cartella e delle sue sottocartelle.
+     * Utile per operazioni di eliminazione o spostamento ricorsive.
+     *
+     * @param folderId L'ID della cartella di cui si vogliono recuperare gli elementi interni.
+     * @return Una `List<FileSystemItem>` contenente tutti gli elementi (file e cartelle)
+     * diretti e indiretti all'interno della cartella specificata.
+     */
     private fun getItemsInFolderRecursive(folderId: String): List<FileSystemItem> {
         val items = mutableListOf<FileSystemItem>()
         val directChildrenPdfs = _allPdfFiles.value.filter { it.parentFolderId == folderId }
@@ -260,6 +396,15 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         return items
     }
 
+    /**
+     * Importa uno o più file PDF dagli URI forniti.
+     * Per ogni URI, estrae il nome del file, crea un nuovo `PdfFileItem` e lo aggiunge
+     * alla lista di tutti i PDF se non è già presente nella cartella corrente.
+     * I nuovi PDF vengono associati all'ID della cartella corrente (o `null` per la root).
+     * Dopo l'aggiunta, la lista `_allPdfFiles` viene aggiornata e i cambiamenti vengono salvati.
+     *
+     * @param uris Una `List<Uri>` rappresentante gli URI dei file PDF da importare.
+     */
     fun importPdfs(uris: List<Uri>) {
         viewModelScope.launch {
             val currentAllPdfs = _allPdfFiles.value.toMutableList()
@@ -298,6 +443,13 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    /**
+     * Alterna lo stato di "preferito" per un singolo `PdfFileItem`.
+     * Trova il PDF nella lista `_allPdfFiles`, ne inverte il flag `isFavorite`,
+     * e aggiorna la lista. I cambiamenti vengono poi salvati nel `Datasource`.
+     *
+     * @param pdfFile L'oggetto `PdfFileItem` di cui alternare lo stato di preferito.
+     */
     fun toggleFavorite(pdfFile: PdfFileItem) {
         viewModelScope.launch {
             Log.d("FSViewModel", "Toggling favorite for: ${pdfFile.displayName}, current favorite: ${pdfFile.isFavorite}")
@@ -314,6 +466,12 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    /**
+     * Alterna lo stato di "preferito" per tutti i `PdfFileItem` attualmente selezionati.
+     * Itera sugli elementi selezionati, trova i corrispondenti PDF nella lista principale,
+     * e ne inverte il flag `isFavorite`. Dopo l'aggiornamento, i cambiamenti vengono salvati
+     * e tutte le selezioni vengono cancellate.
+     */
     fun toggleFavoriteSelectedPdfs() {
         viewModelScope.launch {
             val currentPdfs = _allPdfFiles.value.toMutableList()
@@ -331,6 +489,14 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    /**
+     * Crea una nuova cartella con il nome specificato all'interno della cartella corrente.
+     * Controlla se una cartella con lo stesso nome esiste già nella posizione corrente (case-insensitive).
+     * Se il nome è unico, crea un nuovo `FolderItem`, lo aggiunge alla lista `_allFolders`,
+     * e salva i cambiamenti nel `Datasource`.
+     *
+     * @param folderName Il nome da assegnare alla nuova cartella.
+     */
     fun createNewFolder(folderName: String) {
         viewModelScope.launch {
             val currentFolders = _allFolders.value.toMutableList()
@@ -338,6 +504,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
 
             if (currentFolders.any { it.displayName.equals(folderName, ignoreCase = true) && it.parentFolderId == parentId }) {
                 Log.w("FSViewModel", "Cartella con nome '$folderName' esiste già in questa posizione.")
+                showUserMessage("A folder with that name already exists.")
                 return@launch
             }
 
@@ -352,6 +519,17 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    /**
+     * Naviga all'interno della cartella specificata.
+     * Prima di navigare, controlla se è attiva la modalità di spostamento e se la cartella
+     * di destinazione è tra gli elementi che si stanno spostando (o una sua sottocartella),
+     * impedendo la navigazione in tal caso.
+     * Se la navigazione è permessa, l'ID della cartella corrente viene salvato nello stack
+     * di navigazione, la `_currentFolder` viene aggiornata e l'ID della nuova cartella corrente
+     * viene persistito. Tutte le selezioni correnti vengono cancellate.
+     *
+     * @param folder L'oggetto `FolderItem` della cartella in cui si desidera entrare.
+     */
     fun enterFolder(folder: FolderItem) {
 
         if (_isMovingItems.value) {
@@ -365,8 +543,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
 
             if (isFolderBeingMoved || isChildOfFolderBeingMoved) {
                 viewModelScope.launch {
-                    val userMessage = MutableSharedFlow<String>()
-                    userMessage.emit("Impossibile navigare in una cartella che stai spostando.")
+                    showUserMessage("You can't navigate on a folder you are moving.")
                 }
                 Log.w("FSViewModel", "Tentativo di navigare in una cartella in fase di spostamento: ${folder.displayName}")
                 return // Impedisci la navigazione
@@ -384,6 +561,13 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         clearAllSelections()
     }
 
+    /**
+     * Torna alla cartella precedente nella gerarchia di navigazione.
+     * Recupera l'ID della cartella precedente dallo stack di navigazione.
+     * Se lo stack è vuoto, significa che si sta tornando alla directory radice (null).
+     * Aggiorna `_currentFolder` e salva l'ID della nuova cartella corrente.
+     * Tutte le selezioni correnti vengono cancellate.
+     */
     fun goBack() {
         if (folderNavigationStack.isNotEmpty()) {
             val previousFolderId = folderNavigationStack.pop()
@@ -402,55 +586,75 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     /**
-     * Resetta la navigazione delle cartelle alla cartella root.
-     * Svuota lo stack di navigazione e imposta la cartella corrente a null.
+     * Resetta la navigazione delle cartelle, riportando l'utente alla cartella root.
+     * Svuota completamente lo stack di navigazione e imposta la cartella corrente a `null`
+     * (che rappresenta la root). L'ID della root viene poi salvato come cartella corrente.
+     * Tutte le selezioni vengono cancellate.
      */
     fun goToRoot() {
         Log.d("FSViewModel", "Navigando alla cartella root.")
-        folderNavigationStack.clear() // Svuota lo stack
-        _currentFolder.value = null // Imposta la cartella corrente a null (rappresenta la root)
+        folderNavigationStack.clear()
+        _currentFolder.value = null
         viewModelScope.launch {
-            datasource.saveCurrentFolderId(FileSystemDatasource.ROOT_FOLDER_ID) // Salva l'ID della root
+            datasource.saveCurrentFolderId(FileSystemDatasource.ROOT_FOLDER_ID)
         }
-        clearAllSelections() // Deseleziona tutto quando si cambia cartella
-    }
-
-    fun exitSelectionMode() {
         clearAllSelections()
-        // _isSelectionModeActive.value = false // Già impostato a false in clearAllSelections
-    }
-
-    fun initiateMove() {
-        if (_selectedItems.value.isNotEmpty()) {
-            _itemsToMove.value = _selectedItems.value.toList() // Copia gli elementi selezionati
-            _isMovingItems.value = true // Attiva la modalità di spostamento
-            clearAllSelections() // Disattiva la modalità di selezione
-            Log.d("FSViewModel", "Iniziato spostamento. Elementi da spostare: ${_itemsToMove.value.size}")
-        } else {
-            Log.w("FSViewModel", "Tentativo di iniziare spostamento senza elementi selezionati.")
-        }
-    }
-
-    fun cancelMoveOperation() {
-        Log.d("FSViewModel", "Operazione di spostamento annullata.")
-        _itemsToMove.value = emptyList() // Svuota la lista
-        _isMovingItems.value = false // Disattiva la modalità di spostamento
     }
 
     /**
-     * Sposta gli elementi precedentemente selezionati (in _itemsToMove) nella cartella corrente.
-     * Gestisce anche la prevenzione dello spostamento di una cartella in se stessa o nei suoi figli.
+     * Esce dalla modalità di selezione multipla.
+     * Questo metodo invoca `clearAllSelections()` che si occupa di deselezionare tutti gli elementi
+     * e di impostare `_isSelectionModeActive` a `false`.
+     */
+    fun exitSelectionMode() {
+        clearAllSelections()
+    }
+
+    /**
+     * Inizia l'operazione di spostamento degli elementi.
+     * Se ci sono elementi selezionati, li copia nella lista `_itemsToMove`,
+     * imposta `_isMovingItems` a `true` e poi `clearAllSelections()` per uscire dalla modalità di selezione.
+     * Se non ci sono elementi selezionati, viene mostrato un messaggio di avvertimento.
+     */
+    fun initiateMove() {
+        if (_selectedItems.value.isNotEmpty()) {
+            _itemsToMove.value = _selectedItems.value.toList()
+            _isMovingItems.value = true
+            clearAllSelections()
+            Log.d("FSViewModel", "Iniziato spostamento. Elementi da spostare: ${_itemsToMove.value.size}")
+        } else {
+            Log.w("FSViewModel", "Tentativo di iniziare spostamento senza elementi selezionati.")
+            showUserMessage("Select elements to move.")
+        }
+    }
+
+    /**
+     * Annulla l'operazione di spostamento corrente.
+     * Svuota la lista degli elementi da spostare (`_itemsToMove`) e imposta `_isMovingItems` a `false`.
+     */
+    fun cancelMoveOperation() {
+        Log.d("FSViewModel", "Operazione di spostamento annullata.")
+        _itemsToMove.value = emptyList()
+        _isMovingItems.value = false
+    }
+
+    /**
+     * Sposta gli elementi precedentemente selezionati (e memorizzati in `_itemsToMove`)
+     * nella cartella attualmente visualizzata (`_currentFolder`).
+     * Gestisce la prevenzione dello spostamento di una cartella in se stessa o in una sua sottocartella,
+     * e la prevenzione dello spostamento di elementi che già esistono nella cartella di destinazione.
+     * Dopo lo spostamento, aggiorna le liste `_allPdfFiles` e `_allFolders` e salva i cambiamenti.
      */
     fun moveItemsToCurrentFolder() {
         viewModelScope.launch {
-            val items = _itemsToMove.value.toList() // Copia per evitare modifiche concorrenti
+            val items = _itemsToMove.value.toList()
             if (items.isEmpty()) {
                 Log.w("FSViewModel", "Nessun elemento da spostare.")
                 cancelMoveOperation()
                 return@launch
             }
 
-            val destinationFolderId = _currentFolder.value?.id // ID della cartella di destinazione
+            val destinationFolderId = _currentFolder.value?.id
             val destinationFolderName = _currentFolder.value?.displayName ?: "Root"
             Log.d("FSViewModel", "Tentativo di spostare ${items.size} elementi nella cartella: $destinationFolderName (${destinationFolderId ?: "Root"})")
 
@@ -465,6 +669,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
                 if (item is FolderItem && (item.id == destinationFolderId || getItemsInFolderRecursive(item.id).any { it.id == destinationFolderId })) {
                     Log.w("FSViewModel", "Impossibile spostare la cartella '${item.displayName}' in se stessa o in una sua sottocartella.")
                     skippedCount++
+                    showUserMessage("Can't move '${item.displayName}' in the selected folder.")
                     continue
                 }
 
@@ -478,6 +683,7 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
                 if (alreadyExistsInDestination) {
                     Log.w("FSViewModel", "Elemento '${item.displayName}' già presente nella cartella di destinazione. Spostamento saltato.")
                     skippedCount++
+                    showUserMessage("Element '${item.displayName}' already present in the destination.")
                     continue
                 }
 
@@ -511,15 +717,30 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
             _allFolders.value = updatedFolders
 
             Log.d("FSViewModel", "Operazione di spostamento completata. Spostati: $movedCount, Saltati: $skippedCount.")
-            cancelMoveOperation() // Termina l'operazione di spostamento
+            showUserMessage("Moved $movedCount elements. Not moved $skippedCount elements.")
+            cancelMoveOperation()
         }
     }
 
-
+    /**
+     * Imposta la stringa di ricerca per filtrare gli elementi visualizzati.
+     * Questa stringa viene utilizzata nel `filteredAndDisplayedItems` `StateFlow`
+     * per mostrare solo gli elementi il cui nome contiene la query.
+     *
+     * @param query La stringa di testo da utilizzare per la ricerca.
+     */
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
     }
 
+    /**
+     * Funzione helper privata che recupera il nome del file da un dato `Uri`.
+     * Tenta prima di ottenere il `DISPLAY_NAME` tramite il `ContentResolver`.
+     * Se questo fallisce (es. per URI di file diretti), estrae il nome dal percorso URI.
+     *
+     * @param uri L'URI del file di cui recuperare il nome.
+     * @return Il nome del file come `String`, o "Unknown PDF" se non è possibile determinarlo.
+     */
     private fun getFileName(uri: Uri): String {
         var result: String? = null
         if (uri.scheme == "content") {
@@ -542,9 +763,24 @@ class FileSystemViewModel(application: Application) : AndroidViewModel(applicati
         return result ?: "Unknown PDF"
     }
 
+    /**
+     * Factory personalizzato per `FileSystemViewModel`.
+     * Questo è necessario quando il ViewModel richiede parametri nel suo costruttore (come `Application`),
+     * poiché la creazione standard non supporta costruttori con argomenti.
+     * Assicura che `FileSystemViewModel` sia istanziato correttamente.
+     *
+     * @param application L'istanza dell'applicazione da passare al ViewModel.
+     */
     class FileSystemViewModelFactory(
         private val application: Application
     ) : ViewModelProvider.Factory {
+        /**
+         * Crea una nuova istanza del ViewModel.
+         *
+         * @param modelClass La classe del ViewModel da creare.
+         * @return Una nuova istanza di `FileSystemViewModel`.
+         * @throws IllegalArgumentException se la `modelClass` fornita non è assegnabile a `FileSystemViewModel`.
+         */
         @Suppress("UNCHECKED_CAST")
         override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(FileSystemViewModel::class.java)) {

@@ -22,7 +22,6 @@
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:paddingBottom="0dp">
-            <!-- Pulsante Indietro (visibile solo in sottocartelle) -->
 
             <ImageButton
                 android:id="@+id/backButton"
@@ -40,7 +39,6 @@
                 android:paddingBottom="12dp"
                 app:tint="@android:color/white" />
 
-            <!-- Titolo Dinamico della Cartella -->
             <TextView
                 android:id="@+id/settingsTitleTextView"
                 android:layout_width="0dp"
@@ -62,12 +60,15 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/add_24dp_000000_fill0_wght400_grad0_opsz24"
                 android:contentDescription="@string/add_cloud"
-                android:padding="16dp"
+                android:paddingTop="16dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="8dp"
+                android:src="@drawable/add_24dp_000000_fill0_wght400_grad0_opsz24"
+                app:layout_constraintBottom_toTopOf="@id/searchView"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toTopOf="@id/searchView"
                 app:tint="@android:color/white" />
 
             <androidx.appcompat.widget.SearchView
