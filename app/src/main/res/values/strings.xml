@@ -59,7 +59,15 @@
     <string name="settings">Settings</string>
     <string name="selected"> selected</string>
 
+    <string name="pdf_load">Error encountered during PDF loading: </string>
+    <string name="empty_pdf">Error: There is no PDF to watch.</string>
+
+    <string name="successful_moving_operation">Elements moved successfully</string>
+    <string name="failed_moving_operation">Moving operation has been canceled</string>
+
     <string name="message_empty_name">The name of the folder can\'t be empty</string>
+
+    <string name="moving_items">Elements ready to be moved.Go to the destination folder.</string>
 
     <plurals name="move_items_message" >
         <item quantity="one">One element is ready to be moved. Go to the destination folder.</item>
@@ -68,6 +76,7 @@
 
     <string name="one_deletion_message">Are you sure you want to delete the one element selected?</string>
     <string name="multiple_deletion_message">Are you sure you want to delete the %d elements selected?</string>
+
     <string name="favorite">favorite</string>
     <string name="back">Back</string>
     <string name="next">Next</string>
@@ -75,4 +84,12 @@
     <string name="warning">WARNING: modifications in this fragment wont be saved. This is just an example for a possible future cloud link implementation</string>
     <string name="nome_cartella_cloud">Cloud  folder\'s name</string>
     <string name="parametro_cloud_es_id_token">Cloud parameter\'s (ID, Token..)</string>
+
+
+    <!--ZFlip widget-->
+    <string name="widget_icon_description">1%s</string>
+    <string name="widget_title">FlexiPDF APP is currently running</string>
+    <string name="widget_message">This file 1%s is opened</string>
+    <string name="empty_widget">No file opened</string>
+
 </resources>

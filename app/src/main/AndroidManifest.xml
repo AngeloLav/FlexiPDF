@@ -23,6 +23,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--Dichiarazioni importanti per il widget dello schermo esterno dello ZFlip -->
+        <receiver android:name="it.lavorodigruppo.flexipdf.provider.FlexiPDFWidgetProvider"
+            android:exported="false"
+            android:label="FlexiPDF Widget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DELETED" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/app_flexipdf_widget_zflip"/>
+        </receiver>
     </application>
 
 </manifest>

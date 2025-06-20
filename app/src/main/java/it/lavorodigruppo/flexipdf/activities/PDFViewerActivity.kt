@@ -88,6 +88,7 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
                 // Catch per altri tipi di eccezioni durante la gestione dei permessi URI
                 Log.e("PDFViewerActivity", "Errore generico nell'ottenere permessi URI: ${e.message}", e)
                 Toast.makeText(this, "Errore permessi file: ${e.message}", Toast.LENGTH_LONG).show()
+
                 finish()
                 return // Termina l'Activity
             }

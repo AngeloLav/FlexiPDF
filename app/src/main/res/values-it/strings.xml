@@ -56,7 +56,15 @@
     <string name="create">Crea</string>
     <string name="selected"> selezionati</string>
 
+    <string name="pdf_load">Errore durante il caricamento del PDF: </string>
+    <string name="empty_pdf">Errore: nessun PDF da visualizzare.</string>
+
+    <string name="successful_moving_operation">Elementi spostati con successo</string>
+    <string name="failed_moving_operation">Operazione di spostamento annullata.</string>
+
     <string name="message_empty_name">Il nome della cartella non può essere vuoto</string>
+
+    <string name="moving_items">Elementi pronti per lo spostamento. Naviga nella cartella di destinazione.</string>
 
     <plurals name="move_items_message">
         <item quantity="one">1 elemento pronto per lo spostamento. Naviga nella cartella di destinazione.</item>
@@ -65,4 +73,10 @@
 
     <string name="one_deletion_message"> Sei sicuro di voler eliminare l\'elemento selezionato?</string>
     <string name="multiple_deletion_message">Sei sicuro di voler eliminare %d elementi selezionati?</string>
+
+    <!--ZFlip widget-->
+    <string name="widget_icon_description">1%s</string>
+    <string name="widget_title">FlexiPDF APP sta ancora eseguendo</string>
+    <string name="widget_message">Il file 1%s è ancora aperto.</string>
+    <string name="empty_widget">Nessun file aperto</string>
 </resources>
