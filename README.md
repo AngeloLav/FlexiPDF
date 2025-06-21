@@ -1,4 +1,4 @@
-<body>
+
   <h1>📄Info: FlexiPDF</h1>
   <p>FlexiPDF è un'applicazione Android per la visualizzazione e la gestione dei documenti PDF.
   Progettata per adattarsi in modo fluido a diversi fattori di forma, inclusi i dispositivi pieghevoli.</p>
@@ -46,10 +46,9 @@
 
   <h4>Modalità di Selezione Multipla (CAB)</h4>
   <ul>
-    <li><strong>Attivazione:</strong> Long click su un elemento.</li>
+    <li><strong>Attivazione:</strong> Long click su un elemento. (una volta fatto si possono selezionare anche altri elementi con un click semplice)</li>
     <li><strong>Azioni:</strong>
       <ul>
-        <li>Contatore selezione</li>
         <li>Elimina 🗑️</li>
         <li>Preferiti ⭐</li>
         <li>Sposta ➡️</li>
@@ -83,4 +82,4 @@
     <li>Condividi App (placeholder)</li>
   </ul>
 
-</body>
+
