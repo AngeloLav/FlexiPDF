@@ -191,7 +191,7 @@ class SettingsFragment : Fragment() {
     //Questa funzione fa si che dopo che il linguaggio sia stato cambiato l'activity venga riavviata
     private fun applyLocaleAndRecreateActivity() {
         Log.d(TAG, "Calling Companion.applyLocale to update application context.")
-        Companion.applyLocale(requireContext().applicationContext)
+            applyLocale(requireContext().applicationContext)
 
         Log.d(TAG, "Recreating activity to apply language changes.")
         activity?.let { currentActivity ->

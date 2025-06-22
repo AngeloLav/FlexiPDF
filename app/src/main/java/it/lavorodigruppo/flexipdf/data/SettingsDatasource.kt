@@ -13,7 +13,6 @@ package it.lavorodigruppo.flexipdf.data
 
 import android.content.Context
 import it.lavorodigruppo.flexipdf.R
-import it.lavorodigruppo.flexipdf.fragments.SettingsFragment
 import it.lavorodigruppo.flexipdf.items.SettingsItem
 
 class SettingsDatasource(private val context: Context) {
@@ -25,11 +24,6 @@ class SettingsDatasource(private val context: Context) {
      * @return Una List di SettingsItem pronta per essere visualizzata nell'interfaccia utente delle impostazioni.
      */
     fun getSettingsOptions(): List<SettingsItem> {
-
-        //Gestione della lingua dell'applicazione
-        val languageValues =context.resources.getStringArray(R.array.language_options_values)
-        val languagesDisplay =context.resources.getStringArray(R.array.language_options)
-
 
         return listOf(
             SettingsItem(
@@ -60,6 +54,12 @@ class SettingsDatasource(private val context: Context) {
                 title = context.getString(R.string.settings_help_title),
                 id = ID_HELP,
                 iconResId = R.drawable.help_24dp_ffffff_fill0_wght400_grad0_opsz24
+            ),
+
+            SettingsItem(
+                title = context.getString(R.string.settings_share_title),
+                id = ID_SHARE,
+                iconResId = R.drawable.share_24dp_ffffff_fill0_wght400_grad0_opsz24
             )
         )
     }

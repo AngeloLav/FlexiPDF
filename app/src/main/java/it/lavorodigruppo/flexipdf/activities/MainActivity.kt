@@ -85,7 +85,6 @@ import it.lavorodigruppo.flexipdf.fragments.OnPdfPickerListener
 import it.lavorodigruppo.flexipdf.fragments.PdfViewerFragment
 import it.lavorodigruppo.flexipdf.utils.PdfManager
 import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel
-import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel.FileSystemViewModelFactory
 
 class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickListener {
 
@@ -129,7 +128,8 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
             return
         }
 
-        fileSystemViewModel = ViewModelProvider(this, FileSystemViewModel.FileSystemViewModelFactory(application))[FileSystemViewModel::class.java]
+        fileSystemViewModel = ViewModelProvider(this,
+            FileSystemViewModel.FileSystemViewModelFactory(application))[FileSystemViewModel::class.java]
         pdfManager = PdfManager(this) { uris: List<Uri> ->
             fileSystemViewModel.importPdfs(uris)
         }
