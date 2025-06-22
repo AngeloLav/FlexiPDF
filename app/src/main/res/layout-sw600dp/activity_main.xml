@@ -8,7 +8,6 @@
     android:layout_height="match_parent"
     tools:context=".activities.MainActivity">
 
-    <!-- Il tuo menu laterale CUSTOM per Tablet Portrait -->
     <include
         android:id="@+id/customSideMenu"
         layout="@layout/layout_custom_side_menu"
@@ -17,7 +16,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintWidth_percent="0.33" /> <!-- Puoi aggiustare la percentuale -->
+        app:layout_constraintWidth_percent="0.33" />
 
     <FrameLayout
         android:id="@+id/frame_layout"
