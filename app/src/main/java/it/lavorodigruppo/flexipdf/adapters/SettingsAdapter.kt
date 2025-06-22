@@ -7,6 +7,11 @@
  * responsabile di collegare i dati delle opzioni di impostazione all'interfaccia utente.
  * Gestisce la creazione e il binding delle view per ogni elemento della lista,
  * e implementa la logica di gestione dei click per ciascuna opzione di impostazione.
+ * Ad ogni impostazione corrisponde un messaggio particolare definito tramite @fun Toast.make
+ * in cui si sono usate le risorse di tipo stringa in modo da poter essere adattabili ad ogni
+ * linguaggio sopportato dalla applicazione. (La risorsa di tipo title è quella che definisce
+ * l'impostazione ad esempio "Lingua/Language/Sprache", mentre la risorsa message fa visualizzare
+ * un breve messaggio sullo schermo sull'impostazione cliccata.)
  *
  */
 package it.lavorodigruppo.flexipdf.adapters
@@ -26,7 +31,7 @@ import android.widget.Toast
 import it.lavorodigruppo.flexipdf.databinding.SettingsItemBinding
 
 
-class SettingsAdapter(private val settingsList: List<SettingsItem>) :
+class SettingsAdapter(private val settingsList: List<SettingsItem>, private val onLanguageSettingClicked: () -> Unit) :
     RecyclerView.Adapter<SettingsAdapter.SettingsViewHolder>() {
 
     /**
@@ -91,31 +96,46 @@ class SettingsAdapter(private val settingsList: List<SettingsItem>) :
 
         clickedSettingsItem?.let { item ->
             when (item.title) {
-                "Language" -> {
-                    Toast.makeText(v.context, "Language clicked", Toast.LENGTH_SHORT).show()
+
+                v.context.getString(R.string.settings_language_title) -> {
+                    onLanguageSettingClicked()
                 }
-                "Theme" -> {
+
+                v.context.getString(R.string.settings_theme_title) -> {
                     val currentNightMode = AppCompatDelegate.getDefaultNightMode()
                     if (currentNightMode == AppCompatDelegate.MODE_NIGHT_NO) {
                         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                        Toast.makeText(v.context, v.context.getString(R.string.theme_changed_to_dark),
+                            Toast.LENGTH_SHORT).show()
                     } else {
                         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                        Toast.makeText(v.context, v.context.getString(R.string.theme_changed_to_light),
+                            Toast.LENGTH_SHORT).show()
                     }
                 }
-                "About Us" -> {
-                    Toast.makeText(v.context, "About us clicked", Toast.LENGTH_SHORT).show()
+
+                v.context.getString(R.string.settings_about_title) -> {
+                    Toast.makeText(v.context, v.context.getString(R.string.about_us_message),
+                        Toast.LENGTH_SHORT).show()
                 }
-                "Credits" -> {
-                    Toast.makeText(v.context, "Credits clicked", Toast.LENGTH_SHORT).show()
+
+                v.context.getString(R.string.settings_credits_title) -> {
+                    Toast.makeText(v.context, v.context.getString(R.string.credits_message),
+                        Toast.LENGTH_SHORT).show()
                 }
-                "Help" -> {
-                    Toast.makeText(v.context, "Help clicked", Toast.LENGTH_SHORT).show()
+
+                v.context.getString(R.string.settings_help_title) -> {
+                    Toast.makeText(v.context, v.context.getString(R.string.help_message),
+                        Toast.LENGTH_SHORT).show()
                 }
-                "Share App" -> {
+
+                v.context.getString(R.string.settings_share_title) -> {
                     val appUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                     val intent = Intent(Intent.ACTION_VIEW, appUrl.toUri())
                     v.context.startActivity(intent)
                 }
+
+
                 else -> {
                     Toast.makeText(v.context, "Unknown: ${item.title}", Toast.LENGTH_SHORT).show()
                 }

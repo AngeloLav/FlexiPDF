@@ -18,6 +18,8 @@ constraintlayout = "2.2.1"
 preferenceKtx = "1.2.1"
 recyclerview = "1.4.0"
 window = "1.4.0"
+cardview = "1.0.0"
+uiTextAndroid = "1.8.3"
 
 
 [libraries]
@@ -38,6 +40,8 @@ material = { group = "com.google.android.material", name = "material", version.r
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-preference-ktx = { group = "androidx.preference", name = "preference-ktx", version.ref = "preferenceKtx" }
+androidx-cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
+androidx-ui-text-android = { group = "androidx.compose.ui", name = "ui-text-android", version.ref = "uiTextAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -60,6 +60,7 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
@@ -116,6 +117,9 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        Toast.makeText(this, getString(R.string.changed_language),
+            Toast.LENGTH_SHORT).show()
 
         try {
             binding = ActivityMainBinding.inflate(layoutInflater)
