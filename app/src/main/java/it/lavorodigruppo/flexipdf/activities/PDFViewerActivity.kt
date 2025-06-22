@@ -31,6 +31,7 @@ import it.lavorodigruppo.flexipdf.interfaces.PdfLoadCallback
 import kotlinx.coroutines.launch
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
+import it.lavorodigruppo.flexipdf.provider.FlexiPDFWidgetProvider
 
 
 class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
@@ -183,6 +184,7 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
         } else {
             // Se c'è uno stato salvato, ripristina il layout al suo stato originale
             updateLayout(currentLayoutIsFoldable)
+            FlexiPDFWidgetProvider.notifyFileStatusChanged(applicationContext, "currentFileName.pdf")
         }
         // NUOVO: Chiama updateNavigationButtonStates all'avvio per impostare lo stato iniziale dei bottoni
         updateNavigationButtonStates()
@@ -489,5 +491,6 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
     override fun onDestroy() {
         super.onDestroy()
         binding = null // Rilascia il riferimento al binding per prevenire memory leaks
+        FlexiPDFWidgetProvider.notifyFileStatusChanged(applicationContext, null)
     }
 }
