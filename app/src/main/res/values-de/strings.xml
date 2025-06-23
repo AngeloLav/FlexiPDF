@@ -30,6 +30,7 @@
     <string name="changed_language">Die Sprache auswählt ist Deutsch</string>
     <string name="language_missing_message">Fehler beim Anwenden der Sprache:
         Aktivität nicht gefunden.</string>
+    <string name="share_message">Auf „Teilen“ wurde geklickt</string>
 
     <string name="settings_icon_description">Einstellungen Symbol</string>
     <string name="settings_item_message">%1$s</string>

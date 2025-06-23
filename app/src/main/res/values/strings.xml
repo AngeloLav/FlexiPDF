@@ -28,6 +28,7 @@
     <string name="help_message">Help clicked</string>
     <string name="changed_language">The chosen language is English.</string>
     <string name="language_missing_message">Error applying language: Activity not found.</string>
+    <string name="share_message">Share was clicked</string>
 
     <string name="settings_icon_description">Settings Icon</string>
     <string name="settings_item_message">%1$s</string>

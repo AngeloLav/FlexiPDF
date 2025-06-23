@@ -37,7 +37,6 @@ class SettingsAdapter(private val settingsList: List<SettingsItem>, private val 
  *
  * @param settingsList La lista di oggetti `SettingsItem` da visualizzare.
  */
-class SettingsAdapter(private val settingsList: List<SettingsItem>, private val onLanguageSettingClicked: () -> Unit) :
     RecyclerView.Adapter<SettingsAdapter.SettingsViewHolder>() {
 
     /**
@@ -147,7 +146,7 @@ class SettingsAdapter(private val settingsList: List<SettingsItem>, private val 
                 }
 
                 v.context.getString(R.string.settings_share_title) -> {
-                    Toast.makeText(v.context, "Share clicked", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(v.context, v.context.getString(R.string.share_message), Toast.LENGTH_SHORT).show()
                 }
 
 
