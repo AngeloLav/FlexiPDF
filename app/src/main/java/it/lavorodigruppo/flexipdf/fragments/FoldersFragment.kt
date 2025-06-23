@@ -50,65 +50,115 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.google.android.material.snackbar.Snackbar
 import it.lavorodigruppo.flexipdf.data.FileSystemDatasource
 
+/**
+ * `FoldersFragment` è il frammento principale che visualizza la lista di file PDF e cartelle
+ * all'interno dell'applicazione. Gestisce l'interazione dell'utente con gli elementi del file system,
+ * la modalità di selezione contestuale, la navigazione tra cartelle, la ricerca,
+ * e l'integrazione con il ViewModel per la gestione dei dati.
+ */
 class FoldersFragment(
 ) : Fragment() {
 
+    /**
+     * Listener per la gestione dei click sui file PDF, comunicando con l'Activity ospitante.
+     */
     private var pdfFileClickListener: OnPdfFileClickListener? = null
 
-    // Override del metodo onAttach per ottenere il riferimento all'Activity (che implementa il listener)
+    /**
+     * Override del metodo `onAttach` del ciclo di vita del Fragment.
+     * Questo metodo viene chiamato quando il Fragment viene associato al suo contesto (Activity).
+     * Qui si verifica se il contesto implementa l'interfaccia `OnPdfFileClickListener`
+     * e, in caso affermativo, si assegna il riferimento al listener per consentire la comunicazione.
+     *
+     * @param context Il contesto (Activity) a cui il Fragment è associato.
+     */
     override fun onAttach(context: Context) {
         super.onAttach(context)
         if (context is OnPdfFileClickListener) {
             pdfFileClickListener = context
         } else {
-            // È buona pratica lanciare un'eccezione se l'Activity non implementa il listener richiesto.
-            // Puoi anche solo loggare un avviso se preferisci.
             Log.e("FoldersFragment", "$context must implement OnPdfFileClickListener")
         }
     }
 
+    /**
+     * L'istanza del binding View per il layout del fragment.
+     * Utilizzata per accedere alle viste nel layout in modo sicuro e senza boilerplate.
+     */
     private var _binding: FragmentFoldersBinding? = null
+
+    /**
+     * Proprietà di convenienza per accedere all'istanza del binding.
+     * Assicura che il binding non sia nullo quando viene utilizzato.
+     */
     private val binding get() = _binding!!
 
+    /**
+     * L'istanza del ViewModel associato a questo Fragment, utilizzata per gestire la logica dei dati
+     * e interagire con il modello del file system.
+     */
     private lateinit var fileSystemViewModel: FileSystemViewModel
+
+    /**
+     * L'istanza dell'adapter per la `RecyclerView` che visualizza gli elementi del file system.
+     */
     private lateinit var fileSystemAdapter: FileSystemAdapter
 
+    /**
+     * L'istanza di `ActionMode` utilizzata per la barra delle azioni contestuale (Contextual Action Bar - CAB).
+     * Questa barra appare quando gli elementi vengono selezionati per azioni multiple (es. elimina, sposta).
+     */
     private var actionMode: ActionMode? = null
+
+    /**
+     * Implementazione dell'interfaccia `ActionMode.Callback` per gestire il ciclo di vita e
+     * le interazioni con la Contextual Action Bar (CAB). Definisce come viene creata la CAB,
+     * come vengono preparate le sue voci di menu in base allo stato, e come vengono gestiti i click sulle voci.
+     */
     private val actionModeCallback = object : ActionMode.Callback {
+        /**
+         * Chiamato quando la Contextual Action Bar (CAB) viene creata.
+         * Gonfia il menu XML (`contextual_action_bar_menu.xml`) per la CAB.
+         * @param mode L'istanza di `ActionMode` per questa CAB.
+         * @param menu Il `Menu` della CAB in cui gonfiare le voci.
+         * @return `true` se la CAB deve essere mostrata, `false` altrimenti.
+         */
         override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
             val inflater: MenuInflater = mode!!.menuInflater
             inflater.inflate(R.menu.contextual_action_bar_menu, menu)
             return true
         }
 
+        /**
+         * Chiamato ogni volta che la Contextual Action Bar (CAB) deve essere aggiornata.
+         * Questo include la prima volta che viene mostrata e ogni volta che `invalidate()` viene chiamato.
+         * Questo metodo viene utilizzato per mostrare/nascondere le voci di menu e aggiornare il titolo
+         * in base allo stato corrente (modalità di selezione standard o modalità di spostamento).
+         * @param mode L'istanza di `ActionMode` per questa CAB.
+         * @param menu Il `Menu` della CAB da preparare.
+         * @return `true` se il menu è stato modificato e deve essere ridisegnato, `false` altrimenti.
+         */
         override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
             val isMoving = fileSystemViewModel.isMovingItems.value
             val selectedCount = fileSystemViewModel.selectedItems.value.size
             val itemsToMoveCount = fileSystemViewModel.itemsToMove.value.size
 
-            // Voci di menu per la modalità di selezione standard
             val deleteItem = menu?.findItem(R.id.action_delete_selected)
             val favoriteItem = menu?.findItem(R.id.action_favorite_selected)
             val moveItem = menu?.findItem(R.id.action_move)
-
-            // Voci di menu per la modalità di spostamento
             val moveHereItem = menu?.findItem(R.id.action_move_here)
             val moveBackItem = menu?.findItem(R.id.action_move_back)
 
             if (isMoving) {
-                // Modalità di spostamento: mostra "Sposta qui" e "Annulla"
                 deleteItem?.isVisible = false
                 favoriteItem?.isVisible = false
                 moveItem?.isVisible = false
 
                 moveHereItem?.isVisible = true
-
                 moveBackItem?.isVisible = fileSystemViewModel.currentFolder.value != null
-
 
                 mode?.title = resources.getQuantityString(R.plurals.move_items_message, itemsToMoveCount, itemsToMoveCount)
             } else {
-                // Modalità di selezione standard: mostra "Elimina", "Preferito", "Sposta"
                 deleteItem?.isVisible = true
                 favoriteItem?.isVisible = fileSystemViewModel.selectedItems.value.any { it is PdfFileItem }
                 moveItem?.isVisible = true
@@ -117,14 +167,17 @@ class FoldersFragment(
                 moveBackItem?.isVisible = false
 
                 mode?.title = "$selectedCount" + getString(R.string.selected)
-
-
-                fileSystemViewModel.currentFolder.value?.id ?: FileSystemDatasource.ROOT_FOLDER_ID
-
             }
             return true
         }
 
+        /**
+         * Chiamato quando l'utente clicca su una voce di menu nella Contextual Action Bar (CAB).
+         * Gestisce le azioni corrispondenti all'ID della voce cliccata (es. eliminazione, aggiunta ai preferiti, spostamento).
+         * @param mode L'istanza di `ActionMode` per questa CAB.
+         * @param item La `MenuItem` che è stata cliccata.
+         * @return `true` se l'evento è stato gestito, `false` altrimenti.
+         */
         override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
             return when (item?.itemId) {
                 R.id.action_delete_selected -> {
@@ -137,28 +190,34 @@ class FoldersFragment(
                     true
                 }
                 R.id.action_move -> {
-                    fileSystemViewModel.initiateMove() // Inizia l'operazione di spostamento
-                    mode?.invalidate() // Invalida la CAB per mostrare le nuove opzioni
+                    fileSystemViewModel.initiateMove()
+                    mode?.invalidate()
                     Snackbar.make(binding.root, getString(R.string.moving_items), Snackbar.LENGTH_LONG).show()
                     true
                 }
-                R.id.action_move_here -> { // GESTIONE "SPOSTA QUI"
+                R.id.action_move_here -> {
                     fileSystemViewModel.moveItemsToCurrentFolder()
                     Snackbar.make(binding.root, getString(R.string.successful_moving_operation), Snackbar.LENGTH_SHORT).show()
                     mode?.finish()
                     true
                 }
 
-                R.id.action_move_back -> { // GESTIONE "INDIETRO" IN MODALITÀ SPOSTAMENTO
+                R.id.action_move_back -> {
                     fileSystemViewModel.goBack()
-                    mode?.invalidate() // Invalida la CAB per aggiornare la visibilità del pulsante "Indietro" (se si torna alla root)
+                    mode?.invalidate()
                     true
                 }
                 else -> false
             }
         }
 
-
+        /**
+         * Chiamato quando la Contextual Action Bar (CAB) viene chiusa o distrutta.
+         * Questo accade quando l'utente esce dalla modalità contestuale.
+         * Esegue la pulizia necessaria, come reimpostare lo stato di `actionMode` a `null`,
+         * cancellare tutte le selezioni e annullare qualsiasi operazione di spostamento in corso.
+         * @param mode L'istanza di `ActionMode` che sta per essere distrutta.
+         */
         override fun onDestroyActionMode(mode: ActionMode?) {
             actionMode = null
             fileSystemViewModel.clearAllSelections()
@@ -166,6 +225,15 @@ class FoldersFragment(
         }
     }
 
+    /**
+     * Override del metodo `onCreateView` del ciclo di vita del Fragment.
+     * Questo metodo è responsabile di gonfiare il layout del Fragment e restituire la sua vista radice.
+     * Utilizza View Binding per creare un'istanza del binding per il layout `fragment_folders.xml`.
+     * @param inflater L'oggetto `LayoutInflater` che può essere usato per gonfiare qualsiasi vista nel contesto corrente.
+     * @param container Se non nullo, questo è il ViewGroup padre a cui la UI del Fragment dovrebbe essere allegata.
+     * @param savedInstanceState Se non nullo, questo Fragment viene ricostruito da uno stato precedentemente salvato.
+     * @return La vista radice (View) del Fragment.
+     */
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -174,6 +242,15 @@ class FoldersFragment(
         return binding.root
     }
 
+    /**
+     * Override del metodo `onViewCreated` del ciclo di vita del Fragment.
+     * Questo metodo viene chiamato subito dopo che `onCreateView` ha restituito la sua vista.
+     * Qui vengono inizializzati il `FileSystemViewModel`, configurata la `RecyclerView`,
+     * impostati i listener per gli elementi UI e avviata l'osservazione dei dati dal ViewModel.
+     * Include anche la logica per la gestione degli `WindowInsets` per adattare il layout alle barre di sistema.
+     * @param view La vista radice del Fragment restituita da `onCreateView`.
+     * @param savedInstanceState Se non nullo, questo Fragment viene ricostruito da uno stato precedentemente salvato.
+     */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -187,15 +264,10 @@ class FoldersFragment(
         setupListeners()
         observeViewModel()
 
-        // --- INIZIO: GESTIONE WINDOW INSETS per il banner superiore, RecyclerView e FAB ---
-        // Questo listener è fondamentale per adattare il layout alle barre di sistema (status bar, navigation bar)
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
-            // Ottieni gli insets per le barre di sistema (status bar, navigation bar)
             val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            // Ottieni gli insets specifici per la barra di navigazione
             val navigationBarsInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
 
-            // 1. Applica l'inset superiore al padding del topBannerCardView (per la status bar)
             binding.bannerContentLayout.setPadding(
                 binding.bannerContentLayout.paddingLeft,
                 systemBarsInsets.top,
@@ -203,83 +275,74 @@ class FoldersFragment(
                 binding.bannerContentLayout.paddingBottom
             )
 
-            // 2. Determina il padding inferiore per la pdfRecyclerView in base all'orientamento
             val orientation = resources.configuration.orientation
             val bottomPaddingForRecyclerView = if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                0 // Nessun padding inferiore in modalità orizzontale, la lista può andare sotto la barra
+                0
             } else {
-                systemBarsInsets.bottom // Applica il padding inferiore in modalità verticale (per non coprire il contenuto)
+                systemBarsInsets.bottom
             }
 
-            // Applica il padding inferiore alla pdfRecyclerView
-            // (gli insets left/right di systemBarsInsets tengono conto di notch, display cutouts ecc.)
             binding.pdfRecyclerView.setPadding(
-                systemBarsInsets.left, // Padding sinistro per eventuali insets del sistema (es. notch/gesture bar)
+                systemBarsInsets.left,
                 binding.pdfRecyclerView.paddingTop,
-                systemBarsInsets.right, // Padding destro per eventuali insets del sistema
-                bottomPaddingForRecyclerView // Padding inferiore condizionale
+                systemBarsInsets.right,
+                bottomPaddingForRecyclerView
             )
 
-            // 3. Gestione del Floating Action Button (FAB) in base agli insets della barra di navigazione
             val fabLayoutParams = binding.floatingActionButton.layoutParams as? ConstraintLayout.LayoutParams
             if (fabLayoutParams != null) {
-                // Margini di default per il FAB, se non modificati in XML
                 val defaultMarginEnd = 16.dpToPx(requireContext())
                 val defaultMarginBottom = 16.dpToPx(requireContext())
 
                 if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                    // In landscape, la barra di navigazione è solitamente a destra o sinistra.
-                    // Aggiungiamo l'inset destro (se la barra è a destra) al marginEnd del FAB.
                     fabLayoutParams.marginEnd = defaultMarginEnd + navigationBarsInsets.right
-                    // Il bottom margin può rimanere quello di default o essere adattato se la barra è anche in basso.
                     fabLayoutParams.bottomMargin = defaultMarginBottom
-                } else { // Portrait
-                    // In portrait, la barra di navigazione è in basso.
-                    // Aggiungiamo l'inset inferiore al marginBottom del FAB.
+                } else {
                     fabLayoutParams.marginEnd = defaultMarginEnd
                     fabLayoutParams.bottomMargin = defaultMarginBottom + navigationBarsInsets.bottom
                 }
-                binding.floatingActionButton.layoutParams = fabLayoutParams // Applica i LayoutParams modificati
+                binding.floatingActionButton.layoutParams = fabLayoutParams
             }
 
-            insets // Restituisci gli insets per permettere ad altre viste di gestirli
+            insets
         }
     }
 
+    /**
+     * Funzione di estensione per `Int` che converte un valore da DP (Density-independent Pixels) a PX (Pixels).
+     * Utile per impostare dimensioni in pixel in modo programmatico basandosi su valori DP.
+     * @receiver Il valore in DP da convertire.
+     * @param context Il contesto utilizzato per accedere ai `displayMetrics` del dispositivo.
+     * @return Il valore convertito in pixel.
+     */
     private fun Int.dpToPx(context: Context): Int =
         (this * context.resources.displayMetrics.density).toInt()
 
+    /**
+     * Configura la `RecyclerView` per visualizzare gli elementi del file system.
+     * Inizializza il `FileSystemAdapter` con tutti i listener di interazione necessari (click, long click,
+     * doppio click, toggle di selezione, toggle preferiti) e lo associa alla `RecyclerView`.
+     * Include una logica specifica per gestire i click sugli elementi in base alla modalità di spostamento attiva.
+     */
     private fun setupRecyclerView() {
         fileSystemAdapter = FileSystemAdapter(
             onItemClick = onItemClick@{ item ->
-
                 if (fileSystemViewModel.isMovingItems.value) {
                     if (item is PdfFileItem) {
-                        // Se siamo in modalità spostamento e clicchiamo un PDF, non aprirlo.
-                        // Invece, mostra un messaggio all'utente chiamando il ViewModel.
-                        fileSystemViewModel.showUserMessage("Clicca su una cartella per navigare o 'Sposta qui' per confermare.")
+                        fileSystemViewModel.showUserMessage("Click on a folder to navigate or move here to confirm")
                         Log.d("FoldersFragment", "Tentativo di aprire PDF in modalità spostamento, impedito: ${item.displayName}")
-                        return@onItemClick // Esci dalla lambda onItemClick
-                    }
-                    // Se è una cartella in modalità spostamento, permetti la navigazione
-                    // La logica di enterFolder gestirà se la navigazione è permessa o meno.
-                    else if (item is FolderItem) {
+                        return@onItemClick
+                    } else if (item is FolderItem) {
                         fileSystemViewModel.enterFolder(item)
-                        return@onItemClick // Esci dalla lambda onItemClick dopo aver gestito la cartella
+                        return@onItemClick
                     }
                 }
 
-                // Questa parte del codice viene eseguita solo se:
-                // 1. Non siamo in modalità spostamento (isMovingItems.value è false)
-                // 2. Siamo in modalità spostamento, ma l'elemento cliccato non è un PdfFileItem
-                //    (cioè, è una FolderItem e la navigazione è stata permessa sopra).
                 when (item) {
                     is PdfFileItem -> {
                         val pdfUri = item.uriString.toUri()
                         Log.d("FoldersFragment", "PDF cliccato: ${item.displayName}. Notifico l'Activity tramite callback.")
-                        // Utilizza il callback per notificare l'Activity
                         pdfFileClickListener?.onPdfFileClicked(pdfUri)
-
                     }
                     is FolderItem -> {
                         fileSystemViewModel.enterFolder(item)
@@ -308,6 +371,12 @@ class FoldersFragment(
         }
     }
 
+    /**
+     * Configura i listener per gli elementi dell'interfaccia utente nel Fragment.
+     * Include il listener per il `FloatingActionButton` (FAB) per mostrare un popup,
+     * i listener per la `SearchView` per la gestione della ricerca del testo,
+     * e il listener per il pulsante "indietro" personalizzato.
+     */
     private fun setupListeners() {
 
         binding.floatingActionButton.setOnClickListener {
@@ -317,9 +386,9 @@ class FoldersFragment(
 
         val searchEditText = binding.searchView.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)
         searchEditText?.let {
-            it.background = null // Questo è cruciale per rimuovere la sottolineatura predefinita
-            it.setTextColor(requireContext().getColor(android.R.color.white)) // <--- CAMBIATO QUI: Testo bianco
-            it.setHintTextColor(requireContext().getColor(android.R.color.darker_gray)) // Suggerimento grigio scuro
+            it.background = null
+            it.setTextColor(requireContext().getColor(android.R.color.white))
+            it.setHintTextColor(requireContext().getColor(android.R.color.darker_gray))
             Log.d("FoldersFragment", "SearchView EditText configurato (background, testo, suggerimento).")
         } ?: run {
             Log.e("FoldersFragment", "Errore: Impossibile trovare l'EditText interno della SearchView!")
@@ -347,6 +416,15 @@ class FoldersFragment(
         }
     }
 
+    /**
+     * Osserva i `Flow` esposti dal `FileSystemViewModel` per aggiornare l'interfaccia utente
+     * in risposta a cambiamenti nei dati.
+     * - `filteredAndDisplayedItems`: aggiorna la lista mostrata nella `RecyclerView`.
+     * - `currentFolder`: aggiorna il titolo della barra superiore e la visibilità del pulsante "indietro".
+     * - `isSelectionModeActive`: gestisce l'attivazione/disattivazione della `Contextual Action Bar` (CAB)
+     * e la modalità di selezione dell'adapter.
+     * - `selectedItems`: aggiorna il titolo della CAB con il conteggio degli elementi selezionati.
+     */
     private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
             fileSystemViewModel.filteredAndDisplayedItems.collectLatest { items ->
@@ -369,7 +447,7 @@ class FoldersFragment(
                 Log.d("FoldersFragment", "Cartella corrente cambiata: ${folder?.displayName ?: "Root"}")
 
                 if (actionMode != null) {
-                    actionMode?.invalidate() // Forza la CAB a ri-valutare le voci di menu (es. pulsante "Indietro")
+                    actionMode?.invalidate()
                     Log.d("FoldersFragment", "CAB invalidata a causa del cambio cartella.")
                 }
             }
@@ -383,10 +461,9 @@ class FoldersFragment(
                         actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(actionModeCallback)
                     }
                     actionMode?.title = "${fileSystemViewModel.selectedItems.value.size}" + getString(R.string.selected)
-                    actionMode?.invalidate() // Invalida per aggiornare le voci di menu
+                    actionMode?.invalidate()
                 } else {
-                    // Chiude la CAB solo se NON siamo in modalità di spostamento
-                    if (!fileSystemViewModel.isMovingItems.value) { // <--- AGGIUNTA QUESTA CONDIZIONE
+                    if (!fileSystemViewModel.isMovingItems.value) {
                         actionMode?.finish()
                         Log.d("FoldersFragment", "CAB chiusa perché non in modalità selezione e non in modalità spostamento.")
                     } else {
@@ -405,6 +482,11 @@ class FoldersFragment(
         }
     }
 
+    /**
+     * Mostra un `AlertDialog` che permette all'utente di inserire un nome per una nuova cartella.
+     * Se il nome inserito non è vuoto, viene richiesta al `fileSystemViewModel` la creazione della nuova cartella.
+     * Mostra un Toast se il nome è vuoto.
+     */
     private fun showNewFolderDialog() {
         val builder = AlertDialog.Builder(requireContext())
         builder.setTitle(R.string.new_folder)
@@ -427,6 +509,11 @@ class FoldersFragment(
         builder.show()
     }
 
+    /**
+     * Mostra un `AlertDialog` di conferma prima di procedere con l'eliminazione degli elementi selezionati.
+     * Il messaggio del dialog varia a seconda che sia stato selezionato un solo elemento o più elementi.
+     * Se l'utente conferma, chiama il `fileSystemViewModel` per eliminare gli elementi e chiude la CAB.
+     */
     private fun showDeleteConfirmationDialog() {
         val selectedCount = fileSystemViewModel.selectedItems.value.size
         val message = if (selectedCount == 1) {
@@ -449,16 +536,27 @@ class FoldersFragment(
             .show()
     }
 
+    /**
+     * Override del metodo `onDestroyView` del ciclo di vita del Fragment.
+     * Chiamato quando la vista del Fragment sta per essere distrutta.
+     * Esegue la pulizia delle risorse: chiude la `Contextual Action Bar` (se attiva),
+     * resetta l'istanza del binding a `null` per prevenire memory leak,
+     * e resetta il riferimento al `pdfFileClickListener`.
+     */
     override fun onDestroyView() {
         super.onDestroyView()
         actionMode?.finish()
         actionMode = null
         _binding = null
-        // IMPORTANTE: Resetta il listener per evitare memory leaks quando il fragment è scollegato
         pdfFileClickListener = null
     }
 
-    // --- Metodi per il FAB Popup ---
+    /**
+     * Mostra un `PopupWindow` personalizzato che funge da menu per il `FloatingActionButton`.
+     * Questo popup contiene opzioni come "Importa PDF" e "Crea Cartella".
+     * Il posizionamento del popup è calcolato per apparire sopra il FAB.
+     * Definisce i listener per le opzioni del popup e per la sua chiusura, ripristinando l'animazione del FAB.
+     */
     private fun showPopupMenu() {
         val popupBinding = it.lavorodigruppo.flexipdf.databinding.CustomPopupMenuBinding.inflate(LayoutInflater.from(requireContext()))
         val popupView = popupBinding.root
@@ -499,16 +597,19 @@ class FoldersFragment(
         }
 
         popupBinding.optionCreateFolder.setOnClickListener {
-            showNewFolderDialog() // Chiama il dialog per creare la cartella
+            showNewFolderDialog()
             popupWindow.dismiss()
         }
 
-        // Aggiungi un listener per quando il popup si chiude (es. cliccando fuori)
         popupWindow.setOnDismissListener {
-            rotateFabBackward() // Riporta il FAB alla posizione originale
+            rotateFabBackward()
         }
     }
 
+    /**
+     * Avvia un'animazione di rotazione per il `FloatingActionButton` (FAB) in avanti (da 0 a 90 gradi).
+     * Utilizzato quando il FAB viene cliccato per aprire il menu popup.
+     */
     private fun rotateFabForward() {
         ObjectAnimator.ofFloat(binding.floatingActionButton, "rotation", 0f, 90f).apply {
             duration = 500
@@ -517,6 +618,10 @@ class FoldersFragment(
         }
     }
 
+    /**
+     * Avvia un'animazione di rotazione per il `FloatingActionButton` (FAB) all'indietro (da 90 a 0 gradi).
+     * Utilizzato quando il menu popup del FAB viene chiuso.
+     */
     private fun rotateFabBackward() {
         ObjectAnimator.ofFloat(binding.floatingActionButton, "rotation", 90f, 0f).apply {
             duration = 500

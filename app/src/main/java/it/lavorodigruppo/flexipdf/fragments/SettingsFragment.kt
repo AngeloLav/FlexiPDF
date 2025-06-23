@@ -41,16 +41,32 @@ import it.lavorodigruppo.flexipdf.items.SettingsItem
 import it.lavorodigruppo.flexipdf.data.SettingsDatasource
 import java.util.Locale
 
-
+/**
+ * `SettingsFragment` è il frammento che gestisce e visualizza la schermata delle impostazioni dell'applicazione.
+ * Popola una `RecyclerView` con le opzioni di impostazione definite nel `SettingsDatasource`
+ * e assicura che il layout si adatti correttamente agli `WindowInsets` del sistema.
+ */
 class SettingsFragment : Fragment() {
 
-    // Dichiarazioni delle variabili lateinit per i componenti della UI e i dati.
-    // Verranno inizializzate in onCreateView.
+    /**
+     * Riferimento alla `RecyclerView` che visualizza le opzioni delle impostazioni.
+     */
     private lateinit var settingsRecyclerView: RecyclerView
+
+    /**
+     * L'adapter per la `RecyclerView` che collega i dati delle impostazioni alle viste.
+     */
     private lateinit var settingsAdapter: SettingsAdapter
+
+    /**
+     * La lista di oggetti `SettingsItem` che rappresentano le opzioni di impostazione disponibili.
+     */
     private lateinit var settingsList: List<SettingsItem>
 
-    // Memorizza il padding superiore originale del layout del banner.
+    /**
+     * Memorizza il padding superiore originale del layout del banner per calcoli successivi
+     * legati agli `WindowInsets`.
+     */
     private var originalBannerPaddingTop = 0
 
     companion object {
@@ -88,22 +104,24 @@ class SettingsFragment : Fragment() {
     }
 
     /**
-     * Metodo chiamato per creare e restituire la View associata al Fragment.
-     * Questo è il punto in cui il layout XML del Fragment viene gonfiato e i componenti UI vengono inizializzati.
+     * Metodo chiamato per creare e restituire la gerarchia di viste associata al Fragment.
+     * In questo metodo, il layout del Fragment viene gonfiato, la `RecyclerView` e il suo `Adapter`
+     * vengono inizializzati con i dati provenienti dal `SettingsDatasource`.
+     * Inoltre, viene impostato un listener per gli `WindowInsets` sulla vista radice
+     * per adattare dinamicamente il padding del banner superiore e della `RecyclerView` inferiore
+     * in base alla presenza e dimensione delle barre di sistema (status bar e navigation bar).
      *
-     * @param inflater L'LayoutInflater che può essere utilizzato per gonfiare qualsiasi View nel Fragment.
-     * @param container Se non nullo, questo è il ViewGroup genitore a cui la UI del Fragment dovrebbe essere attaccata.
-     * @param savedInstanceState Se non nullo, questo Fragment sta venendo ricreato da un precedente stato salvato.
-     * @return La View radice del layout del Fragment.
+     * @param inflater L'oggetto `LayoutInflater` che può essere usato per gonfiare qualsiasi vista nel contesto corrente.
+     * @param container Se non nullo, questo è il `ViewGroup` padre a cui la UI del Fragment dovrebbe essere allegata.
+     * @param savedInstanceState Se non nullo, questo Fragment viene ricostruito da uno stato precedentemente salvato.
+     * @return La vista radice (View) del Fragment.
      */
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Gonfia il layout del Fragment dal file XML 'fragment_settings.xml'.
         val view = inflater.inflate(R.layout.fragment_settings, container, false)
 
-        // Inizializzazione della RecyclerView per le impostazioni.
         settingsRecyclerView = view.findViewById(R.id.settingsRecyclerView)
 
         // Ottimizzazione: indica che la dimensione del RecyclerView non cambierà, migliorando le performance.
@@ -112,31 +130,18 @@ class SettingsFragment : Fragment() {
         // Imposta un LinearLayoutManager per visualizzare gli elementi in una lista verticale.
         settingsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        // Inizializzazione del datasource per ottenere le opzioni delle impostazioni.
         val dataSource = SettingsDatasource(requireContext())
         settingsList = dataSource.getSettingsOptions()
 
-        // Inizializzazione e impostazione dell'adapter per la RecyclerView.
         settingsAdapter = SettingsAdapter(settingsList) { showLanguageSelectionDialog() }
         settingsRecyclerView.adapter = settingsAdapter
 
-        // --- Gestione degli WindowInsets ---
-
-        // Trova il layout del banner all'interno della View del Fragment.
         val bannerContentLayout = view.findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.bannerContentLayout)
-
-        // Memorizza il padding superiore originale del layout del banner prima di applicare gli insets.
         originalBannerPaddingTop = bannerContentLayout.paddingTop
 
-        // Imposta un listener per gli WindowInsets sulla View radice del Fragment.
-        // Questo listener viene chiamato ogni volta che le barre di sistema cambiano posizione o dimensione.
         ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
-            // Ottiene gli insets specifici per le barre di sistema (status bar, navigation bar).
             val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
 
-            // Applica il padding superiore al layout del banner.
-            // Il nuovo padding superiore è la somma del padding originale e l'altezza della status bar.
-            // Questo spinge il contenuto del banner sotto la status bar, evitando sovrapposizioni.
             bannerContentLayout.setPadding(
                 bannerContentLayout.paddingLeft,
                 originalBannerPaddingTop + systemBarsInsets.top,
@@ -144,20 +149,14 @@ class SettingsFragment : Fragment() {
                 bannerContentLayout.paddingBottom
             )
 
-            // Applica il padding inferiore alla RecyclerView.
-            // Questo assicura che il contenuto della lista non venga coperto dalla navigation bar di sistema
-            // (o dalla BottomNavigationView se il suo layout lo permette).
             settingsRecyclerView.setPadding(
                 settingsRecyclerView.paddingLeft,
                 settingsRecyclerView.paddingTop,
                 settingsRecyclerView.paddingRight,
                 systemBarsInsets.bottom
             )
-            // Restituisce gli insets per permettere che vengano propagati ad altre viste se necessario.
             insets
         }
-
-        // --- Fine della gestione degli WindowInsets ---
         return view
     }
 

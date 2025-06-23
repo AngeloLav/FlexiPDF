@@ -15,13 +15,22 @@ import android.content.Context
 import it.lavorodigruppo.flexipdf.R
 import it.lavorodigruppo.flexipdf.items.SettingsItem
 
+/**
+ * Datasource per la gestione delle opzioni di impostazione fisse dell'applicazione.
+ * Questa classe è responsabile di recuperare le definizioni delle impostazioni
+ * (come titoli, icone e ID) dalle risorse dell'applicazione.
+ *
+ * @param context Il contesto dell'applicazione, utilizzato per accedere alle risorse.
+ */
 class SettingsDatasource(private val context: Context) {
 
     /**
-     * Recupera e restituisce una lista di SettingsItem che rappresentano le opzioni di impostazione.
-     * Le opzioni di testo e le icone vengono caricate da risorse predefinite dell'applicazione.
+     * Recupera e restituisce una lista di `SettingsItem` che rappresentano le opzioni di impostazione disponibili.
+     * Le opzioni di testo (titoli) vengono caricate dalle risorse di tipo stringa, definite nel file strings.xml
+     * (es. settings_language_title) e le icone corrispondenti sono predefinite come ID di risorse drawable.
      *
-     * @return Una List di SettingsItem pronta per essere visualizzata nell'interfaccia utente delle impostazioni.
+     * @return Una `List` di `SettingsItem` contenente tutte le opzioni di impostazione predefinite,
+     * pronta per essere visualizzata in un'interfaccia utente come una `RecyclerView`.
      */
     fun getSettingsOptions(): List<SettingsItem> {
 
