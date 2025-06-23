@@ -25,6 +25,7 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
@@ -49,7 +50,6 @@ import it.lavorodigruppo.flexipdf.fragments.OnPdfPickerListener
 import it.lavorodigruppo.flexipdf.fragments.PdfViewerFragment
 import it.lavorodigruppo.flexipdf.utils.PdfManager
 import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel
-import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel.FileSystemViewModelFactory
 
 class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickListener {
 
@@ -118,6 +118,9 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        Toast.makeText(this, getString(R.string.changed_language),
+            Toast.LENGTH_SHORT).show()
+
         try {
             binding = ActivityMainBinding.inflate(layoutInflater)
             setContentView(binding.root)
@@ -126,7 +129,8 @@ class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickLis
             return
         }
 
-        fileSystemViewModel = ViewModelProvider(this, FileSystemViewModel.FileSystemViewModelFactory(application))[FileSystemViewModel::class.java]
+        fileSystemViewModel = ViewModelProvider(this,
+            FileSystemViewModel.FileSystemViewModelFactory(application))[FileSystemViewModel::class.java]
         pdfManager = PdfManager(this) { uris: List<Uri> ->
             fileSystemViewModel.importPdfs(uris)
         }

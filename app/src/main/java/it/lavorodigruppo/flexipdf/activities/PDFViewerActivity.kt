@@ -34,6 +34,7 @@ import it.lavorodigruppo.flexipdf.interfaces.PdfLoadCallback
 import kotlinx.coroutines.launch
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
+import it.lavorodigruppo.flexipdf.provider.FlexiPDFWidgetProvider
 
 
 class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
@@ -163,6 +164,7 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
             updateLayout(false)
         } else {
             updateLayout(currentLayoutIsFoldable)
+            FlexiPDFWidgetProvider.notifyFileStatusChanged(applicationContext, "currentFileName.pdf")
         }
         updateNavigationButtonStates()
     }
@@ -438,6 +440,7 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
      */
     override fun onDestroy() {
         super.onDestroy()
-        binding = null
+        binding = null // Rilascia il riferimento al binding per prevenire memory leaks
+        FlexiPDFWidgetProvider.notifyFileStatusChanged(applicationContext, null)
     }
 }

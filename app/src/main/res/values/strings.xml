@@ -1,4 +1,5 @@
 <resources>
+    <!--Risorse universali-->
     <string name="app_name">FlexiPDF</string>
     <string name="floating_action_button_description">Add new folder or a new PDF file</string>
 
@@ -12,31 +13,37 @@
     <string name="recent_pdfs_title">Recently Imported</string>
     <string name="favorite_pdfs_title">Favourites</string>
 
-    <string name="searchbar_message">Search..</string>
-
-    <string name="import_pdf">Import PDF</string>
-    <string name="create_folder">Create Folder</string>
-
     <!-- Settings Options -->
-    <string-array name="settings_options">
-        <item>Language</item>
-        <item>Theme</item>
-        <item>About Us</item>
-        <item>Credits</item>
-        <item>Help</item>
-        <item>Share App</item>
-    </string-array>
+    <string name= "settings_language_title">Language</string>
+    <string name= "settings_theme_title">Theme</string>
+    <string name= "settings_about_title">About Us</string>
+    <string name= "settings_credits_title">Credits</string>
+    <string name= "settings_help_title">Help</string>
+    <string name= "settings_share_title">Share App</string>
+
+    <string name="theme_changed_to_light">Theme changed to light</string>
+    <string name="theme_changed_to_dark">Theme changed to dark</string>
+    <string name="about_us_message">About Us clicked</string>
+    <string name="credits_message">Credits clicked</string>
+    <string name="help_message">Help clicked</string>
+    <string name="changed_language">The chosen language is English.</string>
+    <string name="language_missing_message">Error applying language: Activity not found.</string>
+    <string name="share_message">Share was clicked</string>
+
     <string name="settings_icon_description">Settings Icon</string>
     <string name="settings_item_message">%1$s</string>
 
-    <string name="changed_language">Language is set to English</string>
 
-    <string name="pdf_icon_description">PDF Icon</string>
+    <!-- Fragment Folders -->
+    <string name="searchbar_message">Search..</string>
+    <string name="import_pdf">Import PDF</string>
+    <string name="create_folder">Create Folder</string>
 
     <string name="file_name">File</string>
     <string name="folder_name">Folder</string>
     <string name="file_icon_description">1%s</string>
     <string name="folders_icon_description">1%s</string>
+    <string name="pdf_icon_description">PDF Icon</string>
 
     <string name="delete_pdf_description">Confirm deletion</string>
     <string name="favorite_icon_description">Favourite Pdf</string>
@@ -57,8 +64,9 @@
     <string name="folders">Folders</string>
     <string name="shared">Shared</string>
     <string name="settings">Settings</string>
-    <string name="selected"> selected</string>
+    <string name="selected">Selected</string>
 
+    <!--Operazioni su file-->
     <string name="pdf_load">Error encountered during PDF loading: </string>
     <string name="empty_pdf">Error: There is no PDF to watch.</string>
 
@@ -77,7 +85,7 @@
     <string name="one_deletion_message">Are you sure you want to delete the one element selected?</string>
     <string name="multiple_deletion_message">Are you sure you want to delete the %d elements selected?</string>
 
-    <string name="favorite">favorite</string>
+    <!--Fragment Shared-->
     <string name="back">Back</string>
     <string name="next">Next</string>
     <string name="add_cloud">Add a new cloud\n</string>
@@ -87,9 +95,11 @@
 
 
     <!--ZFlip widget-->
+    <string name="widget_label_name">FlexiPDF Z-Flip Widget</string>
     <string name="widget_icon_description">1%s</string>
-    <string name="widget_title">FlexiPDF APP is currently running</string>
-    <string name="widget_message">This file 1%s is opened</string>
+    <string name="widget_title">FlexiPDF is still running</string>
+    <string name="widget_message">The file 1%s is opened</string>
     <string name="empty_widget">No file opened</string>
+
 
 </resources>

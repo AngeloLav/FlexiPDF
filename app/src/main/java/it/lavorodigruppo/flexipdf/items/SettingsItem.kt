@@ -19,8 +19,10 @@ package it.lavorodigruppo.flexipdf.items
  * @property iconResId L'ID della risorsa drawable (es. `R.drawable.my_icon`)
  * che rappresenta l'icona associata a questa opzione di impostazione.
  * Questa icona fornisce un'indicazione visiva rapida dello scopo dell'impostazione.
+ * @property id L'identificazione del tipo di impostazione (es. "ID_LANGUAGE")
  */
 data class SettingsItem(
     val title: String,
-    val iconResId: Int
+    val id: String,
+    val iconResId: Int,
 )
