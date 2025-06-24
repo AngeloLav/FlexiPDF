@@ -22,12 +22,12 @@
     <string name= "settings_help_title">Hilfe</string>
     <string name= "settings_share_title">App teilen</string>
 
-    <string name="theme_changed_to_light">Thema auf hell geändert</string>
-    <string name="theme_changed_to_dark">Thema auf dunkel geändert</string>
+    <string name="theme_changed_to_light">Thema ist hell</string>
+    <string name="theme_changed_to_dark">Thema ist dunkel</string>
     <string name="about_us_message">Über uns angeklickt</string>
     <string name="credits_message">Credits angeklickt</string>
     <string name="help_message">Hilfe angeklickt</string>
-    <string name="changed_language">Die Sprache auswählt ist Deutsch</string>
+    <string name="changed_language">Die Sprache ist Deutsch</string>
     <string name="language_missing_message">Fehler beim Anwenden der Sprache:
         Aktivität nicht gefunden.</string>
     <string name="share_message">Auf „Teilen“ wurde geklickt</string>
@@ -65,7 +65,7 @@
     <string name="folders">Ordner</string>
     <string name="shared">Geteilt</string>
     <string name="settings">Einstellungen</string>
-    <string name="selected">Ausgewählt</string>
+    <string name="selected"> ausgewählt</string>
 
 
     <!--Operazioni su file-->
@@ -103,6 +103,6 @@
     <string name="widget_label_name">FlexiPDF Z-Flip Widget</string>
     <string name="widget_icon_description">1%s</string>
     <string name="widget_title">FlexiPDF läuft derzeit</string>
-    <string name="widget_message">Diese Datei 1%s ist geöffnet</string>
+    <string name="widget_message">Eine Datei ist geöffnet</string>
     <string name="empty_widget">Keine Datei ist geöffnet</string>
 </resources>
