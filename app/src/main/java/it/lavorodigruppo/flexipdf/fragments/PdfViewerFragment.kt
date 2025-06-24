@@ -95,7 +95,7 @@ class PdfViewerFragment : Fragment(), OnErrorListener, OnLoadCompleteListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-            pdfUri = it.getParcelable(ARG_PDF_URI)
+            pdfUri = arguments?.getParcelable("pdf_uri", Uri::class.java)
             initialPage = it.getInt(ARG_INITIAL_PAGE, 0)
             enableInternalSwipe = it.getBoolean(ARG_ENABLE_INTERNAL_SWIPE, true)
             pagesToLoad = it.getIntArray(ARG_PAGES_TO_LOAD)

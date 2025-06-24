@@ -14,6 +14,7 @@
  */
 package it.lavorodigruppo.flexipdf.activities
 
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
@@ -35,6 +36,7 @@ import kotlinx.coroutines.launch
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
 import it.lavorodigruppo.flexipdf.provider.FlexiPDFWidgetProvider
+import kotlinx.coroutines.Dispatchers
 
 
 class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
@@ -94,7 +96,14 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
                 finish()
                 return
             }
-        }
+            /**
+             * Si effettua un specifico controllo per il widget
+             */
+            currentDisplayFileNameForWidget = getFileNameFromUri(pdfUri!!)
+            } ?: run {
+            finish(); return
+            }
+
 
         fun getAbsolutePdfPageCount(uri: Uri): Int {
             var pageCount = 0
@@ -146,27 +155,87 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
             WindowInfoTracker.getOrCreate(this@PDFViewerActivity)
                 .windowLayoutInfo(this@PDFViewerActivity)
                 .collect { newLayoutInfo ->
-                    val foldingFeature = newLayoutInfo.displayFeatures.filterIsInstance<FoldingFeature>().firstOrNull()
+                    val foldingFeature =
+                        newLayoutInfo.displayFeatures.filterIsInstance<FoldingFeature>()
+                            .firstOrNull()
 
                     val isInFoldableSemiOpenPortraitMode = foldingFeature != null &&
                             foldingFeature.state == FoldingFeature.State.HALF_OPENED &&
                             foldingFeature.orientation == FoldingFeature.Orientation.VERTICAL
 
-                    Log.d("PDFViewerActivity", "WindowLayoutInfo aggiornato. IsFoldableSemiOpenPortraitMode = $isInFoldableSemiOpenPortraitMode, Current Orientation = ${resources.configuration.orientation}")
+                    Log.d(
+                        "PDFViewerActivity",
+                        "WindowLayoutInfo aggiornato. IsFoldableSemiOpenPortraitMode = $isInFoldableSemiOpenPortraitMode, Current Orientation = ${resources.configuration.orientation}"
+                    )
 
-                    val shouldBeFoldable = isInFoldableSemiOpenPortraitMode && resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+                    var isDeviceCurrentlyFoldedClosed = false
+                    if (foldingFeature != null) {
+                        isDeviceCurrentlyFoldedClosed = foldingFeature.isSeparating &&
+                                (foldingFeature.state == FoldingFeature.State.HALF_OPENED)
+                        Log.d(
+                            "WidgetFoldListener",
+                            "FoldingFeature: state=${foldingFeature.state}, " +
+                                    "isSeparating=${foldingFeature.isSeparating}, " +
+                                    "isDeviceClosed=$isDeviceCurrentlyFoldedClosed"
+                        )
+                    } else {
+                        Log.d("WidgetFoldListener", "No FoldingFeature detected.")
+                        isDeviceCurrentlyFoldedClosed = false
+                    }
 
-                    updateLayout(shouldBeFoldable)
+                    if (pdfUri != null) {
+                        if (isDeviceCurrentlyFoldedClosed) {
+                            if (!widgetNotifiedOfClosedState) {
+                                Log.i(
+                                    "WidgetFoldListener",
+                                    "ZFLIP CLOSED with PDF. Notifying widget."
+                                )
+                                FlexiPDFWidgetProvider.notifyFileStatusChanged(
+                                    applicationContext,
+                                    true,
+                                    currentDisplayFileNameForWidget
+                                )
+                                widgetNotifiedOfClosedState = true
+                            } else {
+                                Log.i(
+                                    "PDFViewerActivity_Widget",
+                                    "ZFLIP OPENED (was closed with PDF). Notifying widget to clear 'closed' state."
+                                )
+                                FlexiPDFWidgetProvider.notifyFileStatusChanged(
+                                    applicationContext,
+                                    false,
+                                    currentDisplayFileNameForWidget
+                                )
+                                widgetNotifiedOfClosedState = false
+                            }
+                        }
+                        } else {
+                            if (widgetNotifiedOfClosedState) {
+                                Log.i(
+                                    "PDFViewerActivity_Widget",
+                                    "No PDF URI, but widget thought it was closed with PDF. Clearing."
+                                )
+                                FlexiPDFWidgetProvider.notifyFileStatusChanged(
+                                    applicationContext,
+                                    false,
+                                    null
+                                )
+                                widgetNotifiedOfClosedState = false
+                            }
+                        }
+                    }
                 }
-        }
 
         if (savedInstanceState == null) {
             updateLayout(false)
         } else {
+            currentLayoutIsFoldable =
+                savedInstanceState.getBoolean("currentLayoutIsFoldable", false)
             updateLayout(currentLayoutIsFoldable)
-            FlexiPDFWidgetProvider.notifyFileStatusChanged(applicationContext, "currentFileName.pdf")
+            Log.d("WidgetFoldListener", "Activity recreated." +
+                    " Relying on fold listener to set widget state. " +
+                    "currentDisplayFileNameForWidget: ${currentDisplayFileNameForWidget}")
         }
-        updateNavigationButtonStates()
     }
 
     /**
@@ -441,6 +510,28 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
     override fun onDestroy() {
         super.onDestroy()
         binding = null // Rilascia il riferimento al binding per prevenire memory leaks
-        FlexiPDFWidgetProvider.notifyFileStatusChanged(applicationContext, null)
+        FlexiPDFWidgetProvider.notifyFileStatusChanged(applicationContext, false, null)
     }
+
+    /**
+     * In questa sezione si definiscono gli oggetti necessari per la creazione del widget nel
+     * momento in cui si chiude lo smartphone Z-Flip. Si è creata una nuova variabile di tipo WindowInfoTracker
+     * in modo da evitare conflitti nella tratazione.
+     * La variabile widgetNotifiedOfClosedState controlla lo stato open o closed della notifica.
+     */
+    private lateinit var windowInfoTrackerForWidget: WindowInfoTracker
+    private var currentDisplayFileNameForWidget: String? = null
+    private var widgetNotifiedOfClosedState: Boolean = false
+
+    fun getFileNameFromUri(uri: Uri) : String? {
+
+        var fileName: String? = null
+
+        if (fileName == null) {
+            fileName = uri.lastPathSegment
+        }
+
+        return fileName?.substringAfterLast('/')
+    }
+
 }

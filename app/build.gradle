@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "it.lavorodigruppo.flexipdf"
-        minSdk 31
+        minSdk 33
         targetSdk 35
         versionCode 1
         versionName "1.0"
@@ -47,7 +47,7 @@ dependencies {
     implementation libs.material
     implementation libs.androidx.activity
     //In case, this one is the first i used and it worked
-    //implementation 'com.github.mhiew:android-pdf-viewer:3.2.0-beta.1'
+    implementation 'com.github.mhiew:android-pdf-viewer:3.2.0-beta.1'
     implementation libs.android.pdf.viewer
     implementation libs.androidx.constraintlayout
     implementation libs.androidx.preference.ktx
@@ -63,4 +63,6 @@ dependencies {
     implementation libs.kotlinx.coroutines.core
     implementation libs.kotlinx.coroutines.android
     implementation libs.androidx.window
+    implementation "androidx.window:window:1.2.0"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.9.0"
 }
