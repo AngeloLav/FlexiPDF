@@ -7,7 +7,8 @@
  * responsabile di collegare i dati delle opzioni di impostazione all'interfaccia utente.
  * Gestisce la creazione e il binding delle view per ogni elemento della lista,
  * e implementa la logica di gestione dei click per ciascuna opzione di impostazione.
- * Ad ogni impostazione corrisponde un messaggio particolare definito tramite @fun Toast.make
+ *
+ * Ad ogni impostazione corrisponde un messaggio particolare definito tramite @fun Toast.makeText
  * in cui si sono usate le risorse di tipo stringa in modo da poter essere adattabili ad ogni
  * linguaggio sopportato dalla applicazione. (La risorsa di tipo title è quella che definisce
  * l'impostazione ad esempio "Lingua/Language/Sprache", mentre la risorsa message fa visualizzare
@@ -16,7 +17,7 @@
  */
 package it.lavorodigruppo.flexipdf.adapters
 
-import android.content.Intent
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,8 +25,8 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.recyclerview.widget.RecyclerView
 import it.lavorodigruppo.flexipdf.R
 import it.lavorodigruppo.flexipdf.items.SettingsItem
-import androidx.core.net.toUri
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import it.lavorodigruppo.flexipdf.databinding.SettingsItemBinding
 
 
@@ -141,8 +142,7 @@ class SettingsAdapter(private val settingsList: List<SettingsItem>, private val 
                 }
 
                 v.context.getString(R.string.settings_help_title) -> {
-                    Toast.makeText(v.context, v.context.getString(R.string.help_message),
-                        Toast.LENGTH_SHORT).show()
+                        showHelpDialog(v.context)
                 }
 
                 v.context.getString(R.string.settings_share_title) -> {
@@ -155,5 +155,22 @@ class SettingsAdapter(private val settingsList: List<SettingsItem>, private val 
                 }
             }
         }
+    }
+
+    /**
+     * La funzione sottostante permette la visualizzazione del messagio "Help" dove viene spiegato
+     * il comportamento complessivo della app in un layout specifico definito come Scrollabile ("ScrollView").
+     * Si apre una finestra di tipo dialog simile a quella usata per la scelta del linguaggio.
+     */
+    private fun showHelpDialog(context: Context) {
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.settings_help_dialog, null)
+
+        AlertDialog.Builder(context)
+            .setTitle(R.string.settings_help_title)
+            .setView(dialogView)
+            .setPositiveButton(android.R.string.ok) { dialog, _ ->
+                dialog.dismiss()
+            }
+        .show()
     }
 }

@@ -105,4 +105,43 @@
     <string name="widget_title">FlexiPDF läuft derzeit</string>
     <string name="widget_message">Eine Datei ist geöffnet</string>
     <string name="empty_widget">Keine Datei ist geöffnet</string>
+
+    <!--Help dialog information -->
+    <string name="dialog_app_info">
+    \t\tDa Sie auf \„Hilfe\“ geklickt haben, gehen wir davon aus, dass Sie bei der Verwendung
+    der FlexiPDF-App Fragen haben.\n
+    Die folgenden Abschnitte erklären Ihnen daher kurz und bündig, wie Sie die App verwenden.\n\n
+
+    <b>1.\t \„Startseite\“</b>\n
+    Sobald Sie die App öffnen, finden Sie diese Oberfläche. Sie sehen zwei Wortzeilen: \„Letzte\“ und \„Favoriten\“.
+    Außerdem wird eine Meldung zur eingestellten Sprache angezeigt.
+    Über die Leiste darunter können Sie durch die verschiedenen Funktionen der App navigieren.\n\n
+
+    <b>2.\t \„Ordner\“</b>
+    Wenn Sie die App zum ersten Mal verwenden, finden Sie eine leere Ansicht mit einer Suchleiste und einem schwebenden Aktionsbutton.
+    Die Suchleiste ist derzeit nutzlos, da Sie noch keine Datei hochgeladen oder einen Ordner erstellt haben.
+    Klicken Sie dazu auf den roten Button rechts auf dem Bildschirm. Es erscheint eine kleine Oberfläche,
+    in der Sie zwischen \„Neuen Ordner erstellen\“ und \„PDF-Datei importieren\“ wählen können.\n
+    Abhängig von Ihrer Auswahl werden Ihnen zwei verschiedene Bildschirme angezeigt:\n
+    \t\t\t->\t Wenn Sie auf \„Neuen Ordner erstellen\“ geklickt haben, werden Sie aufgefordert,
+        einen Namen einzugeben. Durch Klicken auf die Schaltfläche \„Erstellen\“ wird Ihr Ordner auf Ihrem Bildschirm
+        angezeigt. Andernfalls wird bei leerem Namen eine Fehlermeldung angezeigt, und der Ordner wird nicht erstellt.
+    \t\t\t->\t Wenn Sie auf \„PDF-Datei importieren\“ geklickt haben, werden Sie aufgefordert,
+        eine zu importierende Datei auszuwählen. Durch Klicken auf die Schaltfläche \„Importieren\“ wird
+        diese automatisch auf dem Bildschirm angezeigt.\n
+    Mit der Suchleiste oben können Sie die importierten Dateien und erstellten Ordner durchsuchen.
+    Zum Löschen, Verschieben und Markieren einer importierten Datei klicken Sie fest darauf. Die Datei vibriert daraufhin.
+    Im oberen Bildschirmbereich finden Sie die oben genannten Funktionen.\n\n
+
+    <b>3.\t \„Freigegeben\“</b>\n
+    Dieser Bereich der App ist aufgrund der fehlenden Cloud-Anbindung nicht funktionsfähig.\n\n
+
+    <b>4.\t \„Einstellungen\“</b>\n
+    So, Sie haben es bis zum Ende geschafft. Hier können Sie die App-Sprache ändern, indem Sie auf
+    die Funktion klicken und zwischen den verschiedenen verfügbaren Sprachen wählen (es werden nur drei unterstützt: Englisch, Italienisch und Deutsch).
+    \nMit der Option \„Thema\“ können Sie die App-Farben von hell auf dunkel ändern.
+    \nMit der Funktion \„Hilfe\“ erhalten Sie Informationen zur App.
+    \nMit der Funktion \„Teilen\“ können Sie die App mit Ihren Freunden teilen.
+
+    </string>
 </resources>
