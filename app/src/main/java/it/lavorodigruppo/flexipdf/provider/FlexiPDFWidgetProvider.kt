@@ -196,7 +196,8 @@ class FlexiPDFWidgetProvider : AppWidgetProvider() {
 
     /**
      * Qua sotto è definito un companion object che contiene alcune chiavi e dei valori necessari per
-     * la gestione delle preferenze della applicazione e dei broadcast.
+     * la gestione delle preferenze della applicazione e dei broadcast. Si specificano anche
+     * le azioni che si possono verificare con i broadcast.
      * Le prime sono necessarie per il broadcast, mentre le altre per le sharedPreferences.
      * Si definisce anche la funzione @fun notifyFileStatusChanged() che viene utilizzata per mettere
      * nel contesto giusto e con le corrette nomenclature tutte le funzionalità del widget.

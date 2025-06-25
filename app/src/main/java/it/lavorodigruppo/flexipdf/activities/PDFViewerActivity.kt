@@ -168,6 +168,14 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
                         "WindowLayoutInfo aggiornato. IsFoldableSemiOpenPortraitMode = $isInFoldableSemiOpenPortraitMode, Current Orientation = ${resources.configuration.orientation}"
                     )
 
+
+                    /**
+                     * Adesso si fa un controllo dello stato in cui si trova il dispositivo ZFlip in
+                     * modo da mettere a disposizione o meno il widget e di aggiornare adeguatamente il suo stato.
+                     * Inizialmente si gestisce il caso in cui l'app sta eseguendo ma nessun file viene
+                     * lasciato aperto, e dopo si gestisce il caso in cui l'app viene chiusa con
+                     * un file PDF aperto e sul widget viene mostrato un messaggio che indica questo.
+                     */
                     var isDeviceCurrentlyFoldedClosed = false
                     if (foldingFeature != null) {
                         isDeviceCurrentlyFoldedClosed = foldingFeature.isSeparating &&
