@@ -74,11 +74,11 @@
 
   <h3>4. Settings Fragment ⚙️</h3>
   <ul>
-    <li>Lingua (placeholder)</li>
+    <li>Lingua: Inglese / Italiano / Tedesco</li>
     <li>Tema: Chiaro / Scuro</li>
     <li>Info su di noi (placeholder)</li>
     <li>Crediti (placeholder) </li>
-    <li>Aiuto / FAQ (placeholder)</li>
+    <li>Aiuto / FAQ / Spiagazione sull'uso di ogni interfaccia.</li>
     <li>Condividi App (placeholder)</li>
   </ul>
 
