@@ -14,9 +14,7 @@
  */
 package it.lavorodigruppo.flexipdf.activities
 
-import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -36,7 +34,7 @@ import kotlinx.coroutines.launch
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
 import it.lavorodigruppo.flexipdf.provider.FlexiPDFWidgetProvider
-import kotlinx.coroutines.Dispatchers
+
 
 
 class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
@@ -523,22 +521,16 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
 
     /**
      * In questa sezione si definiscono gli oggetti necessari per la creazione del widget nel
-     * momento in cui si chiude lo smartphone Z-Flip. Si è creata una nuova variabile di tipo WindowInfoTracker
-     * in modo da evitare conflitti nella tratazione.
+     * momento in cui si chiude lo smartphone Z-Flip.
      * La variabile widgetNotifiedOfClosedState controlla lo stato open o closed della notifica.
+     * Usando la funzione ausiliaria getFileNameUri si riesce a ricavare il nome dell'ultimo file
+     * lasciato aperto.
      */
-    private lateinit var windowInfoTrackerForWidget: WindowInfoTracker
     private var currentDisplayFileNameForWidget: String? = null
     private var widgetNotifiedOfClosedState: Boolean = false
 
-    fun getFileNameFromUri(uri: Uri) : String? {
-
-        var fileName: String? = null
-
-        if (fileName == null) {
-            fileName = uri.lastPathSegment
-        }
-
+    private fun getFileNameFromUri(uri: Uri) : String? {
+        val fileName: String? = uri.lastPathSegment
         return fileName?.substringAfterLast('/')
     }
 
