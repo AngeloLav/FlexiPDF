@@ -22,12 +22,12 @@
     <string name= "settings_help_title">Aiuto</string>
     <string name= "settings_share_title">Condividere l\'App</string>
 
-    <string name="theme_changed_to_light">Tema cambiato a chiaro</string>
-    <string name="theme_changed_to_dark">Tema cambiato a scuro</string>
+    <string name="theme_changed_to_light">Tema impostato chiaro</string>
+    <string name="theme_changed_to_dark">Tema impostato scuro</string>
     <string name="about_us_message">Si è cliccato Su di noi</string>
     <string name="credits_message">Si è cliccato Credits</string>
     <string name="help_message">Si è cliccato Aiuto</string>
-    <string name="changed_language">La lingua impostata è quella italiana</string>
+    <string name="changed_language">La lingua impostata è Italiano</string>
     <string name="language_missing_message">Errore durante l\'applicazione della lingua:
         attività non trovata.</string>
     <string name="share_message">La condivisione è stata cliccata</string>
@@ -66,7 +66,7 @@
     <string name="folders">Cartelle</string>
     <string name="shared">Condivisi</string>
     <string name="settings">Impostazioni</string>
-    <string name="selected">Selezionati</string>
+    <string name="selected"> selezionati</string>
 
     <string name="pdf_load">Errore durante il caricamento del PDF: </string>
     <string name="empty_pdf">Errore: nessun PDF da visualizzare.</string>
@@ -102,6 +102,44 @@
     <string name="widget_label_name">FlexiPDF Z-Flip Widget</string>
     <string name="widget_icon_description">1%s</string>
     <string name="widget_title">FlexiPDF sta ancora eseguendo</string>
-    <string name="widget_message">Il file 1%s è ancora aperto.</string>
+    <string name="widget_message">Un file è ancora aperto.</string>
     <string name="empty_widget">Nessun file aperto</string>
+
+    <!--Help dialog information -->
+    <string name="dialog_app_info">
+        \t\tPoiché hai cliccato sull\'impostazione \"Aiuto\", presumiamo che tu abbia avuto dei dubbi
+        durante l\'utilizzo dell\'app FlexiPDF.\n
+        Pertanto, i paragrafi seguenti ti spiegheremo brevemente come usare questa app.\n\n
+
+        <b>1.\t \"Home\"</b>\n
+        Non appena apri l\'app, troverai questa interfaccia. Ti troverai di fronte a due righe di testo:
+        \"Importati di recente\" e \"Preferiti\" e un messaggio che indica la lingua impostata apparirà sullo schermo.\n
+        Utilizzando la barra sottostante potrai navigare tra le diverse funzionalità dell\'app.\n\n
+
+        <b>2.\t \"Cartelle\"</b>\n
+        Se è la prima volta che utilizzi questa app, troverai una schermata vuota, con una barra di ricerca
+        e un pulsante di azione mobile. Al momento, la barra di ricerca sarebbe inutile usarla, considerando che
+        non hai ancora caricato alcun file o creato una cartella. Per farlo, puoi cliccare sul pulsante rosso nella parte
+        destra dello schermo. Apparirà una piccola interfaccia in cui potrai decidere tra due opzioni \"Crea nuova cartella\"
+        o  \"Importa un file PDF\" .\n A seconda della scelta, ti troverai di fronte a due schermate diverse:\n
+        \t\t\t->\t Se hai cliccato su \"Crea nuova cartella\", ti verrà chiesto di fornire un nome e, cliccando sul pulsante \"Crea\",
+        la tua cartella apparirà sullo schermo; altrimenti, se il nome inserito è vuoto, verrà visualizzato
+        un messaggio di errore e la cartella non verrà creata.\n
+        \t\t\t->\t Se hai cliccato su \"Importa un file PDF\", ti verrà chiesto di scegliere un file da importare e,
+        cliccando sul pulsante \"Importa\", il file verrà visualizzato automaticamente sullo schermo.\n
+        Utilizzando la barra di ricerca in alto, puoi cercare tra i file importati e le cartelle create.
+        Per eliminare, spostare e impostare come preferito un determinato file importato, puoi cliccare
+        per alcuni secondi sull\'oggetto e il file inizierà a vibrare.
+        Nella parte superiore dello schermo vedrai le funzionalità sopra menzionate.\n\n
+
+        <b>3.\t \"Condivisi\"</b>\n
+        Questa parte dell\'app non è funzionale, poiché manca la sezione relativa alla connessione al cloud.\n\n
+
+        <b>4.\t "Impostazioni"</b>\n
+        Bene, sei arrivato alla fine. Qui puoi cambiare la lingua dell\'app cliccando sulla funzionalità \"Lingua\" e scegliendo
+        tra le diverse lingue disponibili (sono supportate solo tre: Inglese, Italiano e Tedesco).\n
+        Il \"Tema\" ti dà la possibilità di cambiare i colori dell\'app da chiari a scuri.\n
+        La funzione \"Aiuto\" è quella che hai scelto ora e fornisce informazioni sull\'app. \n
+        La funzione \"Condividi\" ti dà la possibilità di condividere l\'app con i tuoi amici.\n
+    </string>
 </resources>

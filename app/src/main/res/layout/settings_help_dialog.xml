@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="350dp"
+    android:padding="16dp" >
+
+    <TextView
+        android:id="@+id/help_dialog_text"
+        android:layout_width="match_parent"
+        android:layout_height="350dp"
+        android:lineSpacingExtra="4dp"
+        android:textSize="17sp"
+        android:layout_gravity="center_horizontal"
+        android:text="@string/dialog_app_info"
+        />
+
+</ScrollView>

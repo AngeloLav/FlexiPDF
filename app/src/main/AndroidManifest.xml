@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Serve per il WindowManager -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -25,9 +28,9 @@
         </activity>
 
         <!--Dichiarazioni importanti per il widget dello schermo esterno dello ZFlip -->
-        <receiver android:name="it.lavorodigruppo.flexipdf.provider.FlexiPDFWidgetProvider"
-            android:exported="false"
-            android:label="@string/widget_label_name">
+        <receiver android:name=".provider.FlexiPDFWidgetProvider"
+            android:label="@string/widget_label_name"
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />

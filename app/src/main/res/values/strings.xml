@@ -21,12 +21,12 @@
     <string name= "settings_help_title">Help</string>
     <string name= "settings_share_title">Share App</string>
 
-    <string name="theme_changed_to_light">Theme changed to light</string>
-    <string name="theme_changed_to_dark">Theme changed to dark</string>
+    <string name="theme_changed_to_light">Theme set to light</string>
+    <string name="theme_changed_to_dark">Theme set to dark</string>
     <string name="about_us_message">About Us clicked</string>
     <string name="credits_message">Credits clicked</string>
     <string name="help_message">Help clicked</string>
-    <string name="changed_language">The chosen language is English.</string>
+    <string name="changed_language">Language set to English.</string>
     <string name="language_missing_message">Error applying language: Activity not found.</string>
     <string name="share_message">Share was clicked</string>
 
@@ -64,7 +64,7 @@
     <string name="folders">Folders</string>
     <string name="shared">Shared</string>
     <string name="settings">Settings</string>
-    <string name="selected">Selected</string>
+    <string name="selected"> selected</string>
 
     <!--Operazioni su file-->
     <string name="pdf_load">Error encountered during PDF loading: </string>
@@ -89,7 +89,8 @@
     <string name="back">Back</string>
     <string name="next">Next</string>
     <string name="add_cloud">Add a new cloud\n</string>
-    <string name="warning">WARNING: modifications in this fragment wont be saved. This is just an example for a possible future cloud link implementation</string>
+    <string name="warning">WARNING: modifications in this fragment wont be saved.
+        This is just an example for a possible future cloud link implementation</string>
     <string name="nome_cartella_cloud">Cloud  folder\'s name</string>
     <string name="parametro_cloud_es_id_token">Cloud parameter\'s (ID, Token..)</string>
 
@@ -98,8 +99,44 @@
     <string name="widget_label_name">FlexiPDF Z-Flip Widget</string>
     <string name="widget_icon_description">1%s</string>
     <string name="widget_title">FlexiPDF is still running</string>
-    <string name="widget_message">The file 1%s is opened</string>
+    <string name="widget_message">One file is left open</string>
     <string name="empty_widget">No file opened</string>
+
+    <!--Help dialog information -->
+    <string name="dialog_app_info">
+        \tSince you clicked the \"Help\" setting we are assuming you are having doubts while using FlexiPDF app.\n
+        Therefore, the following paragraphs will concisely explain to you how to use this app.\n
+        \n
+        <b>\t1.\t \"Home\"</b> \n
+        As soon as you open the app you will find this interface. You will be faced with two word lines
+        \"Recents\" and \"Favourites\" and a message signaling the set language will appear on your screen.
+        \nUsing the bar below you will be able to navigate the different functionalities of this app.\n
+        \n
+        <b>\t2.\t \"Folders\"</b>\n
+        If this is the first time you are using this app, then you will find an empty view, with a search bar
+        and a floating action button. Currently the searchbar would be useless considering that you
+        haven\'t yet uploaded any file or created a folder. To do that you can click on the red button on
+        the right part of your screen. A small interface will appear in which you will be able to decide whether
+        to \"Create new folder\" or to \"Import a PDF file\". \n Depending on your choice you will be faced with two different screens: \n
+        \t\t\t->\t If you clicked \"Create new folder\" you will be asked to provide a name and by clicking on the \'Create\' button
+        your folder will appear on your screen, otherwise if the name you provided is empty an error message will be shown
+        and the folder won\'t be created at all.\n
+        \t\t\t->\t If you clicked \"Import a PDF file\" then you will be asked to choose a file to import and by clicking on the \'Import\'
+        button it will be automatically shown on the screen.\n
+        Using the searchbar above you can search your way onto the imported files and created folders.
+        For deleting, moving and setting as favourite a certain imported file you can firmly click and the file will start vibrating.
+        On the upper part of your screen you will see the above mentioned functionalities.\n
+        \n
+        <b>\t3.\t \"Shared\"</b>\n
+        This part of the app isn\'t functional, since it misses the cloud connection part. \n
+        \n
+        <b>\t4.\t \"Settings\"</b>\n
+        Well, you made it to the end. Here you can change in app language clicking on the so called functionality and choosing
+        between the different languages available in the app (only three are supported: English, Italian and German).\n
+        \"Theme\" gives you the possibility to change the app colors from light to dark.\n
+        \"Help\" is the functionality you have chosen now that provides information about the app.\n
+        \"Share\" gives the possibility to share the app with your friends.\n
+    </string>
 
 
 </resources>

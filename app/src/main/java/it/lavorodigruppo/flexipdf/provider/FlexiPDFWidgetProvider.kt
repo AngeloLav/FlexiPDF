@@ -22,6 +22,8 @@ package it.lavorodigruppo.flexipdf.provider
  * usate due altre funzioni ausiliarie: getCurrentlyOpenFileFromApp() che ripesca il nome del file aperto
  * e getShortenedFileName() che permette di visualizzare nel widget un nome più ridotto di caratteri.
  *
+ * Per le funzioni ausiliarie specifiche necessarie per il funzionamento del widget leggere i commenti
+ * anticipanti le funzioni stesse.
  */
 
 
@@ -49,6 +51,9 @@ class FlexiPDFWidgetProvider : AppWidgetProvider() {
         super.onDisabled(context)
         context ?: return
         Log.d(TAG, "Widget Provider is disabled")
+        val prefs = context.getSharedPreferences(WIDGET_PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().clear().apply()
+        Log.d(TAG, "Cleared SharedPreferences")
     }
 
     override fun onAppWidgetOptionsChanged(
@@ -57,6 +62,14 @@ class FlexiPDFWidgetProvider : AppWidgetProvider() {
         appWidgetId: Int,
         newOptions: Bundle?
     ) {
+        if (context != null && appWidgetManager != null) {
+
+            val prefs = context.getSharedPreferences(WIDGET_PREFS_NAME, Context.MODE_PRIVATE)
+            val isFileOpen = prefs.getBoolean(WIDGET_IS_FILE_OPEN, false)
+            val openFileName = prefs.getString(WIDGET_OPEN_FILE_NAME, null)
+            updateAppWidget(context, appWidgetManager, appWidgetId, isFileOpen, openFileName)
+        }
+        Log.d(TAG, "Widget ID $appWidgetId updated due to options change.")
         super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
     }
 
@@ -72,8 +85,10 @@ class FlexiPDFWidgetProvider : AppWidgetProvider() {
 
         Log.d(TAG, "onUpdate called for IDs: ${appWidgetIds.joinToString()}")
         for (appWidgetId in appWidgetIds) {
-            val openFileName = getCurrentlyOpenFileFromApp(context)
-            updateAppWidget(context, appWidgetId, openFileName)
+            val prefs = context.getSharedPreferences(WIDGET_PREFS_NAME, Context.MODE_PRIVATE)
+            val isFileOpen = prefs.getBoolean(WIDGET_IS_FILE_OPEN, false)
+            val openFileName = prefs.getString(WIDGET_OPEN_FILE_NAME, null)
+            updateAppWidget(context, appWidgetManager, appWidgetId, isFileOpen, openFileName)
         }
     }
 
@@ -82,71 +97,95 @@ class FlexiPDFWidgetProvider : AppWidgetProvider() {
         Log.d(TAG, "onReceive action: $action")
 
         if (ACTION_FILE_STATUS_CHANGED == action) {
-            val openFileName = intent.getStringExtra(EXTRA_OPEN_FILE_NAME)
-            val appWidgetManager = AppWidgetManager.getInstance(context)
+                val isFileOpen = intent.getBooleanExtra(EXTRA_IS_FILE_OPEN_ON_CLOSED_ZFLIP, false)
+                val openFileName = intent.getStringExtra(EXTRA_OPEN_FILE_NAME)
+                val appWidgetManager = AppWidgetManager.getInstance(context)
 
-            val appWidgetIds = intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS)
-                ?: appWidgetManager.getAppWidgetIds(
-                    ComponentName(
-                        context,
-                        FlexiPDFWidgetProvider::class.java
+                val appWidgetIds = intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS)
+                    ?: appWidgetManager.getAppWidgetIds(
+                        ComponentName(context, FlexiPDFWidgetProvider::class.java)
                     )
-                )
 
-            if (appWidgetIds != null && appWidgetIds.isNotEmpty()) {
-                Log.d(TAG,"ACTION_FILE_STATUS_CHANGED for IDs: ${appWidgetIds.joinToString()}, " +
-                        "File: $openFileName")
-                for (appWidgetId in appWidgetIds) {
-                    updateAppWidget(context, appWidgetId, openFileName)
+                if (appWidgetIds != null && appWidgetIds.isNotEmpty()) {
+                    Log.d(
+                        TAG,
+                        "ACTION_FILE_STATUS_CHANGED for IDs: ${appWidgetIds.joinToString()}, " +
+                                "IsOpen: $isFileOpen, File: $openFileName"
+                    )
+                    for (appWidgetId in appWidgetIds) {
+                        updateAppWidget(
+                            context,
+                            appWidgetManager,
+                            appWidgetId,
+                            isFileOpen,
+                            openFileName
+                        )
+                    }
                 }
-            } else {
-                Log.d(TAG, "ACTION_FILE_STATUS_CHANGE received but no widget IDs found.")
-            }
-        } else {
-            super.onReceive(context, intent)
         }
     }
 
 
-    //Funzione che fa in modo che il layout del widget venga utilizzato
-    private fun updateAppWidget(context: Context, appWidgetId: Int, openFileName: String?) {
+    /**
+     * Qui si trova la dichiarazione esplicita di una funzione ausiliaria che fa l'aggiornamento
+     * specifico del widget istanziato precedentemente.
+     */
+    private fun updateAppWidget(
+        context: Context,
+        appWidgetManager: AppWidgetManager?,
+        appWidgetId: Int,
+        isFileOpen: Boolean,
+        openFileName: String?
+    ) {
         Log.d(TAG, "Updating widget ID $appWidgetId. Open file: $openFileName")
-
-        val launchIntent = Intent(context, MainActivity::class.java)
 
         val views = RemoteViews(context.packageName, R.layout.widget_zflip)
 
-        views.setTextViewText(
-            R.id.widget_standard_message,
-            context.getString(R.string.widget_title)
-        )
+        if (isFileOpen) {
+            views.setViewVisibility(R.id.widget_icon, View.VISIBLE)
+            views.setViewVisibility(R.id.widget_standard_message, View.VISIBLE)
+            val displayText = if (!openFileName.isNullOrEmpty()) {
+                getShortenedFileName(openFileName, 20) // Shorten if necessary
+            } else {
+                context.getString(R.string.widget_title)
+            }
+            views.setTextViewText(R.id.widget_standard_message, displayText)
 
-        //Controlla se un file è aperto per cambiare il contenuto del messaggio mostrato
-        if (!openFileName.isNullOrEmpty()) {
-            views.setTextViewText(R.id.different_message, getShortenedFileName(openFileName, 20))
-            views.setViewVisibility(R.id.different_message, View.VISIBLE)
+            views.setViewVisibility(R.id.widget_standard_message, View.GONE)
+            views.setViewVisibility(R.id.different_message, View.GONE)
         } else {
+
+            views.setViewVisibility(R.id.widget_icon, View.GONE)
+            views.setViewVisibility(R.id.widget_standard_message, View.GONE)
+
+
+            views.setViewVisibility(R.id.widget_standard_message, View.VISIBLE)
+            views.setTextViewText(
+                R.id.widget_standard_message,
+                context.getString(R.string.widget_title) // Your default title
+            )
+
+            views.setViewVisibility(R.id.different_message, View.VISIBLE)
             views.setTextViewText(
                 R.id.different_message,
                 context.getString(R.string.empty_widget)
             )
         }
 
-        //Fa in modo che si apra l'applicazione quando viene cliccato il widget
+        val launchIntent = Intent(context, MainActivity::class.java)
         val pendingIntentFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         val pendingIntent =
             PendingIntent.getActivity(context, appWidgetId, launchIntent, pendingIntentFlags)
         views.setOnClickPendingIntent(R.id.widget_container, pendingIntent)
+
+        appWidgetManager?.updateAppWidget(appWidgetId, views)
     }
 
 
-    //Due funzioni ausiliarie che permettono di ottimizzare la visualizzazione del widget
-    private fun getCurrentlyOpenFileFromApp(context: Context): String? {
-        val nameFile = context.getSharedPreferences("FlexiPrefs", Context.MODE_PRIVATE)
-        return nameFile.getString("currentOpenFileName", null)
-    }
-
-    //Fa in modo che nel widget non compaiano nomi troppo lunghi di file
+    /**
+     * Funzione ausiliaria che permette di mostrare un widget con non più di @param maxLength caratteri,
+     * in modo da avere una visualizzazione al più concisa e leggibile.
+     */
     private fun getShortenedFileName(fileName: String, maxLength: Int): String {
         if (fileName.length <= maxLength) {
             return fileName
@@ -154,15 +193,31 @@ class FlexiPDFWidgetProvider : AppWidgetProvider() {
         return "${fileName.substring(0, maxLength)}..."
     }
 
+
+    /**
+     * Qua sotto è definito un companion object che contiene alcune chiavi e dei valori necessari per
+     * la gestione delle preferenze della applicazione e dei broadcast. Si specificano anche
+     * le azioni che si possono verificare con i broadcast.
+     * Le prime sono necessarie per il broadcast, mentre le altre per le sharedPreferences.
+     * Si definisce anche la funzione @fun notifyFileStatusChanged() che viene utilizzata per mettere
+     * nel contesto giusto e con le corrette nomenclature tutte le funzionalità del widget.
+     */
     companion object {
-        const val ACTION_FILE_STATUS_CHANGED =
-            "it.lavorodigruppo.flexipdf.ACTION_FILE_STATUS_CHANGED"
-        const val EXTRA_OPEN_FILE_NAME = "it.lavorodigruppo.flexipdf.EXTRA_OPEN_FILE_NAME"
+
+        const val ACTION_FILE_STATUS_CHANGED = "it.lavorodigruppo.flexipdf.ACTION_FILE_STATUS_CHANGED"
+        const val EXTRA_IS_FILE_OPEN_ON_CLOSED_ZFLIP = "isFileOpenOnClosedZFlip"
+        const val EXTRA_OPEN_FILE_NAME = "openFileName"
+
+        const val WIDGET_PREFS_NAME = "FlexiPDFWidgetPrefs"
+        const val WIDGET_IS_FILE_OPEN = "isThereAnOpenFile"
+        const val WIDGET_OPEN_FILE_NAME = "openFileName"
+
         private const val TAG = "FlexiPDFWidget"
 
-        fun notifyFileStatusChanged(context: Context, openFileName: String?) {
+        fun notifyFileStatusChanged(context: Context, isFileOpen:Boolean, openFileName: String?) {
             val intent = Intent(context, FlexiPDFWidgetProvider::class.java).apply {
                 action = ACTION_FILE_STATUS_CHANGED
+                putExtra(EXTRA_IS_FILE_OPEN_ON_CLOSED_ZFLIP, isFileOpen)
                 putExtra(EXTRA_OPEN_FILE_NAME, openFileName)
             }
 
@@ -178,8 +233,9 @@ class FlexiPDFWidgetProvider : AppWidgetProvider() {
                     TAG,
                     "Sent broadcast to update widget. Open file: $openFileName, IDs: ${appWidgetIds.joinToString()}"
                 )
-            } else {
-                Log.d(TAG, "No widget instances found to update.")
+            }
+            else {
+                Log.d(TAG, "No widget instances to update.")
             }
         }
     }
