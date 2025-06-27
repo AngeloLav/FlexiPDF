@@ -50,6 +50,8 @@ import it.lavorodigruppo.flexipdf.fragments.OnPdfPickerListener
 import it.lavorodigruppo.flexipdf.fragments.PdfViewerFragment
 import it.lavorodigruppo.flexipdf.utils.PdfManager
 import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel
+import it.lavorodigruppo.flexipdf.viewmodels.FileSystemViewModel.FileSystemViewModelFactory
+
 
 class MainActivity : AppCompatActivity(), OnPdfPickerListener, OnPdfFileClickListener {
 

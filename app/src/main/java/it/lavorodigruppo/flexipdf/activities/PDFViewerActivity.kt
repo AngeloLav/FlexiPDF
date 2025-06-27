@@ -161,6 +161,16 @@ class PDFViewerActivity : AppCompatActivity(), PdfLoadCallback {
                             foldingFeature.state == FoldingFeature.State.HALF_OPENED &&
                             foldingFeature.orientation == FoldingFeature.Orientation.VERTICAL
 
+                    // Aggiorna il layout in base alla rilevazione della modalità a libro
+                    if (isInFoldableSemiOpenPortraitMode && !currentLayoutIsFoldable) {
+                        Log.d("PDFViewerActivity", "Transizione a modalità a libro.")
+                        updateLayout(true)
+                    } else if (!isInFoldableSemiOpenPortraitMode && currentLayoutIsFoldable) {
+                        Log.d("PDFViewerActivity", "Transizione fuori dalla modalità a libro.")
+                        updateLayout(false)
+                    }
+
+
                     Log.d(
                         "PDFViewerActivity",
                         "WindowLayoutInfo aggiornato. IsFoldableSemiOpenPortraitMode = $isInFoldableSemiOpenPortraitMode, Current Orientation = ${resources.configuration.orientation}"
