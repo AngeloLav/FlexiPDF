@@ -1,7 +1,7 @@
 
   <h1>📄Info: FlexiPDF</h1>
-  <p>FlexiPDF è un'applicazione Android per la visualizzazione e la gestione dei documenti PDF.
-  Progettata per adattarsi in modo fluido a diversi fattori di forma, inclusi i dispositivi pieghevoli.</p>
+  <p>FlexiPDF è un'applicazione Android per la visualizzazione e la gestione dei documenti PDF; è
+  progettata per adattarsi in modo fluido a diversi fattori di forma, inclusi i dispositivi pieghevoli.</p>
 
   <h2>Caratteristiche Principali</h2>
   <ul>
